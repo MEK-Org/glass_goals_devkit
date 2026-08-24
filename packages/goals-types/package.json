@@ -1,0 +1,15 @@
+{
+  "name": "@thkp-eng/goals-types",
+  "version": "1.0.1",
+  "description": "Generated TypeScript types for Glass Goals",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "gen-ts-types": "json2ts -i ../../goals_types/lib/src/op_schema.json -o src/index.ts --unreachableDefinitions --no-additionalProperties",
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^15.0.4",
+    "typescript": "^5.8.3"
+  }
+}

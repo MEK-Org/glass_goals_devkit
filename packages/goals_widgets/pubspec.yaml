@@ -1,0 +1,66 @@
+name: goals_widgets
+description: Extracted reusable goals widgets package.
+
+publish_to: "none"
+
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  goals_core:
+    path: "../goals_core"
+  goals_types:
+    path: "../goals_types"
+  goals_ui_core:
+    path: "../goals_ui_core"
+
+  collection: ^1.17.2
+  intl: any
+  multi_split_view:
+    git:
+      url: https://github.com/AlabasterAxe/multi_split_view
+      ref: master
+  google_fonts: ^6.1.0
+  rxdart: ^0.28.0
+  fade_shimmer: ^2.4.0
+  flutter_dropzone:
+    git:
+      url: https://github.com/AlabasterAxe/flutter_dropzone.git
+      ref: glass-goals
+      path: flutter_dropzone
+  connectivity_plus: ^7.0.0
+
+dependency_overrides:
+  flutter_dropzone_platform_interface:
+    git:
+      url: https://github.com/AlabasterAxe/flutter_dropzone.git
+      ref: glass-goals
+      path: flutter_dropzone_platform_interface
+  flutter_dropzone_web:
+    git:
+      url: https://github.com/AlabasterAxe/flutter_dropzone.git
+      ref: glass-goals
+      path: flutter_dropzone_web
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  golden_toolkit: ^0.15.0
+
+  flutter_lints: ^5.0.0
+
+  integration_test:
+    sdk: flutter
+  test: ^1.24.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/

@@ -1,0 +1,22 @@
+name: goals_ui_core
+description: Core Library that would be shared by any app for displaying goals
+version: 1.0.0
+
+publish_to: "none"
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  connectivity_plus: ^7.0.0
+  flutter:
+    sdk: flutter
+  goals_core:
+    path: "../goals_core"
+  goals_types:
+    path: "../goals_types"
+  rxdart: ^0.28.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.24.0
