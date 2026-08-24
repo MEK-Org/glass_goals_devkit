@@ -1,0 +1,19 @@
+{
+  "name": "@thkp-eng/goals-core",
+  "version": "1.0.3",
+  "description": "Core client sync logic for Glass Goals",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@thkp-eng/goals-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.1"
+  }
+}

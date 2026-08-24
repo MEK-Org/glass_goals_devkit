@@ -1,0 +1,517 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "GoalLogEntry": {
+      "type": "object",
+      "properties": {
+        "i": {
+          "type": "string",
+          "description": "The unique id of the log entry (GoalLogEntry.id in Dart)"
+        },
+        "cT": {
+          "type": "integer",
+          "description": "Creation time as an integer timestamp (GoalLogEntry.creationTime in Dart)"
+        },
+        "p": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Full path to this note including the id of the note itself (GoalLogEntry.path in Dart)"
+        }
+      },
+      "required": ["i", "cT"]
+    },
+    "TextGoalLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "te": {
+              "type": ["string", "null"],
+              "description": "Text content of the entry (TextGoalLogEntry.text in Dart)"
+            }
+          }
+        }
+      ]
+    },
+    "PriorityLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "p",
+              "description": "Entry type: priority (PRIORITY_ENTRY_TYPE in Dart)"
+            },
+            "pr": {
+              "type": ["number", "null"],
+              "description": "Priority value (PriorityLogEntry.priority in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "NoteLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/TextGoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "n",
+              "description": "Entry type: note (NOTE_ENTRY_TYPE in Dart)"
+            },
+            "u": {
+              "type": ["string", "null"],
+              "description": "Id of the note entry being updated, if any (NoteLogEntry.updateNoteEntryId in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "SetSummaryEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/TextGoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "su",
+              "description": "Entry type: set summary (SET_SUMMARY_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "ClearSummaryEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "cSu",
+              "description": "Entry type: clear summary (CLEAR_SUMMARY_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "ArchiveNoteLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "aN",
+              "description": "Entry type: archive note (ARCHIVE_NOTE_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "SetParentLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "sP",
+              "description": "Entry type: set parent (SET_PARENT_ENTRY_TYPE in Dart)"
+            },
+            "pI": {
+              "type": ["string", "null"],
+              "description": "Id of the parent goal (SetParentLogEntry.parentId in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "MakeAnchorLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "mA",
+              "description": "Entry type: make anchor (MAKE_ANCHOR_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "ClearAnchorLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "cA",
+              "description": "Entry type: clear anchor (CLEAR_ANCHOR_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "AddParentLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "aP",
+              "description": "Entry type: add parent (ADD_PARENT_ENTRY_TYPE in Dart)"
+            },
+            "pI": {
+              "type": "string",
+              "description": "Id of the parent goal (AddParentLogEntry.parentId in Dart)"
+            },
+            "iS": {
+              "type": "boolean",
+              "description": "Whether this is a slice (AddParentLogEntry.isSlice in Dart)"
+            },
+            "dCP": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Displayed child path (AddParentLogEntry.displayedChildPath in Dart)"
+            }
+          },
+          "required": ["t", "pI"]
+        }
+      ]
+    },
+    "CreateInstanceLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "cI",
+              "description": "Entry type: create instance (CREATE_INSTANCE_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "RemoveParentLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "rP",
+              "description": "Entry type: remove parent (REMOVE_PARENT_ENTRY_TYPE in Dart)"
+            },
+            "pI": {
+              "type": "string",
+              "description": "Id of the parent goal (RemoveParentLogEntry.parentId in Dart)"
+            }
+          },
+          "required": ["t", "pI"]
+        }
+      ]
+    },
+    "StatusLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "s",
+              "description": "Entry type: status (STATUS_ENTRY_TYPE in Dart)"
+            },
+            "s": {
+              "type": ["string", "null"],
+              "description": "Status value (StatusLogEntry.status in Dart)"
+            },
+            "sT": {
+              "type": ["integer", "null"],
+              "description": "Start time as integer timestamp (StatusLogEntry.startTime in Dart)"
+            },
+            "eT": {
+              "type": ["integer", "null"],
+              "description": "End time as integer timestamp (StatusLogEntry.endTime in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "ArchiveStatusLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "aS",
+              "description": "Entry type: archive status (ARCHIVE_STATUS_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "ClearStatusLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "cS",
+              "description": "Entry type: clear status (CLEAR_STATUS_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "AddStatusIntentionLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "aSI",
+              "description": "Entry type: add status intention (ADD_STATUS_INTENTION_ENTRY_TYPE in Dart)"
+            },
+            "iT": {
+              "type": "string",
+              "description": "Intention text (AddStatusIntentionLogEntry.intentionText in Dart)"
+            },
+            "sI": {
+              "type": "string",
+              "description": "Id of the StatusLogEntry this is being added to (AddStatusIntentionLogEntry.statusId in Dart)"
+            }
+          },
+          "required": ["t", "iT", "sI"]
+        }
+      ]
+    },
+    "AddStatusReflectionLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "aSR",
+              "description": "Entry type: add status reflection (ADD_STATUS_REFLECTION_ENTRY_TYPE in Dart)"
+            },
+            "rT": {
+              "type": "string",
+              "description": "Reflection text (AddStatusReflectionLogEntry.reflectionText in Dart)"
+            },
+            "sI": {
+              "type": "string",
+              "description": "Id of the StatusLogEntry this is being added to (AddStatusReflectionLogEntry.statusId in Dart)"
+            }
+          },
+          "required": ["t", "rT", "sI"]
+        }
+      ]
+    },
+    "ParentContextCommentEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/TextGoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "pCC",
+              "description": "Entry type: parent context comment (PARENT_CONTEXT_COMMENT_ENTRY_TYPE in Dart)"
+            },
+            "pI": {
+              "type": "string",
+              "description": "Id of the parent goal (ParentContextCommentEntry.parentId in Dart)"
+            }
+          },
+          "required": ["t", "pI"]
+        }
+      ]
+    },
+    "DocumentContentsEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/TextGoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "d",
+              "description": "Entry type: document contents (DOCUMENT_CONTENTS_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "ClearDocumentContentsEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "cD",
+              "description": "Entry type: clear document contents (CLEAR_DOCUMENT_CONTENTS_ENTRY_TYPE in Dart)"
+            }
+          },
+          "required": ["t"]
+        }
+      ]
+    },
+    "LongRunningOperationEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "lRO",
+              "description": "Entry type: long running operation (LONG_RUNNING_OPERATION_ENTRY_TYPE in Dart)"
+            },
+            "oId": {
+              "type": "string",
+              "description": "Shared operation ID for all entries of this operation (LongRunningOperationEntry.operationId in Dart)"
+            },
+            "oT": {
+              "type": "string",
+              "description": "Type of operation (LongRunningOperationEntry.operationType in Dart)"
+            },
+            "s": {
+              "type": "string",
+              "enum": ["p", "r", "c", "f"],
+              "description": "Status of the operation: p=pending, r=running, c=completed, f=failed (LongRunningOperationEntry.status in Dart)"
+            },
+            "eM": {
+              "type": ["string", "null"],
+              "description": "Error message if status is failed (LongRunningOperationEntry.errorMessage in Dart)"
+            },
+            "rD": {
+              "type": ["object", "null"],
+              "description": "Result data metadata (LongRunningOperationEntry.resultData in Dart)"
+            }
+          },
+          "required": ["t", "oId", "oT", "s"]
+        }
+      ]
+    },
+    "Op": {
+      "type": "object",
+      "properties": {
+        "h": {
+          "type": "string",
+          "description": "HLC timestamp (Op.hlcTimestamp in Dart)"
+        },
+        "i": {
+          "type": "string",
+          "description": "Unique id of the op (Op.id in Dart)"
+        },
+        "v": {
+          "type": "integer",
+          "description": "Version of the op (Op.version in Dart)"
+        },
+        "t": {
+          "type": "string",
+          "description": "Type of the op (OpType, Op.TYPE_JSON_KEY in Dart)"
+        }
+      },
+      "required": ["h", "i", "v", "t"]
+    },
+    "GoalDelta": {
+      "type": "object",
+      "properties": {
+        "i": {
+          "type": "string",
+          "description": "Id of the goal (GoalDelta.id in Dart)"
+        },
+        "t": {
+          "type": ["string", "null"],
+          "description": "Text of the goal (GoalDelta.text in Dart)"
+        },
+        "lE": {
+          "$ref": "#/definitions/GoalLogEntry",
+          "description": "Log entry for the goal (GoalDelta.logEntry in Dart)"
+        }
+      },
+      "required": ["i"]
+    },
+    "DeltaOp": {
+      "allOf": [
+        { "$ref": "#/definitions/Op" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "d",
+              "description": "Op type: delta (DELTA_OP_TYPE in Dart)"
+            },
+            "d": {
+              "$ref": "#/definitions/GoalDelta",
+              "description": "Goal delta (DeltaOp.delta in Dart)"
+            }
+          },
+          "required": ["t", "d"]
+        }
+      ]
+    },
+    "DisableOp": {
+      "allOf": [
+        { "$ref": "#/definitions/Op" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "dO",
+              "description": "Op type: disable (DISABLE_OP_TYPE in Dart)"
+            },
+            "oI": {
+              "type": "string",
+              "description": "Id of the op being disabled (DisableOp.opId in Dart)"
+            }
+          },
+          "required": ["t", "oI"]
+        }
+      ]
+    },
+    "EnableOp": {
+      "allOf": [
+        { "$ref": "#/definitions/Op" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "eO",
+              "description": "Op type: enable (ENABLE_OP_TYPE in Dart)"
+            },
+            "oI": {
+              "type": "string",
+              "description": "Id of the op being enabled (EnableOp.opId in Dart)"
+            }
+          },
+          "required": ["t", "oI"]
+        }
+      ]
+    }
+  }
+}
