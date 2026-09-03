@@ -7,9 +7,9 @@
 
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "TextGoalLogEntry".
+ * via the `definition` "WireTextGoalLogEntry".
  */
-export type TextGoalLogEntry = GoalLogEntry & {
+export type WireTextGoalLogEntry = WireGoalLogEntry & {
   /**
    * Text content of the entry (TextGoalLogEntry.text in Dart)
    */
@@ -17,9 +17,9 @@ export type TextGoalLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "PriorityLogEntry".
+ * via the `definition` "WirePriorityLogEntry".
  */
-export type PriorityLogEntry = GoalLogEntry & {
+export type WirePriorityLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: priority (PRIORITY_ENTRY_TYPE in Dart)
    */
@@ -31,9 +31,9 @@ export type PriorityLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "NoteLogEntry".
+ * via the `definition` "WireNoteLogEntry".
  */
-export type NoteLogEntry = TextGoalLogEntry & {
+export type WireNoteLogEntry = WireTextGoalLogEntry & {
   /**
    * Entry type: note (NOTE_ENTRY_TYPE in Dart)
    */
@@ -45,9 +45,9 @@ export type NoteLogEntry = TextGoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "SetSummaryEntry".
+ * via the `definition` "WireSetSummaryEntry".
  */
-export type SetSummaryEntry = TextGoalLogEntry & {
+export type WireSetSummaryEntry = WireTextGoalLogEntry & {
   /**
    * Entry type: set summary (SET_SUMMARY_ENTRY_TYPE in Dart)
    */
@@ -55,9 +55,9 @@ export type SetSummaryEntry = TextGoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "ClearSummaryEntry".
+ * via the `definition` "WireClearSummaryEntry".
  */
-export type ClearSummaryEntry = GoalLogEntry & {
+export type WireClearSummaryEntry = WireGoalLogEntry & {
   /**
    * Entry type: clear summary (CLEAR_SUMMARY_ENTRY_TYPE in Dart)
    */
@@ -65,9 +65,9 @@ export type ClearSummaryEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "ArchiveNoteLogEntry".
+ * via the `definition` "WireArchiveNoteLogEntry".
  */
-export type ArchiveNoteLogEntry = GoalLogEntry & {
+export type WireArchiveNoteLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: archive note (ARCHIVE_NOTE_ENTRY_TYPE in Dart)
    */
@@ -75,9 +75,9 @@ export type ArchiveNoteLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "SetParentLogEntry".
+ * via the `definition` "WireSetParentLogEntry".
  */
-export type SetParentLogEntry = GoalLogEntry & {
+export type WireSetParentLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: set parent (SET_PARENT_ENTRY_TYPE in Dart)
    */
@@ -89,9 +89,9 @@ export type SetParentLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "MakeAnchorLogEntry".
+ * via the `definition` "WireMakeAnchorLogEntry".
  */
-export type MakeAnchorLogEntry = GoalLogEntry & {
+export type WireMakeAnchorLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: make anchor (MAKE_ANCHOR_ENTRY_TYPE in Dart)
    */
@@ -99,9 +99,9 @@ export type MakeAnchorLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "ClearAnchorLogEntry".
+ * via the `definition` "WireClearAnchorLogEntry".
  */
-export type ClearAnchorLogEntry = GoalLogEntry & {
+export type WireClearAnchorLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: clear anchor (CLEAR_ANCHOR_ENTRY_TYPE in Dart)
    */
@@ -109,9 +109,9 @@ export type ClearAnchorLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "AddParentLogEntry".
+ * via the `definition` "WireAddParentLogEntry".
  */
-export type AddParentLogEntry = GoalLogEntry & {
+export type WireAddParentLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: add parent (ADD_PARENT_ENTRY_TYPE in Dart)
    */
@@ -131,9 +131,9 @@ export type AddParentLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "CreateInstanceLogEntry".
+ * via the `definition` "WireCreateInstanceLogEntry".
  */
-export type CreateInstanceLogEntry = GoalLogEntry & {
+export type WireCreateInstanceLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: create instance (CREATE_INSTANCE_ENTRY_TYPE in Dart)
    */
@@ -141,9 +141,9 @@ export type CreateInstanceLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "RemoveParentLogEntry".
+ * via the `definition` "WireRemoveParentLogEntry".
  */
-export type RemoveParentLogEntry = GoalLogEntry & {
+export type WireRemoveParentLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: remove parent (REMOVE_PARENT_ENTRY_TYPE in Dart)
    */
@@ -155,9 +155,9 @@ export type RemoveParentLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "StatusLogEntry".
+ * via the `definition` "WireStatusLogEntry".
  */
-export type StatusLogEntry = GoalLogEntry & {
+export type WireStatusLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: status (STATUS_ENTRY_TYPE in Dart)
    */
@@ -177,9 +177,9 @@ export type StatusLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "ArchiveStatusLogEntry".
+ * via the `definition` "WireArchiveStatusLogEntry".
  */
-export type ArchiveStatusLogEntry = GoalLogEntry & {
+export type WireArchiveStatusLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: archive status (ARCHIVE_STATUS_ENTRY_TYPE in Dart)
    */
@@ -187,9 +187,9 @@ export type ArchiveStatusLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "ClearStatusLogEntry".
+ * via the `definition` "WireClearStatusLogEntry".
  */
-export type ClearStatusLogEntry = GoalLogEntry & {
+export type WireClearStatusLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: clear status (CLEAR_STATUS_ENTRY_TYPE in Dart)
    */
@@ -197,9 +197,9 @@ export type ClearStatusLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "AddStatusIntentionLogEntry".
+ * via the `definition` "WireAddStatusIntentionLogEntry".
  */
-export type AddStatusIntentionLogEntry = GoalLogEntry & {
+export type WireAddStatusIntentionLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: add status intention (ADD_STATUS_INTENTION_ENTRY_TYPE in Dart)
    */
@@ -215,9 +215,9 @@ export type AddStatusIntentionLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "AddStatusReflectionLogEntry".
+ * via the `definition` "WireAddStatusReflectionLogEntry".
  */
-export type AddStatusReflectionLogEntry = GoalLogEntry & {
+export type WireAddStatusReflectionLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: add status reflection (ADD_STATUS_REFLECTION_ENTRY_TYPE in Dart)
    */
@@ -233,9 +233,9 @@ export type AddStatusReflectionLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "ParentContextCommentEntry".
+ * via the `definition` "WireParentContextCommentEntry".
  */
-export type ParentContextCommentEntry = TextGoalLogEntry & {
+export type WireParentContextCommentEntry = WireTextGoalLogEntry & {
   /**
    * Entry type: parent context comment (PARENT_CONTEXT_COMMENT_ENTRY_TYPE in Dart)
    */
@@ -247,9 +247,9 @@ export type ParentContextCommentEntry = TextGoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "DocumentContentsEntry".
+ * via the `definition` "WireDocumentContentsLogEntry".
  */
-export type DocumentContentsEntry = TextGoalLogEntry & {
+export type WireDocumentContentsLogEntry = WireTextGoalLogEntry & {
   /**
    * Entry type: document contents (DOCUMENT_CONTENTS_ENTRY_TYPE in Dart)
    */
@@ -257,9 +257,9 @@ export type DocumentContentsEntry = TextGoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "ClearDocumentContentsEntry".
+ * via the `definition` "WireClearDocumentContentsLogEntry".
  */
-export type ClearDocumentContentsEntry = GoalLogEntry & {
+export type WireClearDocumentContentsLogEntry = WireGoalLogEntry & {
   /**
    * Entry type: clear document contents (CLEAR_DOCUMENT_CONTENTS_ENTRY_TYPE in Dart)
    */
@@ -267,17 +267,17 @@ export type ClearDocumentContentsEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "CourseMetadataLogEntry".
+ * via the `definition` "WireCourseMetadataLogEntry".
  */
-export type CourseMetadataLogEntry = GoalLogEntry & {
+export type WireCourseMetadataLogEntry = WireGoalLogEntry & {
   t: "cM";
   tGI: string[];
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "ReadingAssignmentLogEntry".
+ * via the `definition` "WireReadingAssignmentLogEntry".
  */
-export type ReadingAssignmentLogEntry = GoalLogEntry & {
+export type WireReadingAssignmentLogEntry = WireGoalLogEntry & {
   t: "rA";
   tGI: string;
   sP: number;
@@ -287,20 +287,20 @@ export type ReadingAssignmentLogEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "SyllabusParseResultLogEntry".
+ * via the `definition` "WireSyllabusParseResultLogEntry".
  */
-export type SyllabusParseResultLogEntry = GoalLogEntry & {
+export type WireSyllabusParseResultLogEntry = WireGoalLogEntry & {
   t: "sPR";
   cfGI: string;
   tGI: string;
-  cM: ClassMapping[];
+  cM: WireClassMapping[];
   aF: string;
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "LongRunningOperationEntry".
+ * via the `definition` "WireLongRunningOperationEntry".
  */
-export type LongRunningOperationEntry = GoalLogEntry & {
+export type WireLongRunningOperationEntry = WireGoalLogEntry & {
   /**
    * Entry type: long running operation (LONG_RUNNING_OPERATION_ENTRY_TYPE in Dart)
    */
@@ -328,20 +328,20 @@ export type LongRunningOperationEntry = GoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "DeltaOp".
+ * via the `definition` "WireDeltaOp".
  */
-export type DeltaOp = Op & {
+export type WireDeltaOp = WireOp & {
   /**
    * Op type: delta (DELTA_OP_TYPE in Dart)
    */
   t: "d";
-  d: GoalDelta1;
+  d: WireGoalDelta;
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "DisableOp".
+ * via the `definition` "WireDisableOp".
  */
-export type DisableOp = Op & {
+export type WireDisableOp = WireOp & {
   /**
    * Op type: disable (DISABLE_OP_TYPE in Dart)
    */
@@ -353,9 +353,9 @@ export type DisableOp = Op & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "EnableOp".
+ * via the `definition` "WireEnableOp".
  */
-export type EnableOp = Op & {
+export type WireEnableOp = WireOp & {
   /**
    * Op type: enable (ENABLE_OP_TYPE in Dart)
    */
@@ -371,9 +371,9 @@ export interface OpSchema {
 }
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "GoalLogEntry".
+ * via the `definition` "WireGoalLogEntry".
  */
-export interface GoalLogEntry {
+export interface WireGoalLogEntry {
   /**
    * The unique id of the log entry (GoalLogEntry.id in Dart)
    */
@@ -389,9 +389,9 @@ export interface GoalLogEntry {
 }
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "ClassMapping".
+ * via the `definition` "WireClassMapping".
  */
-export interface ClassMapping {
+export interface WireClassMapping {
   cN: number;
   gI: string;
   d?: string;
@@ -399,9 +399,9 @@ export interface ClassMapping {
 }
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "Op".
+ * via the `definition` "WireOp".
  */
-export interface Op {
+export interface WireOp {
   /**
    * HLC timestamp (Op.hlcTimestamp in Dart)
    */
@@ -421,9 +421,9 @@ export interface Op {
 }
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "GoalDelta".
+ * via the `definition` "WireGoalDelta".
  */
-export interface GoalDelta {
+export interface WireGoalDelta {
   /**
    * Id of the goal (GoalDelta.id in Dart)
    */
@@ -432,36 +432,5 @@ export interface GoalDelta {
    * Text of the goal (GoalDelta.text in Dart)
    */
   t?: string | null;
-  lE?: GoalLogEntry1;
-}
-/**
- * Log entry for the goal (GoalDelta.logEntry in Dart)
- */
-export interface GoalLogEntry1 {
-  /**
-   * The unique id of the log entry (GoalLogEntry.id in Dart)
-   */
-  i: string;
-  /**
-   * Creation time as an integer timestamp (GoalLogEntry.creationTime in Dart)
-   */
-  cT: number;
-  /**
-   * Full path to this note including the id of the note itself (GoalLogEntry.path in Dart)
-   */
-  p?: string[];
-}
-/**
- * Goal delta (DeltaOp.delta in Dart)
- */
-export interface GoalDelta1 {
-  /**
-   * Id of the goal (GoalDelta.id in Dart)
-   */
-  i: string;
-  /**
-   * Text of the goal (GoalDelta.text in Dart)
-   */
-  t?: string | null;
-  lE?: GoalLogEntry1;
+  lE?: WireGoalLogEntry;
 }

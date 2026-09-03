@@ -2,8 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:test/test.dart';
+
 import 'package:goals_types/goals_types.dart'
     show
+        CourseMetadataLogEntry,
+        ReadingAssignmentLogEntry,
+
         DeltaOp,
         DisableOp,
         EnableOp,
@@ -54,7 +58,7 @@ void main() {
 
     final jsonStr = op.toJson();
     final jsonObj = jsonDecode(jsonStr);
-    await expectValidOpJson(jsonObj, ref: 'DeltaOp');
+    await expectValidOpJson(jsonObj, ref: 'WireDeltaOp');
 
     expect(
         jsonStr,
@@ -79,7 +83,7 @@ void main() {
     );
     final jsonStr = op.toJson();
     final jsonObj = jsonDecode(jsonStr);
-    expectValidOpJson(jsonObj, ref: 'DeltaOp');
+    expectValidOpJson(jsonObj, ref: 'WireDeltaOp');
     final op2 = Op.fromJson(jsonStr);
     expect(op2, equals(op));
   });
@@ -92,7 +96,7 @@ void main() {
     );
     final jsonStr = op.toJson();
     final jsonObj = jsonDecode(jsonStr);
-    expectValidOpJson(jsonObj, ref: 'EnableOp');
+    expectValidOpJson(jsonObj, ref: 'WireEnableOp');
     final op2 = Op.fromJson(jsonStr);
     expect(op2, equals(op));
   });
@@ -105,8 +109,68 @@ void main() {
     );
     final jsonStr = op.toJson();
     final jsonObj = jsonDecode(jsonStr);
-    expectValidOpJson(jsonObj, ref: 'DisableOp');
+    expectValidOpJson(jsonObj, ref: 'WireDisableOp');
     final op2 = Op.fromJson(jsonStr);
     expect(op2, equals(op));
+  });
+
+  test('WireCourseMetadataLogEntry validation', () async {
+    final entry = CourseMetadataLogEntry(
+      id: '1',
+      creationTime: DateTime.utc(2023),
+      textbookGoalIds: ['textbook1'],
+    );
+    final jsonObj = jsonDecode(jsonEncode(entry.toJsonMap()));
+    await expectValidOpJson(jsonObj, ref: 'WireCourseMetadataLogEntry');
+  });
+
+  test('WireReadingAssignmentLogEntry validation', () async {
+    final entry = ReadingAssignmentLogEntry(
+      id: '2',
+      creationTime: DateTime.utc(2023),
+      textbookGoalId: 'textbook1',
+      startPage: 1,
+      endPage: 10,
+    );
+    final jsonObj = jsonDecode(jsonEncode(entry.toJsonMap()));
+    await expectValidOpJson(jsonObj, ref: 'WireReadingAssignmentLogEntry');
+  });
+
+  test('WireClassMapping validation', () async {
+    final jsonObj = {
+      'cN': 1,
+      'gI': 'goal1',
+      'tp': 'Topic 1'
+    };
+    await expectValidOpJson(jsonObj, ref: 'WireClassMapping');
+  });
+
+  test('WireSyllabusParseResultLogEntry validation', () async {
+    final jsonObj = {
+      'i': '3',
+      'cT': 12345,
+      't': 'sPR',
+      'cfGI': 'folder1',
+      'tGI': 'textbook1',
+      'cM': [
+        {
+          'cN': 1,
+          'gI': 'goal1',
+          'tp': 'Topic 1'
+        }
+      ],
+      'aF': 'file.pdf'
+    };
+    await expectValidOpJson(jsonObj, ref: 'WireSyllabusParseResultLogEntry');
+  });
+
+  test('ops.ts has no digit-suffixed exports', () async {
+    final file = File('../goals-types/src/ops.ts');
+    final contents = await file.readAsString();
+    final exportMatches = RegExp(r'export (?:interface|type) ([A-Za-z0-9_]+)').allMatches(contents);
+    for (final match in exportMatches) {
+      final name = match.group(1)!;
+      expect(RegExp(r'\d$').hasMatch(name), isFalse, reason: 'Export $name ends in a digit');
+    }
   });
 }
