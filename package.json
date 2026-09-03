@@ -4,5 +4,12 @@
   "private": true,
   "description": "Shared Dart and TypeScript library packages extracted from Glass Goals.",
   "license": "BSD-3-Clause",
-  "packageManager": "pnpm@10.27.0"
+  "packageManager": "pnpm@10.27.0",
+  "devDependencies": {
+    "tsx": "^4.23.13",
+    "yaml": "^2.9.0"
+  },
+  "scripts": {
+    "cut-types": "tsx scripts/cut_types_version.ts"
+  }
 }

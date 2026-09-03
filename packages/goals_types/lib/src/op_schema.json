@@ -380,6 +380,100 @@
         }
       ]
     },
+    "CourseMetadataLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "cM"
+            },
+            "tGI": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "required": ["t", "tGI"]
+        }
+      ]
+    },
+    "ReadingAssignmentLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "rA"
+            },
+            "tGI": {
+              "type": "string"
+            },
+            "sP": {
+              "type": "number"
+            },
+            "eP": {
+              "type": "number"
+            },
+            "sPF": {
+              "type": "string",
+              "enum": ["arabic", "roman"]
+            },
+            "ePF": {
+              "type": "string",
+              "enum": ["arabic", "roman"]
+            }
+          },
+          "required": ["t", "tGI", "sP", "eP"]
+        }
+      ]
+    },
+    "ClassMapping": {
+      "type": "object",
+      "properties": {
+        "cN": {
+          "type": "number"
+        },
+        "gI": {
+          "type": "string"
+        },
+        "d": {
+          "type": "string"
+        },
+        "tp": {
+          "type": "string"
+        }
+      },
+      "required": ["cN", "gI", "tp"]
+    },
+    "SyllabusParseResultLogEntry": {
+      "allOf": [
+        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "sPR"
+            },
+            "cfGI": {
+              "type": "string"
+            },
+            "tGI": {
+              "type": "string"
+            },
+            "cM": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/ClassMapping" }
+            },
+            "aF": {
+              "type": "string"
+            }
+          },
+          "required": ["t", "cfGI", "tGI", "cM", "aF"]
+        }
+      ]
+    },
     "LongRunningOperationEntry": {
       "allOf": [
         { "$ref": "#/definitions/GoalLogEntry" },

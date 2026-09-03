@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "gen-ts-types": "json2ts -i ../../goals_types/lib/src/op_schema.json -o src/index.ts --unreachableDefinitions --no-additionalProperties",
+    "gen-ts-types": "json2ts -i ../goals_types/lib/src/op_schema.json -o src/ops.d.ts --unreachableDefinitions --no-additionalProperties",
     "build": "tsc"
   },
   "devDependencies": {
