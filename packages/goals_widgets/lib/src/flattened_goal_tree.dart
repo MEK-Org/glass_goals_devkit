@@ -734,16 +734,19 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
               ? this._flattenedGoalItems[_shiftHoverEndIndex!].path
               : null,
           onDropGoal: (goalDragDetails, topDrop) {
-            onDropGoal(goalDragDetails.path,
-                prevDropPath: prevGoal?.path ?? GoalPath([...this.widget.path]),
-                // this messy logic is for the case when a goal has been dropped
-                // on the top of a separator between the end last child goal
-                // and the next sibling of a parent goal.
-                nextDropPath: prevGoal != null &&
-                        topDrop &&
-                        prevGoal.path.length > flattenedGoal.path.length
-                    ? null
-                    : flattenedGoal.path);
+            onDropGoal(
+              goalDragDetails.path,
+              prevDropPath: prevGoal?.path ?? GoalPath([...this.widget.path]),
+              // this messy logic is for the case when a goal has been dropped
+              // on the top of a separator between the end last child goal
+              // and the next sibling of a parent goal.
+              nextDropPath: prevGoal != null &&
+                      topDrop &&
+                      prevGoal.path.length > flattenedGoal.path.length
+                  ? null
+                  : flattenedGoal.path,
+              isAdditive: isAltHeld(),
+            );
           }));
       goalItems.add(parseChildIndexPathPart(goalId) == null
           ? _swipeWrap(
@@ -753,6 +756,7 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
                   onDropGoal(
                     details.path,
                     dropPath: flattenedGoal.path,
+                    isAdditive: isAltHeld(),
                   );
                 },
                 onEnter: () {

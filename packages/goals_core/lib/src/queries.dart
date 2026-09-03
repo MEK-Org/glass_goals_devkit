@@ -2284,3 +2284,249 @@ SyllabusParseResultLogEntry? getSyllabusParseResultEntry(
 
   return null;
 }
+
+/// Computes the GoalDeltas needed when dropping a set of goals onto a target goal.
+List<GoalDelta> computeDropOnGoalEffects(
+  Map<String, Goal> goalMap,
+  Set<GoalPath> draggedGoalPaths,
+  GoalPath targetGoalPath, {
+  bool isAdditive = false,
+}) {
+  final List<GoalDelta> goalDeltas = [];
+  final superGoals = getTransitiveSuperGoals(goalMap, targetGoalPath.goalId);
+  for (final path in draggedGoalPaths) {
+    final droppedGoal = goalMap[path.goalId];
+
+    if (droppedGoal == null ||
+        superGoals.containsKey(path.goalId) ||
+        path.goalId == targetGoalPath.goalId ||
+        droppedGoal.hasParent(targetGoalPath.goalId)) {
+      continue;
+    }
+
+    final pathParentPath = path.parentPath;
+    final pathParent =
+        pathParentPath.isEmpty ? null : goalMap[pathParentPath.goalId];
+    if (pathParent == null) {
+      goalDeltas.add(GoalDelta(
+          id: path.goalId,
+          logEntry: AddParentLogEntry(
+            id: Cupid.random().encode(),
+            parentId: targetGoalPath.goalId,
+            creationTime: DateTime.now(),
+            path: getLogEntryPath(goalMap, targetGoalPath),
+          )));
+      continue;
+    }
+
+    GoalPath? displayedChildPath;
+    if (pathParentPath.isNotEmpty) {
+      final pathParentEntry = getPathParentEntry(goalMap, path);
+      if (pathParentEntry is AddParentLogEntry) {
+        displayedChildPath = pathParentEntry.displayedChildPath != null
+            ? GoalPath(pathParentEntry.displayedChildPath!)
+            : null;
+      }
+      if (!isAdditive) {
+        goalDeltas.add(GoalDelta(
+            id: path.goalId,
+            logEntry: RemoveParentLogEntry(
+              id: Cupid.random().encode(),
+              creationTime: DateTime.now(),
+              parentId: pathParentPath.goalId,
+              path: getLogEntryPath(goalMap, pathParentPath),
+            )));
+      }
+    }
+
+    goalDeltas.add(GoalDelta(
+        id: path.goalId,
+        logEntry: AddParentLogEntry(
+          id: Cupid.random().encode(),
+          parentId: targetGoalPath.goalId,
+          creationTime: DateTime.now(),
+          displayedChildPath: displayedChildPath,
+          path: getLogEntryPath(goalMap, targetGoalPath),
+        )));
+  }
+  return goalDeltas;
+}
+
+/// Computes the GoalDeltas needed when dropping a set of goals onto a separator between goals.
+List<GoalDelta> computeDropOnSeparatorEffects(
+  Map<String, Goal> goalMap,
+  Set<GoalPath> draggedGoalDetails,
+  GoalPath prevGoalPath,
+  GoalPath nextGoalPath, {
+  bool isAdditive = false,
+}) {
+  GoalPath? newParentPath;
+  double? newPriority = getGoalPriorityBetween(goalMap,
+      pathBefore: prevGoalPath, pathAfter: nextGoalPath);
+
+  if (prevGoalPath.length == nextGoalPath.length) {
+    // dropped between siblings
+    newParentPath = prevGoalPath.parentPath.trailingGoalPath;
+  } else if (prevGoalPath.length == nextGoalPath.length - 1) {
+    // dropped between parent and child
+    newParentPath = prevGoalPath.trailingGoalPath;
+  } else if (prevGoalPath.length > nextGoalPath.length) {
+    // dropped after last child and before add goal entry
+    newParentPath = nextGoalPath.parentPath.trailingGoalPath;
+  }
+
+  // Cycle check: If newParentPath is non-empty, check if any dragged goal is a supergoal of newParentPath or equal to newParentPath.
+  if (newParentPath != null && newParentPath.isNotEmpty) {
+    final superGoals = getTransitiveSuperGoals(goalMap, newParentPath.goalId);
+    for (final path in draggedGoalDetails) {
+      if (superGoals.containsKey(path.goalId) ||
+          path.goalId == newParentPath.goalId) {
+        // abort mission. one of these goals is a super goal of the new parent.
+        return [];
+      }
+    }
+  }
+
+  // Duplicate / root check for additive drops:
+  // In additive mode, root destinations cannot represent an additive edge (root has no edge representation),
+  // and dropping onto an already-existing destination parent edge is rejected with zero effects.
+  if (isAdditive) {
+    if (newParentPath == null || newParentPath.isEmpty) {
+      return [];
+    }
+    for (final details in draggedGoalDetails) {
+      final droppedGoal = goalMap[details.goalId];
+      if (droppedGoal == null || droppedGoal.hasParent(newParentPath.goalId)) {
+        return [];
+      }
+    }
+  }
+
+  final List<GoalDelta> goalDeltas = [];
+
+  // Check if we need to bump any sibling priorities to make room
+  if (newPriority != null) {
+    final conflictingBumps = getConflictingPriorityBumps(
+      goalMap,
+      newParentPath,
+      nextGoalPath,
+      newPriority,
+    );
+
+    if (conflictingBumps.isNotEmpty) {
+      final priorityEntryPath = newParentPath != null
+          ? getLogEntryPath(goalMap, newParentPath)
+          : null;
+
+      for (final entry in conflictingBumps.entries) {
+        goalDeltas.add(GoalDelta(
+            id: entry.key,
+            logEntry: PriorityLogEntry(
+              id: Cupid.random().encode(),
+              creationTime: DateTime.now(),
+              priority: entry.value,
+              path: priorityEntryPath,
+            )));
+      }
+    }
+  }
+
+  for (final details in draggedGoalDetails) {
+    final droppedGoal = goalMap[details.goalId];
+    if (droppedGoal == null) continue;
+
+    final pathParentId = details.parentId;
+
+    if (newParentPath != null && newParentPath.isNotEmpty) {
+      if (!droppedGoal.hasParent(newParentPath.goalId)) {
+        if (!isAdditive && pathParentId != null) {
+          goalDeltas.add(GoalDelta(
+              id: details.goalId,
+              logEntry: RemoveParentLogEntry(
+                id: Cupid.random().encode(),
+                creationTime: DateTime.now(),
+                parentId: pathParentId,
+                path: getLogEntryPath(goalMap, details),
+              )));
+        }
+
+        goalDeltas.add(GoalDelta(
+            id: details.goalId,
+            logEntry: AddParentLogEntry(
+              id: Cupid.random().encode(),
+              parentId: newParentPath.goalId,
+              creationTime: DateTime.now(),
+              path: getLogEntryPath(goalMap, newParentPath),
+            )));
+      }
+    } else {
+      if (!isAdditive && pathParentId != null) {
+        goalDeltas.add(GoalDelta(
+            id: details.goalId,
+            logEntry: RemoveParentLogEntry(
+              id: Cupid.random().encode(),
+              creationTime: DateTime.now(),
+              parentId: pathParentId,
+              path: getLogEntryPath(goalMap, details),
+            )));
+      }
+    }
+
+    final priorityEntryPath = newParentPath != null
+        ? getLogEntryPath(goalMap, newParentPath)
+        : null;
+
+    goalDeltas.add(GoalDelta(
+        id: details.goalId,
+        logEntry: PriorityLogEntry(
+          id: Cupid.random().encode(),
+          creationTime: DateTime.now(),
+          priority: newPriority,
+          path: priorityEntryPath,
+        )));
+  }
+
+  return goalDeltas;
+}
+
+/// Computes the GoalDeltas needed when dropping a goal onto a goal or separator target.
+List<GoalDelta> computeDropGoalEffects(
+  Map<String, Goal> goalMap,
+  GoalPath path, {
+  Set<GoalPath>? selectedGoals,
+  GoalPath? dropPath,
+  GoalPath? prevDropPath,
+  GoalPath? nextDropPath,
+  bool isAdditive = false,
+}) {
+  final Set<GoalPath> goalsToUpdate =
+      (selectedGoals != null && selectedGoals.contains(path))
+          ? {...selectedGoals}
+          : {path};
+
+  if (!((dropPath != null) ^
+      (prevDropPath != null && nextDropPath != null))) {
+    print(
+        'Exactly one of dropPath or prevDropPath and nextDropPath must be non-null');
+    throw Exception(
+        'Exactly one of dropPath or prevDropPath and nextDropPath must be non-null');
+  }
+
+  if (prevDropPath != null && nextDropPath != null) {
+    return computeDropOnSeparatorEffects(
+      goalMap,
+      goalsToUpdate,
+      prevDropPath,
+      nextDropPath,
+      isAdditive: isAdditive,
+    );
+  } else {
+    return computeDropOnGoalEffects(
+      goalMap,
+      goalsToUpdate,
+      dropPath!,
+      isAdditive: isAdditive,
+    );
+  }
+}
+

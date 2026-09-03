@@ -37,6 +37,7 @@ class GoalActionsContext extends InheritedWidget {
     GoalPath? dropPath,
     GoalPath? prevDropPath,
     GoalPath? nextDropPath,
+    bool isAdditive,
   }) onDropGoal;
   final Function(GoalPath?, {DateTime startTime, DateTime? endTime}) onActive;
   final Function(String? goalId, PdfVariant variant, [String? format])? onPrint;
@@ -88,7 +89,8 @@ class GoalActionsContext extends InheritedWidget {
       onDropGoal: (GoalPath path,
           {GoalPath? dropPath,
           GoalPath? prevDropPath,
-          GoalPath? nextDropPath}) {},
+          GoalPath? nextDropPath,
+          bool isAdditive = false}) {},
       onMakeAnchor: (String goalId) {},
       onClearAnchor: (String goalId) {},
       onAddSummary: (String goalId) {},
@@ -116,6 +118,7 @@ class GoalActionsContext extends InheritedWidget {
       GoalPath? dropPath,
       GoalPath? prevDropPath,
       GoalPath? nextDropPath,
+      bool isAdditive,
     })? onDropGoal,
     Function(String? goalId, PdfVariant variant, [String? format])? onPrint,
     Function(String goalId)? onClearAnchor,

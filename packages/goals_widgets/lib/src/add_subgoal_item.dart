@@ -53,6 +53,7 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
   @override
   void initState() {
     super.initState();
+    this._focusNode.addListener(this._focusListener);
     _subscriptions.add(hasMouseProvider.stream.listen((hasMouse) {
       if (!mounted || hasMouse == _hasMouse) {
         return;
@@ -68,10 +69,18 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
     }
   }
 
+  _focusListener() {
+    if (!this._focusNode.hasFocus &&
+        pathsMatch(textFocusProvider.value, this.widget.path)) {
+      Future.delayed(Duration.zero, () => this._focusNode.requestFocus());
+    }
+  }
+
   @override
   void didUpdateWidget(AddSubgoalItemWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (pathsMatch(textFocusProvider.value, this.widget.path)) {
+    if (!pathsMatch(oldWidget.path, widget.path) &&
+        pathsMatch(textFocusProvider.value, widget.path)) {
       _startEditing();
     }
   }
@@ -85,12 +94,16 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
   /// callback guarantees the field is mounted and its input connection is
   /// open before any keystroke arrives.
   void _startEditing() {
-    if (!_editing) {
-      if (mounted) {
-        setState(() => _editing = true);
-      } else {
-        _editing = true;
+    if (_editing) {
+      if (!_focusNode.hasFocus) {
+        _focusNode.requestFocus();
       }
+      return;
+    }
+    if (mounted) {
+      setState(() => _editing = true);
+    } else {
+      _editing = true;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

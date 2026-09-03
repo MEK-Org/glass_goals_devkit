@@ -1,6 +1,6 @@
 {
   "name": "@thkp-eng/goals-core",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Core client sync logic for Glass Goals",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
