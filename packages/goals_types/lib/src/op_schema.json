@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
-    "GoalLogEntry": {
+    "WireGoalLogEntry": {
       "type": "object",
       "properties": {
         "i": {
@@ -14,29 +14,41 @@
         },
         "p": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "description": "Full path to this note including the id of the note itself (GoalLogEntry.path in Dart)"
         }
       },
-      "required": ["i", "cT"]
+      "required": [
+        "i",
+        "cT"
+      ]
     },
-    "TextGoalLogEntry": {
+    "WireTextGoalLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
             "te": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "Text content of the entry (TextGoalLogEntry.text in Dart)"
             }
           }
         }
       ]
     },
-    "PriorityLogEntry": {
+    "WirePriorityLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -45,17 +57,24 @@
               "description": "Entry type: priority (PRIORITY_ENTRY_TYPE in Dart)"
             },
             "pr": {
-              "type": ["number", "null"],
+              "type": [
+                "number",
+                "null"
+              ],
               "description": "Priority value (PriorityLogEntry.priority in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "NoteLogEntry": {
+    "WireNoteLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/TextGoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireTextGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -64,17 +83,24 @@
               "description": "Entry type: note (NOTE_ENTRY_TYPE in Dart)"
             },
             "u": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "Id of the note entry being updated, if any (NoteLogEntry.updateNoteEntryId in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "SetSummaryEntry": {
+    "WireSetSummaryEntry": {
       "allOf": [
-        { "$ref": "#/definitions/TextGoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireTextGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -83,13 +109,17 @@
               "description": "Entry type: set summary (SET_SUMMARY_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "ClearSummaryEntry": {
+    "WireClearSummaryEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -98,13 +128,17 @@
               "description": "Entry type: clear summary (CLEAR_SUMMARY_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "ArchiveNoteLogEntry": {
+    "WireArchiveNoteLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -113,13 +147,17 @@
               "description": "Entry type: archive note (ARCHIVE_NOTE_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "SetParentLogEntry": {
+    "WireSetParentLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -128,17 +166,24 @@
               "description": "Entry type: set parent (SET_PARENT_ENTRY_TYPE in Dart)"
             },
             "pI": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "Id of the parent goal (SetParentLogEntry.parentId in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "MakeAnchorLogEntry": {
+    "WireMakeAnchorLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -147,13 +192,17 @@
               "description": "Entry type: make anchor (MAKE_ANCHOR_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "ClearAnchorLogEntry": {
+    "WireClearAnchorLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -162,13 +211,17 @@
               "description": "Entry type: clear anchor (CLEAR_ANCHOR_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "AddParentLogEntry": {
+    "WireAddParentLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -186,17 +239,24 @@
             },
             "dCP": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "description": "Displayed child path (AddParentLogEntry.displayedChildPath in Dart)"
             }
           },
-          "required": ["t", "pI"]
+          "required": [
+            "t",
+            "pI"
+          ]
         }
       ]
     },
-    "CreateInstanceLogEntry": {
+    "WireCreateInstanceLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -205,13 +265,17 @@
               "description": "Entry type: create instance (CREATE_INSTANCE_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "RemoveParentLogEntry": {
+    "WireRemoveParentLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -224,13 +288,18 @@
               "description": "Id of the parent goal (RemoveParentLogEntry.parentId in Dart)"
             }
           },
-          "required": ["t", "pI"]
+          "required": [
+            "t",
+            "pI"
+          ]
         }
       ]
     },
-    "StatusLogEntry": {
+    "WireStatusLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -239,25 +308,38 @@
               "description": "Entry type: status (STATUS_ENTRY_TYPE in Dart)"
             },
             "s": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "Status value (StatusLogEntry.status in Dart)"
             },
             "sT": {
-              "type": ["integer", "null"],
+              "type": [
+                "integer",
+                "null"
+              ],
               "description": "Start time as integer timestamp (StatusLogEntry.startTime in Dart)"
             },
             "eT": {
-              "type": ["integer", "null"],
+              "type": [
+                "integer",
+                "null"
+              ],
               "description": "End time as integer timestamp (StatusLogEntry.endTime in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "ArchiveStatusLogEntry": {
+    "WireArchiveStatusLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -266,13 +348,17 @@
               "description": "Entry type: archive status (ARCHIVE_STATUS_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "ClearStatusLogEntry": {
+    "WireClearStatusLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -281,13 +367,17 @@
               "description": "Entry type: clear status (CLEAR_STATUS_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "AddStatusIntentionLogEntry": {
+    "WireAddStatusIntentionLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -304,13 +394,19 @@
               "description": "Id of the StatusLogEntry this is being added to (AddStatusIntentionLogEntry.statusId in Dart)"
             }
           },
-          "required": ["t", "iT", "sI"]
+          "required": [
+            "t",
+            "iT",
+            "sI"
+          ]
         }
       ]
     },
-    "AddStatusReflectionLogEntry": {
+    "WireAddStatusReflectionLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -327,13 +423,19 @@
               "description": "Id of the StatusLogEntry this is being added to (AddStatusReflectionLogEntry.statusId in Dart)"
             }
           },
-          "required": ["t", "rT", "sI"]
+          "required": [
+            "t",
+            "rT",
+            "sI"
+          ]
         }
       ]
     },
-    "ParentContextCommentEntry": {
+    "WireParentContextCommentEntry": {
       "allOf": [
-        { "$ref": "#/definitions/TextGoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireTextGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -346,13 +448,18 @@
               "description": "Id of the parent goal (ParentContextCommentEntry.parentId in Dart)"
             }
           },
-          "required": ["t", "pI"]
+          "required": [
+            "t",
+            "pI"
+          ]
         }
       ]
     },
-    "DocumentContentsEntry": {
+    "WireDocumentContentsLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/TextGoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireTextGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -361,13 +468,17 @@
               "description": "Entry type: document contents (DOCUMENT_CONTENTS_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "ClearDocumentContentsEntry": {
+    "WireClearDocumentContentsLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -376,13 +487,145 @@
               "description": "Entry type: clear document contents (CLEAR_DOCUMENT_CONTENTS_ENTRY_TYPE in Dart)"
             }
           },
-          "required": ["t"]
+          "required": [
+            "t"
+          ]
         }
       ]
     },
-    "LongRunningOperationEntry": {
+    "WireCourseMetadataLogEntry": {
       "allOf": [
-        { "$ref": "#/definitions/GoalLogEntry" },
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "cM"
+            },
+            "tGI": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "t",
+            "tGI"
+          ]
+        }
+      ]
+    },
+    "WireReadingAssignmentLogEntry": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "rA"
+            },
+            "tGI": {
+              "type": "string"
+            },
+            "sP": {
+              "type": "number"
+            },
+            "eP": {
+              "type": "number"
+            },
+            "sPF": {
+              "type": "string",
+              "enum": [
+                "arabic",
+                "roman"
+              ]
+            },
+            "ePF": {
+              "type": "string",
+              "enum": [
+                "arabic",
+                "roman"
+              ]
+            }
+          },
+          "required": [
+            "t",
+            "tGI",
+            "sP",
+            "eP"
+          ]
+        }
+      ]
+    },
+    "WireClassMapping": {
+      "type": "object",
+      "properties": {
+        "cN": {
+          "type": "number"
+        },
+        "gI": {
+          "type": "string"
+        },
+        "d": {
+          "type": "string"
+        },
+        "tp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cN",
+        "gI",
+        "tp"
+      ]
+    },
+    "WireSyllabusParseResultLogEntry": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "sPR"
+            },
+            "cfGI": {
+              "type": "string"
+            },
+            "tGI": {
+              "type": "string"
+            },
+            "cM": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WireClassMapping"
+              }
+            },
+            "aF": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "t",
+            "cfGI",
+            "tGI",
+            "cM",
+            "aF"
+          ]
+        }
+      ]
+    },
+    "WireLongRunningOperationEntry": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
         {
           "type": "object",
           "properties": {
@@ -400,23 +643,39 @@
             },
             "s": {
               "type": "string",
-              "enum": ["p", "r", "c", "f"],
+              "enum": [
+                "p",
+                "r",
+                "c",
+                "f"
+              ],
               "description": "Status of the operation: p=pending, r=running, c=completed, f=failed (LongRunningOperationEntry.status in Dart)"
             },
             "eM": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "Error message if status is failed (LongRunningOperationEntry.errorMessage in Dart)"
             },
             "rD": {
-              "type": ["object", "null"],
+              "type": [
+                "object",
+                "null"
+              ],
               "description": "Result data metadata (LongRunningOperationEntry.resultData in Dart)"
             }
           },
-          "required": ["t", "oId", "oT", "s"]
+          "required": [
+            "t",
+            "oId",
+            "oT",
+            "s"
+          ]
         }
       ]
     },
-    "Op": {
+    "WireOp": {
       "type": "object",
       "properties": {
         "h": {
@@ -436,9 +695,14 @@
           "description": "Type of the op (OpType, Op.TYPE_JSON_KEY in Dart)"
         }
       },
-      "required": ["h", "i", "v", "t"]
+      "required": [
+        "h",
+        "i",
+        "v",
+        "t"
+      ]
     },
-    "GoalDelta": {
+    "WireGoalDelta": {
       "type": "object",
       "properties": {
         "i": {
@@ -446,19 +710,25 @@
           "description": "Id of the goal (GoalDelta.id in Dart)"
         },
         "t": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Text of the goal (GoalDelta.text in Dart)"
         },
         "lE": {
-          "$ref": "#/definitions/GoalLogEntry",
-          "description": "Log entry for the goal (GoalDelta.logEntry in Dart)"
+          "$ref": "#/definitions/WireGoalLogEntry"
         }
       },
-      "required": ["i"]
+      "required": [
+        "i"
+      ]
     },
-    "DeltaOp": {
+    "WireDeltaOp": {
       "allOf": [
-        { "$ref": "#/definitions/Op" },
+        {
+          "$ref": "#/definitions/WireOp"
+        },
         {
           "type": "object",
           "properties": {
@@ -467,17 +737,21 @@
               "description": "Op type: delta (DELTA_OP_TYPE in Dart)"
             },
             "d": {
-              "$ref": "#/definitions/GoalDelta",
-              "description": "Goal delta (DeltaOp.delta in Dart)"
+              "$ref": "#/definitions/WireGoalDelta"
             }
           },
-          "required": ["t", "d"]
+          "required": [
+            "t",
+            "d"
+          ]
         }
       ]
     },
-    "DisableOp": {
+    "WireDisableOp": {
       "allOf": [
-        { "$ref": "#/definitions/Op" },
+        {
+          "$ref": "#/definitions/WireOp"
+        },
         {
           "type": "object",
           "properties": {
@@ -490,13 +764,18 @@
               "description": "Id of the op being disabled (DisableOp.opId in Dart)"
             }
           },
-          "required": ["t", "oI"]
+          "required": [
+            "t",
+            "oI"
+          ]
         }
       ]
     },
-    "EnableOp": {
+    "WireEnableOp": {
       "allOf": [
-        { "$ref": "#/definitions/Op" },
+        {
+          "$ref": "#/definitions/WireOp"
+        },
         {
           "type": "object",
           "properties": {
@@ -509,7 +788,10 @@
               "description": "Id of the op being enabled (EnableOp.opId in Dart)"
             }
           },
-          "required": ["t", "oI"]
+          "required": [
+            "t",
+            "oI"
+          ]
         }
       ]
     }

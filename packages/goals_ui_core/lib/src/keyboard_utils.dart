@@ -20,6 +20,11 @@ const SHIFT_KEYS = [
   LogicalKeyboardKey.shiftRight,
 ];
 
+const ALT_KEYS = [
+  LogicalKeyboardKey.altLeft,
+  LogicalKeyboardKey.altRight,
+];
+
 bool isKeyPressed(LogicalKeyboardKey key) {
   return HardwareKeyboard.instance.logicalKeysPressed.contains(key);
 }
@@ -27,6 +32,7 @@ bool isKeyPressed(LogicalKeyboardKey key) {
 bool isCtrlHeld() => CTRL_KEYS.any(isKeyPressed);
 bool isShiftHeld() => SHIFT_KEYS.any(isKeyPressed);
 bool isMetaHeld() => META_KEYS.any(isKeyPressed);
+bool isAltHeld() => ALT_KEYS.any(isKeyPressed);
 
 final _PLATFORM_AGNOSTIC_SHORTCUTS = <ShortcutActivator, Intent>{
   SingleActivator(LogicalKeyboardKey.escape): const CancelIntent(),

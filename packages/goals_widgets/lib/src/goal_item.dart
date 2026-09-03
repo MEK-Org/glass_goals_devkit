@@ -18,7 +18,8 @@ import 'package:flutter/painting.dart'
         TextStyle;
 import 'package:flutter/rendering.dart'
     show HitTestBehavior, MainAxisAlignment, MainAxisSize;
-import 'package:flutter/services.dart' show SystemMouseCursors, TextSelection;
+import 'package:flutter/services.dart'
+    show HardwareKeyboard, KeyEvent, SystemMouseCursors, TextSelection;
 import 'package:flutter/widgets.dart'
     show
         Actions,
@@ -144,6 +145,7 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
   @override
   void initState() {
     super.initState();
+    this._focusNode.addListener(this._focusListener);
 
     subscriptions.add(hoverEventStream.listen((hoveredPath) {
       if (!pathsMatch(hoveredPath, widget.path) && _hovering) {
@@ -200,6 +202,13 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
       if (!mounted) return;
       setState(() {});
     }));
+  }
+
+  _focusListener() {
+    if (!this._focusNode.hasFocus &&
+        pathsMatch(textFocusProvider.value, this.widget.path)) {
+      Future.delayed(Duration.zero, () => this._focusNode.requestFocus());
+    }
   }
 
   @override
@@ -289,25 +298,9 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
           this._dragging = false;
         });
       },
-      feedback: StreamBuilder(
-          stream: dragEventProvider.stream,
-          builder: (context, snapshot) {
-            if (snapshot.hasData && snapshot.data == DragEventType.cancel) {
-              return Container();
-            }
-            return Container(
-              decoration: const BoxDecoration(
-                  color: Colors.red, shape: BoxShape.circle),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text((isSelected ? selectedGoals.length : 1).toString(),
-                    style: const TextStyle(
-                        fontSize: 20,
-                        decoration: TextDecoration.none,
-                        color: Colors.white)),
-              ),
-            );
-          }),
+      feedback: _GoalDragFeedback(
+        count: isSelected ? selectedGoals.length : 1,
+      ),
       child: child,
     );
   }
@@ -605,5 +598,70 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
     }
 
     return actionsWidget;
+  }
+}
+
+class _GoalDragFeedback extends StatefulWidget {
+  final int count;
+  const _GoalDragFeedback({required this.count});
+
+  @override
+  State<_GoalDragFeedback> createState() => _GoalDragFeedbackState();
+}
+
+class _GoalDragFeedbackState extends State<_GoalDragFeedback> {
+  bool _isAdditive = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isAdditive = isAltHeld();
+    HardwareKeyboard.instance.addHandler(_handleKeyEvent);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
+    super.dispose();
+  }
+
+  bool _handleKeyEvent(KeyEvent event) {
+    final additive = isAltHeld();
+    if (_isAdditive != additive) {
+      setState(() {
+        _isAdditive = additive;
+      });
+    }
+    return false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream: dragEventProvider.stream,
+      builder: (context, snapshot) {
+        if (snapshot.hasData && snapshot.data == DragEventType.cancel) {
+          return Container();
+        }
+        final label = _isAdditive ? '+${widget.count}' : '${widget.count}';
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.red,
+            shape: BoxShape.circle,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 20,
+                decoration: TextDecoration.none,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

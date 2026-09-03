@@ -1,13 +1,6 @@
-import 'dart:convert' show jsonDecode, jsonEncode;
-import 'dart:io' show File;
-
-import 'package:collection/collection.dart';
 import 'package:goals_core/model.dart';
 import 'package:goals_core/sync.dart';
-import 'package:goals_core/util.dart';
-import 'package:hlc/hlc.dart' show HLC;
 import 'package:test/test.dart';
-import 'package:uuid/uuid.dart' show Namespace, Uuid;
 
 // Helper function to initialize a SyncClient and add a root goal.
 Future<SyncClient> _initializeClientWithRootGoal(SyncClient client) async {
@@ -15,18 +8,6 @@ Future<SyncClient> _initializeClientWithRootGoal(SyncClient client) async {
   // Create the 'root' goal with id '0' and text 'root'
   await client.modifyGoal(GoalDelta(id: '0', text: 'root'));
   return client;
-}
-
-Future<Iterable<Op>> readJsonFile(String filePath) async {
-  final input = await File(filePath).readAsString();
-  return (jsonDecode(input) as List).cast<String>().map((opString) {
-    try {
-      return Op.fromJson(opString);
-    } catch (e) {
-      print('Error parsing op: $opString');
-      rethrow;
-    }
-  });
 }
 
 void main() {
@@ -1104,416 +1085,6 @@ void main() {
         ]));
   });
 
-  test('compressHistory', () async {
-    final ops = await readJsonFile('test/data/2025.05.12_backup.json');
-
-    final store = MemoryLocalStore();
-
-    await store.setUnsyncedOps(ops);
-
-    final client = SyncClient(localStore: store);
-
-    await client.init();
-    await client.sync();
-    await client.sync();
-
-    final state = client.stateSubject.value;
-
-    final compressed = await computeCompressedHistory(state, client.loadString);
-
-    // write compressed ops to file
-    final compressedOps = compressed.map((op) => op.toJson()).toList();
-    final compressedJson = jsonEncode(compressedOps);
-    final compressedFile = File('test/data/compressed_backup.json');
-    await compressedFile.writeAsString(compressedJson);
-
-    print("Num Ops Before: ${ops.length}");
-    print("Num Ops After: ${compressed.length}");
-
-    final compressedStore = MemoryLocalStore();
-
-    compressedStore.setUnsyncedOps(compressed);
-    final compressedClient = SyncClient(localStore: compressedStore);
-
-    await compressedClient.init();
-    await client.sync();
-    await client.sync();
-
-    final compressedState = compressedClient.stateSubject.value;
-
-    expect(compressedState.length, equals(state.length),
-        reason:
-            'The compressed state should have the same number of goals as the original state.');
-
-    final originalPaths = <GoalPath>{};
-    final originalTranslatedPaths = <GoalPath>{};
-
-    for (final goalId in state.values
-        .where((goal) {
-          for (final entry in goal.superGoalRelationships.entries) {
-            if (state.containsKey(entry.key) &&
-                    entry.value is! AddParentLogEntry ||
-                !(entry.value as AddParentLogEntry).isSlice) {
-              return false;
-            }
-          }
-          return true;
-        })
-        .map((e) => e.id)
-        .sorted(
-          (a, b) => Cupid.toNewId(a).compareTo(Cupid.toNewId(b)),
-        )) {
-      traverseDown(
-        state,
-        goalId,
-        childTraversalComparator: (goalA, goalB) =>
-            Cupid.toNewId(goalA.goalId).compareTo(Cupid.toNewId(goalB.goalId)),
-        onVisit: (path, {required childIndex, required isLeaf}) {
-          originalTranslatedPaths.add(GoalPath([...path.map(Cupid.toNewId)]));
-          originalPaths.add(path);
-        },
-      );
-    }
-
-    final compressedPaths = <GoalPath>{};
-
-    for (final goalId in compressedState.values
-        .where((goal) {
-          for (final entry in goal.superGoalRelationships.entries) {
-            if (compressedState.containsKey(entry.key) &&
-                    entry.value is! AddParentLogEntry ||
-                !(entry.value as AddParentLogEntry).isSlice) {
-              return false;
-            }
-          }
-          return true;
-        })
-        .map((e) => e.id)
-        .sorted(
-          (a, b) => a.compareTo(b),
-        )) {
-      traverseDown(
-        compressedState,
-        goalId,
-        childTraversalComparator: (goalA, goalB) =>
-            goalA.goalId.compareTo(goalB.goalId),
-        onVisit: (path, {required childIndex, required isLeaf}) {
-          compressedPaths.add(path);
-        },
-      );
-    }
-
-    final missing = originalTranslatedPaths.difference(compressedPaths);
-
-    if (missing.isNotEmpty) {
-      print("Missing paths:");
-      int num = 0;
-      for (final path in missing) {
-        debugPrintPath(compressedState, path);
-        print(path.goalId);
-        if (num > 10) {
-          break;
-        }
-        num++;
-      }
-    }
-
-    final extra = compressedPaths.difference(originalTranslatedPaths);
-
-    if (extra.isNotEmpty) {
-      print("Extra paths:");
-      int num = 0;
-      for (final path in extra) {
-        debugPrintPath(compressedState, path);
-        print(path.goalId);
-        if (num > 10) {
-          break;
-        }
-        num++;
-      }
-    }
-
-    expect(missing, isEmpty,
-        reason:
-            'The compressed state is missing paths that were in the original state.');
-    expect(extra, isEmpty,
-        reason:
-            'The compressed state has extra paths that were not in the original state.');
-
-    final diffs = <String, Set<String>>{};
-    for (final (i, originalPath) in originalPaths.indexed) {
-      final newPath = compressedPaths.elementAt(i);
-      final wc = WorldContext.now();
-      final goalDiffs = await diffGoals(
-          wc,
-          state,
-          originalPath,
-          compressedState,
-          newPath,
-          client.loadString,
-          compressedClient.loadString);
-      if (goalDiffs.isNotEmpty) {
-        diffs[getDebugString(compressedState, newPath)] = goalDiffs;
-      }
-    }
-    final diffCounts = <String, int>{};
-    for (final MapEntry(value: diffs) in diffs.entries) {
-      for (final goalDiff in diffs) {
-        final diff = goalDiff.toString();
-        if (diffCounts.containsKey(diff)) {
-          diffCounts[diff] = diffCounts[diff]! + 1;
-        } else {
-          diffCounts[diff] = 1;
-        }
-      }
-    }
-
-    print("Diff Counts:");
-    print(diffCounts);
-  }, skip: "This test is pretty out of date but may still be worth keeping.");
-
-  test('do summary migration', () async {
-    final ops = await readJsonFile('test/data/2025.05.12_backup.json');
-
-    final store = MemoryLocalStore();
-
-    store.setUnsyncedOps(ops);
-
-    final client = SyncClient(localStore: store);
-
-    await client.init();
-    await client.sync();
-    await client.sync();
-
-    final goalMap = await client.stateSubject.first;
-
-    final deltas = <GoalDelta>[];
-    final docContents = <GoalPath, List<String>>{};
-    final pathSummaries = <GoalPath, String>{};
-    var hadParentContext = 0;
-    var hadSummary = 0;
-    var addedToParent = 0;
-    var totalPathsVisited = 0;
-    var uniqueEntryPathsVisited = 0;
-    final migratedPaths = <GoalPath>{};
-
-    for (final goal in getRootGoals(goalMap)) {
-      await traverseDownAsync(
-        goalMap,
-        GoalPath([goal.id]),
-        onVisit: (path, {required bool isLeaf, required int childIndex}) async {
-          final goal = goalMap[path.goalId];
-          final entryPath =
-              getLogEntryPath(goalMap, path) ?? GoalPath([path.goalId]);
-
-          totalPathsVisited++;
-
-          // we default to this being the goal itself,
-          // but if the goal has children, we create a new goal to hold the summary
-          String? summaryGoalId;
-          String? newParentContextGoalId;
-          final doc = docContents[path] ?? [];
-
-          if (!pathSummaries.containsKey(entryPath)) {
-            final summary = hasSummary(goalMap, path);
-            final summaryText = (summary == null ||
-                    (summary.path ?? GoalPath([path.goalId])) != entryPath)
-                ? null
-                : await client.loadString(summary.id);
-            if (summaryText != null) {
-              hadSummary++;
-              migratedPaths.add(path);
-
-              // create new goal with summary as doc contents
-              // add as child to this goal
-              // add composition reference to summary
-              deltas.add(GoalDelta(
-                  id: path.goalId,
-                  logEntry: ClearSummaryEntry(
-                    id: Uuid()
-                        .v5(Namespace.url.value, "$entryPath-clear-summary"),
-                    creationTime: DateTime.now(),
-                    path: getLogEntryPath(goalMap, path),
-                  )));
-              if (!isLeaf) {
-                summaryGoalId = Uuid()
-                    .v5(Namespace.url.value, "$entryPath-summary-goal-id");
-                pathSummaries[entryPath] = summaryGoalId;
-                deltas.addAll([
-                  GoalDelta(
-                      id: summaryGoalId,
-                      text: "Summary",
-                      logEntry: AddParentLogEntry(
-                        id: Uuid().v5(Namespace.url.value,
-                            "$entryPath-add-summary-child"),
-                        parentId: path.goalId,
-                        creationTime: summary!.creationTime,
-                        path: getLogEntryPath(goalMap, path),
-                      )),
-                  GoalDelta(
-                      id: summaryGoalId,
-                      logEntry: DocumentContentsEntry(
-                        id: Uuid().v5(Namespace.url.value,
-                            "$entryPath-set-document-contents"),
-                        text: summaryText,
-                        creationTime: summary.creationTime,
-                        path: getLogEntryPath(goalMap, path),
-                      )),
-                ]);
-                doc.add("#${GoalPath([summaryGoalId])}/comp#");
-              } else {
-                summaryGoalId = path.goalId;
-                doc.add(summaryText);
-              }
-            }
-          } else {
-            summaryGoalId = pathSummaries[entryPath];
-          }
-
-          uniqueEntryPathsVisited++;
-
-          final parentContext = hasParentContext(goal, path.parentId);
-
-          final parentContextComment = (parentContext == null ||
-                  (parentContext.path ?? GoalPath([path.goalId])) != entryPath)
-              ? null
-              : await client.loadString(parentContext.id);
-
-          if (parentContextComment != null) {
-            newParentContextGoalId = Uuid().v5(Namespace.url.value,
-                "$entryPath-${path.parentId}-parent-context-goal-id");
-            hadParentContext++;
-            migratedPaths.add(path);
-            final parentGoalName = goalMap[path.parentId]?.text ?? "Parent";
-
-            // create new goal with parent context as doc contents
-            // add as child to this goal
-            // add composition reference to parent context
-            deltas.addAll([
-              GoalDelta(
-                id: newParentContextGoalId,
-                text: "Comment about $parentGoalName",
-                logEntry: AddParentLogEntry(
-                  id: Uuid().v5(Namespace.url.value,
-                      "$newParentContextGoalId-add-parent"),
-                  parentId: path.goalId,
-                  creationTime: parentContext!.creationTime,
-                  path: getLogEntryPath(goalMap, path),
-                ),
-              ),
-              GoalDelta(
-                  id: newParentContextGoalId,
-                  logEntry: DocumentContentsEntry(
-                    id: Uuid().v5(Namespace.url.value,
-                        "$newParentContextGoalId-set-document-contents"),
-                    text: parentContextComment,
-                    creationTime: parentContext.creationTime,
-                    path: getLogEntryPath(goalMap, path),
-                  )),
-              GoalDelta(
-                id: path.goalId,
-                logEntry: ParentContextCommentEntry(
-                  id: Uuid().v5(Namespace.url.value,
-                      "$newParentContextGoalId-clear-parent-context"),
-                  text: null,
-                  creationTime: DateTime.now(),
-                  parentId: path.parentId!,
-                ),
-              )
-            ]);
-
-            doc.addAll([
-              "",
-              "# #${GoalPath([path.parentId!])}/name#",
-              "#${GoalPath([newParentContextGoalId])}/comp#",
-            ]);
-          }
-          if (doc.isNotEmpty) {
-            docContents[entryPath] = doc;
-          }
-
-          if (path.parentId == null) {
-            return TraversalDecision.continueTraversal;
-          }
-          final parentDoc = docContents[
-              getLogEntryPath(goalMap, path.parentPath) ??
-                  GoalPath([path.parentId!])];
-          if (parentDoc != null &&
-              (summaryGoalId != null || newParentContextGoalId != null)) {
-            migratedPaths.add(path.parentPath);
-            addedToParent++;
-            parentDoc.addAll([
-              "",
-              "# #${GoalPath([path.goalId])}/name#",
-              if (summaryGoalId != null) "#${GoalPath([summaryGoalId])}/comp#",
-              if (newParentContextGoalId != null)
-                "> #${GoalPath([newParentContextGoalId])}/comp#",
-            ]);
-          }
-        },
-        onDepart: (path,
-            {required bool isLeaf, required int childIndex}) async {
-          final entryPath =
-              getLogEntryPath(goalMap, path) ?? GoalPath([path.goalId]);
-          final doc = docContents[entryPath];
-          if (doc == null || doc.isEmpty) {
-            return;
-          }
-          deltas.add(GoalDelta(
-              id: path.goalId,
-              logEntry: DocumentContentsEntry(
-                id: Uuid().v5(
-                    Namespace.url.value, "$entryPath-set-document-contents"),
-                text: doc.join("\n"),
-                creationTime: DateTime.now(),
-                path: getLogEntryPath(goalMap, path),
-              )));
-        },
-        childTraversalComparator: getPriorityComparator(goalMap),
-      );
-    }
-
-    final migrationOps = <Op>[];
-    var hlc = HLC.now('migration');
-    final deltaSet = <String>{};
-
-    for (final delta in deltas.reversed) {
-      if (delta.logEntry == null) {
-        print("Delta ${delta.id} has no log entry. This should not happen.");
-        throw Exception(
-            "Delta ${delta.id} has no log entry. This should not happen.");
-      }
-      if (deltaSet.contains(delta.logEntry!.id)) {
-        continue;
-      }
-      deltaSet.add(delta.logEntry!.id);
-      final op = DeltaOp(
-        delta: delta,
-        id: Cupid.random().encode(),
-        hlcTimestamp: hlc.pack(),
-      );
-      hlc = hlc.increment();
-      migrationOps.add(op);
-    }
-
-    print("Num Migration Ops: ${migrationOps.length}");
-    print("Num Paths Visited: $totalPathsVisited");
-    print("Num Unique Paths Visited: $uniqueEntryPathsVisited");
-    print("Num Had Parent Context: $hadParentContext");
-    print("Num Had Summary: $hadSummary");
-    print("Num Added to Parent: $addedToParent");
-
-    // write migration ops to file
-    final migrationFile = File('test/data/summary_migration.json');
-    await migrationFile.writeAsString(
-        jsonEncode(migrationOps.map((op) => op.toJson()).toList()));
-
-    // write list of migrated paths to file
-    final migratedPathsFile = File('test/data/migrated_paths.json');
-    await migratedPathsFile.writeAsString(jsonEncode(
-        migratedPaths.map((path) => getDebugString(goalMap, path)).toList()));
-  }, skip: "Not really a test.");
-
   test('getAbbreviatedLogEntries', () async {
     final client = SyncClient();
     await _initializeClientWithRootGoal(client);
@@ -1663,6 +1234,192 @@ void main() {
 
       expect(visited, containsAll(['0', '1', '2', '3', '4', '5', '6']));
       expect(visited.length, 7);
+    });
+  });
+
+  group('computeDropGoalEffects', () {
+    test('move on goal removes source parent edge and adds destination edge', () {
+      final now = DateTime.now();
+      final p1 = Goal(id: 'p1', text: 'Parent 1', creationTime: now);
+      final p2 = Goal(id: 'p2', text: 'Parent 2', creationTime: now);
+      final c1 = Goal(id: 'c1', text: 'Child 1', creationTime: now);
+      c1.addSuperGoal('p1');
+      p1.addSubGoal('c1');
+
+      final goalMap = {'p1': p1, 'p2': p2, 'c1': c1};
+
+      final deltas = computeDropGoalEffects(
+        goalMap,
+        GoalPath(const ['p1', 'c1']),
+        dropPath: GoalPath(const ['p2']),
+        isAdditive: false,
+      );
+
+      expect(deltas.length, equals(2));
+      final removeEntry = deltas.firstWhere((d) => d.logEntry is RemoveParentLogEntry).logEntry as RemoveParentLogEntry;
+      final addEntry = deltas.firstWhere((d) => d.logEntry is AddParentLogEntry).logEntry as AddParentLogEntry;
+      expect(removeEntry.parentId, equals('p1'));
+      expect(addEntry.parentId, equals('p2'));
+    });
+
+    test('additive drop on goal preserves source parent and adds destination edge', () {
+      final now = DateTime.now();
+      final p1 = Goal(id: 'p1', text: 'Parent 1', creationTime: now);
+      final p2 = Goal(id: 'p2', text: 'Parent 2', creationTime: now);
+      final c1 = Goal(id: 'c1', text: 'Child 1', creationTime: now);
+      c1.addSuperGoal('p1');
+      p1.addSubGoal('c1');
+
+      final goalMap = {'p1': p1, 'p2': p2, 'c1': c1};
+
+      final deltas = computeDropGoalEffects(
+        goalMap,
+        GoalPath(const ['p1', 'c1']),
+        dropPath: GoalPath(const ['p2']),
+        isAdditive: true,
+      );
+
+      expect(deltas.length, equals(1));
+      expect(deltas.where((d) => d.logEntry is RemoveParentLogEntry), isEmpty);
+      final addEntry = deltas.first.logEntry as AddParentLogEntry;
+      expect(addEntry.parentId, equals('p2'));
+    });
+
+    test('additive drop on existing parent or cycle is rejected with zero effects', () {
+      final now = DateTime.now();
+      final p1 = Goal(id: 'p1', text: 'Parent 1', creationTime: now);
+      final c1 = Goal(id: 'c1', text: 'Child 1', creationTime: now);
+      c1.addSuperGoal('p1');
+      p1.addSubGoal('c1');
+
+      final goalMap = {'p1': p1, 'c1': c1};
+
+      // Duplicate drop
+      final dupDeltas = computeDropGoalEffects(
+        goalMap,
+        GoalPath(const ['p1', 'c1']),
+        dropPath: GoalPath(const ['p1']),
+        isAdditive: true,
+      );
+      expect(dupDeltas, isEmpty);
+
+      // Cycle drop
+      final cycleDeltas = computeDropGoalEffects(
+        goalMap,
+        GoalPath(const ['p1']),
+        dropPath: GoalPath(const ['p1', 'c1']),
+        isAdditive: true,
+      );
+      expect(cycleDeltas, isEmpty);
+    });
+
+    test('additive drop on separator under already-existing parent produces zero effects and no priority mutation', () {
+      final now = DateTime(2026, 1, 1, 10, 0);
+      final p1 = Goal(id: 'p1', text: 'Parent 1', creationTime: now);
+      final c1 = Goal(id: 'c1', text: 'Child 1', creationTime: now);
+      final c2 = Goal(id: 'c2', text: 'Child 2', creationTime: now);
+      c1.addSuperGoal('p1');
+      c2.addSuperGoal('p1');
+      p1.addSubGoal('c1');
+      p1.addSubGoal('c2');
+      c1.prependEntry(PriorityLogEntry(id: 'p-c1', creationTime: now, priority: 100.0, path: GoalPath(const ['p1'])));
+      c2.prependEntry(PriorityLogEntry(id: 'p-c2', creationTime: now, priority: 200.0, path: GoalPath(const ['p1'])));
+
+      final goalMap = {'p1': p1, 'c1': c1, 'c2': c2};
+
+      final deltas = computeDropGoalEffects(
+        goalMap,
+        GoalPath(const ['p1', 'c1']),
+        prevDropPath: GoalPath(const ['p1', 'c1']),
+        nextDropPath: GoalPath(const ['p1', 'c2']),
+        isAdditive: true,
+      );
+
+      expect(deltas, isEmpty,
+          reason: 'Additive separator drop on existing destination parent must produce zero effects');
+    });
+
+    test('normal drag on separator under same parent reorders with priority update', () {
+      final now = DateTime(2026, 1, 1, 10, 0);
+      final p1 = Goal(id: 'p1', text: 'Parent 1', creationTime: now);
+      final c1 = Goal(id: 'c1', text: 'Child 1', creationTime: now);
+      final c2 = Goal(id: 'c2', text: 'Child 2', creationTime: now);
+      c1.addSuperGoal('p1');
+      c2.addSuperGoal('p1');
+      p1.addSubGoal('c1');
+      p1.addSubGoal('c2');
+      c1.prependEntry(PriorityLogEntry(id: 'p-c1', creationTime: now, priority: 100.0, path: GoalPath(const ['p1'])));
+      c2.prependEntry(PriorityLogEntry(id: 'p-c2', creationTime: now, priority: 200.0, path: GoalPath(const ['p1'])));
+
+      final goalMap = {'p1': p1, 'c1': c1, 'c2': c2};
+
+      final deltas = computeDropGoalEffects(
+        goalMap,
+        GoalPath(const ['p1', 'c1']),
+        prevDropPath: GoalPath(const ['p1', 'c1']),
+        nextDropPath: GoalPath(const ['p1', 'c2']),
+        isAdditive: false,
+      );
+
+      expect(deltas.length, equals(1));
+      expect(deltas.first.id, equals('c1'));
+      expect(deltas.first.logEntry, isA<PriorityLogEntry>());
+      final pEntry = deltas.first.logEntry as PriorityLogEntry;
+      expect(pEntry.priority, equals(150.0));
+    });
+
+    test('additive drop on root separator produces zero effects and no priority mutation', () {
+      final now = DateTime(2026, 1, 1, 10, 0);
+      final r1 = Goal(id: 'r1', text: 'Root 1', creationTime: now);
+      final r2 = Goal(id: 'r2', text: 'Root 2', creationTime: now);
+      final p1 = Goal(id: 'p1', text: 'Parent 1', creationTime: now);
+      final c1 = Goal(id: 'c1', text: 'Child 1', creationTime: now);
+      c1.addSuperGoal('p1');
+      p1.addSubGoal('c1');
+      r1.prependEntry(PriorityLogEntry(id: 'p-r1', creationTime: now, priority: 10.0));
+      r2.prependEntry(PriorityLogEntry(id: 'p-r2', creationTime: now, priority: 20.0));
+
+      final goalMap = {'r1': r1, 'r2': r2, 'p1': p1, 'c1': c1};
+
+      final deltas = computeDropGoalEffects(
+        goalMap,
+        GoalPath(const ['p1', 'c1']),
+        prevDropPath: GoalPath(const ['r1']),
+        nextDropPath: GoalPath(const ['r2']),
+        isAdditive: true,
+      );
+
+      expect(deltas, isEmpty,
+          reason: 'Additive drop to root separator must produce zero effects because root has no edge representation');
+    });
+
+    test('normal drag of child to root separator removes parent edge and assigns root priority', () {
+      final now = DateTime(2026, 1, 1, 10, 0);
+      final r1 = Goal(id: 'r1', text: 'Root 1', creationTime: now);
+      final r2 = Goal(id: 'r2', text: 'Root 2', creationTime: now);
+      final p1 = Goal(id: 'p1', text: 'Parent 1', creationTime: now);
+      final c1 = Goal(id: 'c1', text: 'Child 1', creationTime: now);
+      c1.addSuperGoal('p1');
+      p1.addSubGoal('c1');
+      r1.prependEntry(PriorityLogEntry(id: 'p-r1', creationTime: now, priority: 10.0));
+      r2.prependEntry(PriorityLogEntry(id: 'p-r2', creationTime: now, priority: 20.0));
+
+      final goalMap = {'r1': r1, 'r2': r2, 'p1': p1, 'c1': c1};
+
+      final deltas = computeDropGoalEffects(
+        goalMap,
+        GoalPath(const ['p1', 'c1']),
+        prevDropPath: GoalPath(const ['r1']),
+        nextDropPath: GoalPath(const ['r2']),
+        isAdditive: false,
+      );
+
+      expect(deltas.length, equals(2));
+      final removeEntry = deltas.firstWhere((d) => d.logEntry is RemoveParentLogEntry).logEntry as RemoveParentLogEntry;
+      final pEntry = deltas.firstWhere((d) => d.logEntry is PriorityLogEntry).logEntry as PriorityLogEntry;
+      expect(removeEntry.parentId, equals('p1'));
+      expect(pEntry.priority, equals(15.0));
+      expect(pEntry.path, isNull, reason: 'Root priority entry must have null path');
     });
   });
 }
