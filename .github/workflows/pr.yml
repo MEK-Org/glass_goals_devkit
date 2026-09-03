@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  test-ts:
+    name: TypeScript packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run -r build
+      - run: pnpm run -r test
+
+  test-dart:
+    name: Dart and Flutter packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: goals_types
+        working-directory: packages/goals_types
+        run: |
+          dart pub get
+          dart test -r expanded
+
+      - name: goals_core
+        working-directory: packages/goals_core
+        run: |
+          dart pub get
+          dart test -r expanded
+
+      - name: goals_ui_core
+        working-directory: packages/goals_ui_core
+        run: |
+          flutter pub get
+          flutter analyze
+
+      - name: goals_widgets
+        working-directory: packages/goals_widgets
+        run: |
+          flutter pub get
+          flutter test
