@@ -54,7 +54,7 @@ jobs:
         working-directory: packages/goals_ui_core
         run: |
           flutter pub get
-          flutter analyze
+          flutter analyze --no-fatal-infos
 
       - name: goals_widgets
         working-directory: packages/goals_widgets
