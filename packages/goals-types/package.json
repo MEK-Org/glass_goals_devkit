@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "gen-ts-types": "json2ts -i ../goals_types/lib/src/op_schema.json -o src/ops.d.ts --unreachableDefinitions --no-additionalProperties",
-    "build": "tsc"
+    "gen-ts-types": "json2ts -i ../goals_types/lib/src/op_schema.json -o src/ops.ts --unreachableDefinitions --no-additionalProperties",
+    "build": "tsc",
+    "test": "./test-package.sh"
   },
   "devDependencies": {
     "json-schema-to-typescript": "^15.0.4",
