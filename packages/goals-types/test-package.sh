@@ -28,7 +28,7 @@ cat << 'INNER_EOF' > tsconfig.json
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "esModuleInterop": true
   }
 }
