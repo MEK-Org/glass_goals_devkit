@@ -1,6 +1,6 @@
 {
   "name": "@thkp-eng/goals-types",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Generated TypeScript types for Glass Goals",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

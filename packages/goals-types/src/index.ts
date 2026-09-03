@@ -1,176 +1,31 @@
-export interface WireGoalLogEntry {
-  /**
-   * The unique id of the log entry (GoalLogEntry.id in Dart)
-   */
-  i: string;
-  /**
-   * Creation time as an integer timestamp (GoalLogEntry.creationTime in Dart)
-   */
-  cT: number;
-  /**
-   * Full path to this note including the id of the note itself (GoalLogEntry.path in Dart)
-   */
-  p?: string[];
-}
-/**
- * This interface was referenced by `OpSchema`'s JSON-Schema
- * via the `definition` "Op".
- */
-export interface WireOp {
-  /**
-   * HLC timestamp (Op.hlcTimestamp in Dart)
-   */
-  h: string;
-  /**
-   * Unique id of the op (Op.id in Dart)
-   */
-  i: string;
-  /**
-   * Version of the op (Op.version in Dart)
-   */
-  v: number;
-  /**
-   * Type of the op (OpType, Op.TYPE_JSON_KEY in Dart)
-   */
-  t: string;
-}
-
-export type WireTextGoalLogEntry = WireGoalLogEntry & {
-  te?: string | null;
-};
-
-export type WirePriorityLogEntry = WireGoalLogEntry & {
-  t: "p";
-  pr?: number | null;
-};
-
-export type WireNoteLogEntry = WireTextGoalLogEntry & {
-  t: "n";
-  u?: string | null;
-};
-
-export type WireSetSummaryEntry = WireTextGoalLogEntry & {
-  t: "su";
-};
-
-export type WireClearSummaryEntry = WireGoalLogEntry & {
-  t: "cSu";
-};
-
-export type WireArchiveNoteLogEntry = WireGoalLogEntry & {
-  t: "aN";
-};
-
-export type WireSetParentLogEntry = WireGoalLogEntry & {
-  t: "sP";
-  pI?: string | null;
-};
-
-export type WireMakeAnchorLogEntry = WireGoalLogEntry & {
-  t: "mA";
-};
-
-export type WireClearAnchorLogEntry = WireGoalLogEntry & {
-  t: "cA";
-};
-
-export type WireAddParentLogEntry = WireGoalLogEntry & {
-  t: "aP";
-  pI: string;
-  iS?: boolean;
-  dCP?: string[];
-};
-
-export type WireCreateInstanceLogEntry = WireGoalLogEntry & {
-  t: "cI";
-};
-
-export type WireRemoveParentLogEntry = WireGoalLogEntry & {
-  t: "rP";
-  pI: string;
-};
-
-export type WireStatusLogEntry = WireGoalLogEntry & {
-  t: "s";
-  s?: string | null;
-  sT?: number | null;
-  eT?: number | null;
-};
-
-export type WireArchiveStatusLogEntry = WireGoalLogEntry & {
-  t: "aS";
-};
-
-export type WireClearStatusLogEntry = WireGoalLogEntry & {
-  t: "cS";
-};
-
-export type WireDocumentContentsLogEntry = WireTextGoalLogEntry & {
-  t: "d";
-};
-
-export type WireClearDocumentContentsLogEntry = WireGoalLogEntry & {
-  t: "cD";
-};
-
-export type WireDeltaOp = WireOp & {
-  t: "d";
-  d: WireGoalDelta;
-};
-
-export type WireDisableOp = WireOp & {
-  t: "dO";
-  oI: string;
-};
-
-export type WireEnableOp = WireOp & {
-  t: "eO";
-  oI: string;
-};
-
-export interface WireGoalDelta {
-  i: string;
-  t?: string | null;
-  lE?: WireGoalLogEntry;
-}
-
-export type WireLongRunningOperationEntry = WireGoalLogEntry & {
-  t: "lRO";
-  oId: string;
-  oT: string;
-  s: "p" | "r" | "c" | "f";
-  eM?: string;
-  rD?: Record<string, unknown>;
-};
-
-export type WireCourseMetadataLogEntry = WireGoalLogEntry & {
-  t: "cM";
-  tGI: string[];
-};
-
-export type WireReadingAssignmentLogEntry = WireGoalLogEntry & {
-  t: "rA";
-  tGI: string;
-  sP: number;
-  eP: number;
-  sPF?: "arabic" | "roman";
-  ePF?: "arabic" | "roman";
-};
-
-export interface WireClassMapping {
-  cN: number;
-  gI: string;
-  d?: string;
-  tp: string;
-}
-
-export type WireSyllabusParseResultLogEntry = WireGoalLogEntry & {
-  t: "sPR";
-  cfGI: string;
-  tGI: string;
-  cM: WireClassMapping[];
-  aF: string;
-};
+export type { GoalLogEntry as WireGoalLogEntry } from "./ops.js";
+export type { Op as WireOp } from "./ops.js";
+export type { TextGoalLogEntry as WireTextGoalLogEntry } from "./ops.js";
+export type { PriorityLogEntry as WirePriorityLogEntry } from "./ops.js";
+export type { NoteLogEntry as WireNoteLogEntry } from "./ops.js";
+export type { SetSummaryEntry as WireSetSummaryEntry } from "./ops.js";
+export type { ClearSummaryEntry as WireClearSummaryEntry } from "./ops.js";
+export type { ArchiveNoteLogEntry as WireArchiveNoteLogEntry } from "./ops.js";
+export type { SetParentLogEntry as WireSetParentLogEntry } from "./ops.js";
+export type { MakeAnchorLogEntry as WireMakeAnchorLogEntry } from "./ops.js";
+export type { ClearAnchorLogEntry as WireClearAnchorLogEntry } from "./ops.js";
+export type { AddParentLogEntry as WireAddParentLogEntry } from "./ops.js";
+export type { CreateInstanceLogEntry as WireCreateInstanceLogEntry } from "./ops.js";
+export type { RemoveParentLogEntry as WireRemoveParentLogEntry } from "./ops.js";
+export type { StatusLogEntry as WireStatusLogEntry } from "./ops.js";
+export type { ArchiveStatusLogEntry as WireArchiveStatusLogEntry } from "./ops.js";
+export type { ClearStatusLogEntry as WireClearStatusLogEntry } from "./ops.js";
+export type { DocumentContentsEntry as WireDocumentContentsLogEntry } from "./ops.js";
+export type { ClearDocumentContentsEntry as WireClearDocumentContentsLogEntry } from "./ops.js";
+export type { DeltaOp as WireDeltaOp } from "./ops.js";
+export type { DisableOp as WireDisableOp } from "./ops.js";
+export type { EnableOp as WireEnableOp } from "./ops.js";
+export type { GoalDelta1 as WireGoalDelta } from "./ops.js";
+export type { LongRunningOperationEntry as WireLongRunningOperationEntry } from "./ops.js";
+export type { CourseMetadataLogEntry as WireCourseMetadataLogEntry } from "./ops.js";
+export type { ReadingAssignmentLogEntry as WireReadingAssignmentLogEntry } from "./ops.js";
+export type { ClassMapping as WireClassMapping } from "./ops.js";
+export type { SyllabusParseResultLogEntry as WireSyllabusParseResultLogEntry } from "./ops.js";
 
 export * from "./types.js";
 export * from "./conversion.js";
