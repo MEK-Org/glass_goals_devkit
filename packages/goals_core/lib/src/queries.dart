@@ -1816,16 +1816,20 @@ List<HistoryItem> computeFlatHistoryLog(WorldContext worldContext,
     return [];
   }
   Map<String, DetailViewLogEntryItem> items = {};
+  final noteLogicalIds = <String, String>{};
   for (final entry in goal.log.sortedBy((a) => a.creationTime)) {
     switch (entry) {
       case NoteLogEntry():
-        final originalNoteEntry =
-            items[entry.updateNoteEntryId ?? entry.id]?.entry;
+        final logicalNoteId = entry.updateNoteEntryId == null
+            ? entry.id
+            : noteLogicalIds[entry.updateNoteEntryId!] ??
+                entry.updateNoteEntryId!;
+        final originalNoteEntry = items[logicalNoteId]?.entry;
         var entryPath = entry.path;
-        if (items[entry.id] != null) {
-          entryPath = items[entry.id]?.entry.path;
+        if (originalNoteEntry != null) {
+          entryPath = originalNoteEntry.path;
         }
-        items[originalNoteEntry?.id ?? entry.id] = DetailViewLogEntryItem(
+        items[logicalNoteId] = DetailViewLogEntryItem(
             entry: NoteLogEntry(
               creationTime:
                   originalNoteEntry?.creationTime ?? entry.creationTime,
@@ -1835,9 +1839,10 @@ List<HistoryItem> computeFlatHistoryLog(WorldContext worldContext,
             ),
             time: originalNoteEntry?.creationTime ?? entry.creationTime,
             path: rootGoalPath);
+        noteLogicalIds[entry.id] = logicalNoteId;
         break;
       case ArchiveNoteLogEntry():
-        items.remove(entry.id);
+        items.remove(noteLogicalIds[entry.id] ?? entry.id);
         break;
       case ArchiveStatusLogEntry():
         final archivedStatusEntry = items[entry.id]?.entry;
@@ -2529,4 +2534,3 @@ List<GoalDelta> computeDropGoalEffects(
     );
   }
 }
-
