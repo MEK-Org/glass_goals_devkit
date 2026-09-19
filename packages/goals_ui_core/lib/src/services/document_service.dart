@@ -79,6 +79,14 @@ abstract class DocumentService {
     DocumentGoalReferences? goalReferences,
   });
 
+  /// Reconciles one consumer's goal references with an already-expanded
+  /// document after an in-place edit such as save or split.
+  Future<void> reconcileDocumentReferences(
+    GoalPath rootPath,
+    dynamic doc, {
+    required DocumentGoalReferences goalReferences,
+  });
+
   /// Renders a document to markdown plus collected citation footnotes.
   Future<(String, List<String>)> docToCitationMarkdown(
     Map<String, Goal> goalMap,
