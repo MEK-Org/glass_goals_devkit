@@ -1030,6 +1030,54 @@ void main() {
         ]));
   });
 
+  test('traverseDownAsync sorts cold children with childTraversalComparatorAsync and preserves onVisit loaded-goal access', () async {
+    Goal parent =
+        Goal(id: 'parent', text: 'parent', creationTime: DateTime(2020, 1, 1));
+    Goal childZ =
+        Goal(id: 'childZ', text: 'Zebra', creationTime: DateTime(2020, 1, 1));
+    Goal childA =
+        Goal(id: 'childA', text: 'Apple', creationTime: DateTime(2020, 1, 1));
+
+    parent.addSubGoal(childZ.id);
+    childZ.addSuperGoal(parent.id);
+
+    parent.addSubGoal(childA.id);
+    childA.addSuperGoal(parent.id);
+
+    final storedGoals = {
+      parent.id: parent,
+      childZ.id: childZ,
+      childA.id: childA,
+    };
+
+    // goalMap is cold: only parent is present.
+    final goalMap = <String, Goal>{
+      parent.id: parent,
+    };
+
+    Future<Goal?> loadGoal(String id) async => storedGoals[id];
+
+    final visitedIds = <String>[];
+    await traverseDownAsync(
+      goalMap,
+      GoalPath([parent.id]),
+      loadGoal: loadGoal,
+      order: TraversalOrder.depthFirst,
+      childTraversalComparatorAsync: (a, b) async {
+        final goalA = goalMap[a.goalId] ?? await loadGoal(a.goalId);
+        final goalB = goalMap[b.goalId] ?? await loadGoal(b.goalId);
+        return goalA!.text.compareTo(goalB!.text);
+      },
+      onVisit: (path, {required bool isLeaf, required int childIndex}) async {
+        // onVisit must have access to the loaded goal in goalMap
+        expect(goalMap[path.goalId], isNotNull);
+        visitedIds.add(path.last);
+      },
+    );
+
+    expect(visitedIds, equals(['parent', 'childA', 'childZ']));
+  });
+
   test('traverseDownAsync, breadth first', () async {
     Goal parent =
         Goal(id: 'parent', text: 'parent', creationTime: DateTime(2020, 1, 1));
