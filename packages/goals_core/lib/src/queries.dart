@@ -422,6 +422,11 @@ Future<bool> _traverseAsync(
 }) async {
   assert(order != TraversalOrder.breadthFirst || onDepart == null,
       'onDepart callback is not supported with breadth-first traversal.');
+  if (traversalComparator != null && traversalComparatorAsync != null) {
+    throw ArgumentError(
+        'Provide either childTraversalComparator or '
+        'childTraversalComparatorAsync, not both.');
+  }
 
   final List<_qia> queue =
       rootGoalPath.mapIndexed((i, path) => _qia(childIndex + i, path)).toList();

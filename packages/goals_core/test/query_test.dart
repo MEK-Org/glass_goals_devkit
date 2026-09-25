@@ -1078,6 +1078,54 @@ void main() {
     expect(visitedIds, equals(['parent', 'childA', 'childZ']));
   });
 
+  test('async traversals reject both childTraversalComparator and childTraversalComparatorAsync before visiting', () async {
+    Goal parent =
+        Goal(id: 'parent', text: 'parent', creationTime: DateTime(2020, 1, 1));
+    Goal child =
+        Goal(id: 'child', text: 'child', creationTime: DateTime(2020, 1, 1));
+    parent.addSubGoal(child.id);
+    child.addSuperGoal(parent.id);
+    final goalMap = <String, Goal>{parent.id: parent, child.id: child};
+
+    final visitedIds = <String>[];
+    final loadedIds = <String>[];
+    Future<Goal?> loadGoal(String id) async {
+      loadedIds.add(id);
+      return goalMap[id];
+    }
+
+    Future<TraversalDecision?> onVisit(GoalPath path,
+        {required bool isLeaf, required int childIndex}) async {
+      visitedIds.add(path.goalId);
+      return null;
+    }
+
+    await expectLater(
+      traverseDownAsync(
+        goalMap,
+        GoalPath([parent.id]),
+        loadGoal: loadGoal,
+        onVisit: onVisit,
+        childTraversalComparator: (a, b) => 0,
+        childTraversalComparatorAsync: (a, b) async => 0,
+      ),
+      throwsArgumentError,
+    );
+    await expectLater(
+      traverseAllAsync(
+        goalMap,
+        [GoalPath([parent.id])],
+        loadGoal: loadGoal,
+        onVisit: onVisit,
+        childTraversalComparator: (a, b) => 0,
+        childTraversalComparatorAsync: (a, b) async => 0,
+      ),
+      throwsArgumentError,
+    );
+    expect(visitedIds, isEmpty);
+    expect(loadedIds, isEmpty);
+  });
+
   test('traverseDownAsync, breadth first', () async {
     Goal parent =
         Goal(id: 'parent', text: 'parent', creationTime: DateTime(2020, 1, 1));
