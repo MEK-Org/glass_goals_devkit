@@ -369,6 +369,43 @@ class _qi {
   _qi(this.childIndex, this.path, [this.onDepartParent]);
 }
 
+Future<List<T>> _asyncSort<T>(
+  List<T> list,
+  Future<int> Function(T a, T b) compare,
+) async {
+  if (list.length <= 1) return List<T>.of(list);
+
+  final middle = list.length ~/ 2;
+  final left = await _asyncSort(list.sublist(0, middle), compare);
+  final right = await _asyncSort(list.sublist(middle), compare);
+
+  final result = <T>[];
+  var leftIndex = 0;
+  var rightIndex = 0;
+
+  while (leftIndex < left.length && rightIndex < right.length) {
+    final comparison = await compare(left[leftIndex], right[rightIndex]);
+    if (comparison <= 0) {
+      result.add(left[leftIndex]);
+      leftIndex++;
+    } else {
+      result.add(right[rightIndex]);
+      rightIndex++;
+    }
+  }
+
+  while (leftIndex < left.length) {
+    result.add(left[leftIndex]);
+    leftIndex++;
+  }
+  while (rightIndex < right.length) {
+    result.add(right[rightIndex]);
+    rightIndex++;
+  }
+
+  return result;
+}
+
 Future<bool> _traverseAsync(
   Map<String, Goal> goalMap,
   Iterable<GoalPath> rootGoalPath,
@@ -376,6 +413,8 @@ Future<bool> _traverseAsync(
   OnVisitAsync? onVisit,
   OnDepartAsync? onDepart,
   int Function(GoalPath goalA, GoalPath goalB)? traversalComparator,
+  Future<int> Function(GoalPath goalA, GoalPath goalB)?
+      traversalComparatorAsync,
   TraversalDirection direction = TraversalDirection.down,
   TraversalOrder order = TraversalOrder.breadthFirst,
   int childIndex = 0,
@@ -383,6 +422,11 @@ Future<bool> _traverseAsync(
 }) async {
   assert(order != TraversalOrder.breadthFirst || onDepart == null,
       'onDepart callback is not supported with breadth-first traversal.');
+  if (traversalComparator != null && traversalComparatorAsync != null) {
+    throw ArgumentError(
+        'Provide either childTraversalComparator or '
+        'childTraversalComparatorAsync, not both.');
+  }
 
   final List<_qia> queue =
       rootGoalPath.mapIndexed((i, path) => _qia(childIndex + i, path)).toList();
@@ -414,6 +458,14 @@ Future<bool> _traverseAsync(
       continue;
     }
 
+    if (!goalMap.containsKey(goalId)) {
+      try {
+        goalMap[goalId] = headGoal;
+      } catch (_) {
+        // goalMap may be an unmodifiable map
+      }
+    }
+
     final prevPath = direction == TraversalDirection.up
         ? currentPath.sublist(1)
         : currentPath.sublist(0, currentPath.length - 1);
@@ -427,13 +479,22 @@ Future<bool> _traverseAsync(
       continue;
     }
 
-    final nextPaths = direction == TraversalDirection.up
+    final rawNextPaths = direction == TraversalDirection.up
         ? headGoal.superGoalIds
             .map((superGoalId) => GoalPath([superGoalId, ...currentPath]))
-            .sorted(traversalComparator ?? (a, b) => 0)
+            .toList()
         : headGoal.subGoalIds
             .map((subGoalId) => GoalPath([...currentPath, subGoalId]))
-            .sorted(traversalComparator ?? (a, b) => 0);
+            .toList();
+
+    List<GoalPath> nextPaths;
+    if (traversalComparatorAsync != null) {
+      nextPaths = await _asyncSort(rawNextPaths, traversalComparatorAsync);
+    } else if (traversalComparator != null) {
+      nextPaths = rawNextPaths.sorted(traversalComparator);
+    } else {
+      nextPaths = rawNextPaths;
+    }
 
     final decision = await onVisit?.call(currentPath,
         isLeaf: nextPaths.isEmpty, childIndex: childIndex);
@@ -527,6 +588,8 @@ Future<void> traverseDownAsync(
   OnDepartAsync? onDepart,
   TraversalOrder order = TraversalOrder.breadthFirst,
   int Function(GoalPath goalA, GoalPath goalB)? childTraversalComparator,
+  Future<int> Function(GoalPath goalA, GoalPath goalB)?
+      childTraversalComparatorAsync,
   int childIndex = 0,
 }) async {
   loadGoal ??= (goalId) => Future.value(null);
@@ -536,6 +599,7 @@ Future<void> traverseDownAsync(
       onDepart: onDepart,
       order: order,
       traversalComparator: childTraversalComparator,
+      traversalComparatorAsync: childTraversalComparatorAsync,
       childIndex: childIndex);
 }
 
@@ -566,6 +630,8 @@ Future<void> traverseAllAsync(
     TraversalOrder order = TraversalOrder.breadthFirst,
     TraversalDirection direction = TraversalDirection.down,
     int Function(GoalPath goalA, GoalPath goalB)? childTraversalComparator,
+    Future<int> Function(GoalPath goalA, GoalPath goalB)?
+        childTraversalComparatorAsync,
     CancellationToken? cancellationToken}) async {
   loadGoal ??= (goalId) => Future.value(null);
   await _traverseAsync(
@@ -577,6 +643,7 @@ Future<void> traverseAllAsync(
     direction: direction,
     onDepart: onDepart,
     traversalComparator: childTraversalComparator,
+    traversalComparatorAsync: childTraversalComparatorAsync,
     cancellationToken: cancellationToken,
   );
 }
