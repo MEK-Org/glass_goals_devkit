@@ -1,6 +1,15 @@
 import { GoalLogEntry, WireGoalLogEntry } from "@thkp-eng/goals-types";
 
+export const BOOK_ENTRY_TYPE = "b";
 export const BOOK_SECTION_ENTRY_TYPE = "bS";
+
+/**
+ * Wire format for Book Log Entry: marks a goal as a book (e.g. a textbook
+ * created from a syllabus).
+ */
+export interface WireBookLogEntry extends WireGoalLogEntry {
+  t: typeof BOOK_ENTRY_TYPE;
+}
 
 // Mimic the Dart constants
 export const FIRST_VERSION = 1;
