@@ -1,6 +1,41 @@
 import 'package:goals_types/goals_types.dart';
 
+const BOOK_ENTRY_TYPE = 'b';
 const BOOK_SECTION_ENTRY_TYPE = 'bS';
+
+/// Marks a goal as a book (e.g. a textbook created from a syllabus).
+class BookLogEntry extends GoalLogEntry {
+  static const FIRST_VERSION = 1;
+
+  const BookLogEntry({
+    required super.id,
+    required super.creationTime,
+    super.path,
+  });
+
+  @override
+  List<Object?> get props => [id, creationTime];
+
+  static BookLogEntry fromJsonMap(dynamic json, int? version) {
+    if (json is! Map) {
+      throw Exception('Invalid data: $json is not a map');
+    }
+    return BookLogEntry(
+      id: json[GoalLogEntry.ID_JSON_KEY],
+      creationTime: DateTime.fromMillisecondsSinceEpoch(
+          json[GoalLogEntry.CREATION_TIME_JSON_KEY]!),
+      path: json[GoalLogEntry.PATH_JSON_KEY]?.cast<String>(),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJsonMap() {
+    return {
+      ...super.toJsonMap(),
+      GoalLogEntry.TYPE_JSON_KEY: BOOK_ENTRY_TYPE,
+    };
+  }
+}
 
 class BookSectionLogEntry extends GoalLogEntry {
   static const FIRST_VERSION = 1;
@@ -78,6 +113,9 @@ class BookLogEntryModule implements LogEntryModule {
     if (json is Map &&
         json[GoalLogEntry.TYPE_JSON_KEY] == BOOK_SECTION_ENTRY_TYPE) {
       return BookSectionLogEntry.fromJsonMap(json, version);
+    }
+    if (json is Map && json[GoalLogEntry.TYPE_JSON_KEY] == BOOK_ENTRY_TYPE) {
+      return BookLogEntry.fromJsonMap(json, version);
     }
     return null;
   }
