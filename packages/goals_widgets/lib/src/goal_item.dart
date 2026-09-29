@@ -456,8 +456,8 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
                                                   ? " "
                                                   : goal?.text ?? " ",
                                               style: (isSelected
-                                                      ? focusedFontStyle
-                                                          .merge(mainTextStyle)
+                                                      ? mainTextStyle.merge(
+                                                          focusedFontStyle)
                                                       : mainTextStyle)
                                                   .copyWith(
                                                 decoration:

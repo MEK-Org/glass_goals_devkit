@@ -1,3 +1,5 @@
+import 'dart:ui' show Size;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:goals_core/model.dart' show GoalPath;
@@ -7,16 +9,44 @@ import 'package:goals_ui_core/core.dart'
     show
         GoalActionsContext,
         GoalWidgetsContext,
+        GoalsTheme,
         hasMouseProvider,
+        selectedGoalsProvider,
         textFocusProvider;
 import 'package:goals_widgets/src/goal_item.dart';
 
 void main() {
   late SyncClient client;
 
+  ThemeData selectionTheme() {
+    return ThemeData(
+      textTheme: const TextTheme(
+        bodyLarge: TextStyle(fontWeight: FontWeight.normal),
+      ),
+      extensions: [
+        GoalsTheme(
+          uiUnit: 4,
+          primaryColor: Colors.black,
+          focusedFontStyle: const TextStyle(fontWeight: FontWeight.bold),
+          activeGoalBg: Colors.white,
+          activeGoalFg: Colors.black,
+          doneGoalBg: Colors.white,
+          doneGoalFg: Colors.black,
+          archivedGoalBg: Colors.white,
+          archivedGoalFg: Colors.black,
+          pendingGoalBg: Colors.white,
+          pendingGoalFg: Colors.black,
+          toDoGoalBg: Colors.white,
+          toDoGoalFg: Colors.black,
+        ),
+      ],
+    );
+  }
+
   setUp(() async {
     textFocusProvider.add(null);
     hasMouseProvider.add(true);
+    selectedGoalsProvider.add([]);
     client = SyncClient(
       localStore: MemoryLocalStore(),
       persistenceService: MemoryPersistenceService(),
@@ -125,5 +155,105 @@ void main() {
 
       expect(find.byType(TextField), findsNothing);
     });
+  });
+
+  testWidgets(
+      'selection becomes bold and deselection restores the normal weight',
+      (tester) async {
+    final path = GoalPath(const ['g1']);
+
+    Future<void> pumpSelectionUpdate() async {
+      // BehaviorSubject first replays its current value, then delivers the
+      // newly-published selection on the next turn.
+      await tester.pump();
+      await tester.pump();
+    }
+
+    // This is the same value the viewer publishes when the user selects this
+    // row. Set it before mounting so the widget's initial provider snapshot
+    // represents the selected state.
+    selectedGoalsProvider.add([path]);
+
+    // The production theme supplies a regular bodyLarge style. Exercise that
+    // order explicitly: the selected style must override its normal weight.
+    await tester.pumpWidget(MaterialApp(
+      theme: selectionTheme(),
+      home: Scaffold(
+        body: GoalWidgetsContext(
+          syncClient: client,
+          child: GoalActionsContext.empty(
+            child: GoalItemWidget(
+              path: path,
+              hasRenderableChildren: false,
+              hoverActionsBuilder: (_) => const SizedBox.shrink(),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await pumpSelectionUpdate();
+
+    Text goalText() => tester.widget<Text>(find.text('Original Goal Text'));
+
+    expect(
+      goalText().style!.fontWeight,
+      FontWeight.bold,
+      reason: 'The selected goal must be visibly bold.',
+    );
+
+    selectedGoalsProvider.add([]);
+    await pumpSelectionUpdate();
+
+    expect(
+      goalText().style!.fontWeight,
+      FontWeight.normal,
+      reason: 'Clearing selection must restore the ordinary goal appearance.',
+    );
+
+    selectedGoalsProvider.add([path]);
+    await pumpSelectionUpdate();
+
+    expect(
+      goalText().style!.fontWeight,
+      FontWeight.bold,
+      reason: 'Selecting again must restore the visible selection state.',
+    );
+  });
+
+  testWidgets('selected goal visual state', (tester) async {
+    tester.view.physicalSize = const Size(640, 120);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final path = GoalPath(const ['g1']);
+    selectedGoalsProvider.add([path]);
+
+    await tester.pumpWidget(MaterialApp(
+      theme: selectionTheme(),
+      home: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: GoalWidgetsContext(
+            syncClient: client,
+            child: GoalActionsContext.empty(
+              child: GoalItemWidget(
+                key: const ValueKey('selected-goal'),
+                path: path,
+                hasRenderableChildren: false,
+                hoverActionsBuilder: (_) => const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+    await tester.pump();
+
+    await expectLater(
+      find.byKey(const ValueKey('selected-goal')),
+      matchesGoldenFile('goldens/selected_goal_after.png'),
+    );
   });
 }
