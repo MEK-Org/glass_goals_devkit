@@ -10,6 +10,8 @@ import 'package:flutter/widgets.dart'
         CallbackAction,
         Center,
         FocusNode,
+        FocusManager,
+        FocusScopeNode,
         GestureDetector,
         Icon,
         MouseRegion,
@@ -25,6 +27,8 @@ import 'package:flutter/widgets.dart'
         Expanded;
 import 'package:goals_core/model.dart';
 import 'package:goals_ui_core/core.dart';
+
+import 'flattened_goal_tree.dart' show getChildIndexPathPart, parseChildIndexPathPart;
 
 class AddSubgoalItemWidget extends StatefulWidget {
   final GoalPath path;
@@ -46,6 +50,9 @@ class AddSubgoalItemWidget extends StatefulWidget {
 class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
   late TextEditingController _textController = TextEditingController(text: '');
   bool _editing = false;
+  int _draftRevision = 0;
+  int _focusRevision = 0;
+  int _pendingSubmissions = 0;
   bool _hasMouse = hasMouseProvider.value;
   final FocusNode _focusNode = FocusNode();
   final List<StreamSubscription> _subscriptions = [];
@@ -54,14 +61,16 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
   void initState() {
     super.initState();
     this._focusNode.addListener(this._focusListener);
-    _subscriptions.add(hasMouseProvider.stream.listen((hasMouse) {
-      if (!mounted || hasMouse == _hasMouse) {
-        return;
-      }
-      setState(() {
-        _hasMouse = hasMouse;
-      });
-    }));
+    _subscriptions.add(
+      hasMouseProvider.stream.listen((hasMouse) {
+        if (!mounted || hasMouse == _hasMouse) {
+          return;
+        }
+        setState(() {
+          _hasMouse = hasMouse;
+        });
+      }),
+    );
     _subscriptions.add(textFocusProvider.stream.listen(_onTextFocusChanged));
 
     if (pathsMatch(textFocusProvider.value, this.widget.path)) {
@@ -72,16 +81,27 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
   _focusListener() {
     if (!this._focusNode.hasFocus &&
         pathsMatch(textFocusProvider.value, this.widget.path)) {
-      Future.delayed(Duration.zero, () => this._focusNode.requestFocus());
+      final revision = _focusRevision;
+      Future.delayed(Duration.zero, () {
+        if (mounted &&
+            revision == _focusRevision &&
+            pathsMatch(textFocusProvider.value, widget.path) &&
+            FocusManager.instance.primaryFocus is FocusScopeNode) {
+          _focusNode.requestFocus();
+        }
+      });
     }
   }
 
   @override
   void didUpdateWidget(AddSubgoalItemWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!pathsMatch(oldWidget.path, widget.path) &&
-        pathsMatch(textFocusProvider.value, widget.path)) {
-      _startEditing();
+    if (!pathsMatch(oldWidget.path, widget.path)) {
+      _draftRevision++;
+      _focusRevision++;
+      _textController.clear();
+      _editing = false;
+      if (pathsMatch(textFocusProvider.value, widget.path)) _startEditing();
     }
   }
 
@@ -105,11 +125,21 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
     } else {
       _editing = true;
     }
+    final path = widget.path;
+    final revision = _draftRevision;
+    final focusRevision = _focusRevision;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted ||
+          !pathsMatch(widget.path, path) ||
+          !pathsMatch(textFocusProvider.value, path) ||
+          revision != _draftRevision ||
+          focusRevision != _focusRevision)
+        return;
       _focusNode.requestFocus();
       _textController.selection = TextSelection(
-          baseOffset: 0, extentOffset: _textController.text.length);
+        baseOffset: 0,
+        extentOffset: _textController.text.length,
+      );
     });
   }
 
@@ -128,7 +158,7 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
         _startEditing();
       }
     } else {
-      _focusNode.unfocus();
+      _focusRevision++;
       if (_editing && mounted) {
         setState(() {
           _editing = false;
@@ -138,17 +168,56 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
   }
 
   _cancelEditing() {
+    _draftRevision++;
     this._textController.text = '';
     textFocusProvider.add(null);
   }
 
-  _addGoal() async {
-    final newText = _textController.text;
-    await GoalActionsContext.of(context).onAddGoal.call(
-        widget.path.parentPath, newText,
-        pathBefore: widget.prevSiblingPath, pathAfter: widget.nextSiblingPath);
-    _textController.text = '';
-    _textController.selection = TextSelection(baseOffset: 0, extentOffset: 0);
+  Future<void> _addGoal() async {
+    // A repeated Enter/click-away must not submit the consumed buffer again.
+    if (_pendingSubmissions > 0 && _textController.text.isEmpty) return;
+    final path = widget.path;
+    final draft = _textController.value;
+    final revision = ++_draftRevision;
+    final focusRevision = _focusRevision;
+    final onAddGoal = GoalActionsContext.of(context).onAddGoal;
+    _pendingSubmissions++;
+    // A stream echo may insert the new goal before the callback completes.
+    // This reusable row now owns the NEXT draft, not the submitted one.
+    _textController.clear();
+    try {
+      await onAddGoal(
+        path.parentPath,
+        draft.text,
+        pathBefore: widget.prevSiblingPath,
+        pathAfter: widget.nextSiblingPath,
+      );
+      if (!mounted ||
+          !pathsMatch(widget.path, path) ||
+          _draftRevision != revision ||
+          _focusRevision != focusRevision ||
+          !_editing ||
+          !pathsMatch(textFocusProvider.value, path))
+        return;
+      // Focus/selection handoff still waits for the mutation contract. Only
+      // the submitting row can tell whether the user has started another draft.
+      final index = parseChildIndexPathPart(path.goalId);
+      if (index != null && index != -1) {
+        textFocusProvider.add(
+          GoalPath([...path.parentPath, getChildIndexPathPart(index + 1)]),
+        );
+      }
+    } catch (_) {
+      if (mounted &&
+          pathsMatch(widget.path, path) &&
+          _draftRevision == revision &&
+          _textController.text.isEmpty) {
+        _textController.value = draft;
+      }
+      rethrow;
+    } finally {
+      _pendingSubmissions--;
+    }
   }
 
   @override
@@ -190,9 +259,11 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
                         autocorrect: false,
                         controller: _textController,
                         decoration: null,
-                        style: theme.textTheme.bodyLarge ??
+                        style:
+                            theme.textTheme.bodyLarge ??
                             theme.textTheme.bodyMedium,
                         maxLines: _hasMouse ? null : 1,
+                        onChanged: (_) => _draftRevision++,
                         onEditingComplete: _addGoal,
                         onTapOutside: (_) {
                           if (_textController.text.isNotEmpty) {
@@ -207,10 +278,13 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
                       onTap: () {
                         textFocusProvider.add(widget.path);
                       },
-                      child: Text(ADD_GOAL_TEXT,
-                          style: (theme.textTheme.bodyLarge ??
-                                  theme.textTheme.bodyMedium)
-                              ?.copyWith(color: Colors.black54)),
+                      child: Text(
+                        ADD_GOAL_TEXT,
+                        style:
+                            (theme.textTheme.bodyLarge ??
+                                    theme.textTheme.bodyMedium)
+                                ?.copyWith(color: Colors.black54),
+                      ),
                     ),
             ],
           ),
