@@ -586,10 +586,30 @@ class SyncClient {
 
   Future<Set<String>> _computeAffectedGoalIds(Iterable<Op> ops) async {
     final result = <String>{};
+    void addDelta(DeltaOp op, {bool restoring = false}) {
+      result.addAll(getAffectedGoalIdsFromDeltaOp(op));
+      if (op.delta.logEntry is SetParentLogEntry) {
+        // SetParent detaches every prior parent, even when its replacement
+        // is rejected. Include those parents in per-goal watch invalidation.
+        final goal = stateSubject.value[op.delta.id];
+        result.addAll(goal?.superGoalIds ?? []);
+        if (restoring && goal != null) {
+          // Undo can restore a parent that is absent from the current graph.
+          // Its relationship entry remains in the goal's history.
+          for (final entry in goal.log) {
+            if (entry is AddParentLogEntry) result.add(entry.parentId);
+            if (entry is SetParentLogEntry && entry.parentId != null) {
+              result.add(entry.parentId!);
+            }
+          }
+        }
+      }
+    }
+
     for (final op in ops) {
       switch (op) {
         case DeltaOp deltaOp:
-          result.addAll(getAffectedGoalIdsFromDeltaOp(deltaOp));
+          addDelta(deltaOp);
           break;
         case EnableOp(opId: final affectedOpId) ||
               DisableOp(opId: final affectedOpId):
@@ -610,7 +630,7 @@ class SyncClient {
                 opId: op.id);
             continue;
           }
-          result.addAll(getAffectedGoalIdsFromDeltaOp(affectedOp));
+          addDelta(affectedOp, restoring: true);
           break;
       }
     }
@@ -865,32 +885,29 @@ class SyncClient {
       }
 
       goal.superGoalRelationships.clear();
+      modifiedGoalIds.add(goal.id);
 
       final newParentId = entry.parentId;
       if (newParentId == null) {
         return modifiedGoalIds;
       }
 
-      goal.addSuperGoal(newParentId, entry);
-      modifiedGoalIds.add(goal.id);
-      modifiedGoalIds.add(newParentId);
-
       final newSuperGoal = _ensureMutable(goalMap, newParentId);
       if (newSuperGoal != null) {
         // TODO: how does this work in an async world?
         if (_checkCycles(
             goalMap, goal.id, {newSuperGoal.id}, {newSuperGoal.id})) {
-          // silently ignore deltas that would create cycles ¯\_(ツ)_/¯
-          return {};
+          // Keep the existing detach-first SetParent semantics, but skip
+          // both sides of the replacement and notify the detached parents.
+          return modifiedGoalIds;
         }
-
-        newSuperGoal.addSubGoal(goal.id, entry);
       }
+
+      goal.addSuperGoal(newParentId, entry);
+      newSuperGoal?.addSubGoal(goal.id, entry);
+      modifiedGoalIds.add(newParentId);
     } else if (entry is AddParentLogEntry) {
       final childId = entry.isSlice ? entry.id : goal.id;
-      goal.addSuperGoal(entry.parentId, entry);
-      modifiedGoalIds.add(goal.id);
-
       // We'll add the sub goal to the new super goal if it exists
       // This is not an error because in a partial-state
       // world, the super goal may not be loaded yet.
@@ -898,12 +915,13 @@ class SyncClient {
       if (newSuperGoal != null) {
         if (_checkCycles(
             goalMap, childId, {newSuperGoal.id}, {newSuperGoal.id})) {
-          // silently ignore deltas that would create cycles ¯\_(ツ)_/¯
-          return {};
+          // Reject both sides of a cycle-closing relationship.
+          return modifiedGoalIds;
         }
-
-        newSuperGoal.addSubGoal(goal.id, entry);
       }
+      goal.addSuperGoal(entry.parentId, entry);
+      newSuperGoal?.addSubGoal(goal.id, entry);
+      modifiedGoalIds.add(goal.id);
       modifiedGoalIds.add(entry.parentId);
     } else if (entry is RemoveParentLogEntry) {
       goal.removeSuperGoal(entry.parentId);

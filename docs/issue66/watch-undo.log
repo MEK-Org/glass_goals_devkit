@@ -1,0 +1,28 @@
+00:00 +0: loading test/sync/sync_client_cycles_test.dart
+00:00 +0: AddParent rejects both sides of a closing edge
+AddParent: a up=[b] down=[]; b up=[] down=[a]
+00:00 +1: AddParent op graph has bounded upward traversal
+00:00 +2: AddParent allows unloaded parent and missing ancestor
+00:00 +3: SetParent rejects both sides of a closing edge
+SetParent: a up=[b] down=[]; b up=[] down=[a]
+00:00 +4: SetParent op graph has bounded upward traversal
+00:00 +5: SetParent allows unloaded parent and missing ancestor
+00:00 +6: existing upward/downward cycles terminate, visiting each goal once
+00:00 +7: DAG diamond keeps all parents and visits shared ancestor once
+00:00 +8: cyclic SetParent still detaches prior parents and notifies watches
+00:00 +8 -1: cyclic SetParent still detaches prior parents and notifies watches [E]
+  Expected: ['b']
+    Actual: _CompactKeysIterable<String>:[]
+     Which: at location [0] is _CompactKeysIterable<String>:[] which shorter than expected
+
+  package:matcher                               expect
+  test/sync/sync_client_cycles_test.dart 174:5  main.<fn>
+
+00:00 +8 -1: slice cycle guard retains slice identity and relationships
+00:00 +9 -1: Some tests failed.
+
+Failing tests:
+  test/sync/sync_client_cycles_test.dart: cyclic SetParent still detaches prior parents and notifies watches
+
+Consider enabling the flag chain-stack-traces to receive more detailed exceptions.
+For example, 'dart test --chain-stack-traces'.
