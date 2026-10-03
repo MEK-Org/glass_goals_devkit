@@ -433,7 +433,67 @@ void main() {
       );
     }
   }
+  for (final outside in [false, true]) {
+    testWidgets(
+      'unchanged inline ${outside ? 'click-away' : 'Enter'} is a no-op',
+      variant: TargetPlatformVariant.only(TargetPlatform.linux),
+      (tester) async {
+        final h = _Harness(tester);
+        await h.start();
+        final modification = h.client.modifyGoal(GoalDelta(id: 'g2', text: 'Temporary'));
+        await tester.pumpAndSettle();
+        await modification;
+        final undoing = h.client.undo();
+        await tester.pumpAndSettle();
+        await undoing;
+        await tester.pumpAndSettle();
+        final undo = [...h.client.undoStack];
+        final redo = [...h.client.redoStack];
+        expect(undo, isNotEmpty);
+        expect(redo, isNotEmpty);
+        await tester.tap(find.text('Old goal'));
+        await tester.pumpAndSettle();
+        h.remote.hold = true;
+        await h.submit(outside: outside);
+        await tester.pumpAndSettle();
+        expect(h.remote.calls, isEmpty);
+        expect(h.client.undoStack, undo);
+        expect(h.client.redoStack, redo);
+        expect(_inline, findsNothing);
+        expect(h.inlineText, 'Old goal');
+        expect(textFocusProvider.value, isNull);
+        expect(h.advanced, outside ? 0 : 1);
+        if (outside) expect(h.outsideFocus.hasPrimaryFocus, isTrue);
+        await h.finish();
+        final redoing = h.client.redo();
+        await tester.pumpAndSettle();
+        await redoing;
+        expect(h.client.stateSubject.value['g2']!.text, 'Temporary');
+      },
+    );
+  }
   for (final newestFirst in [false, true]) {
+    testWidgets('inline revert to live text awaits older edit newestFirst=$newestFirst', (tester) async {
+      final h = _Harness(tester);
+      await h.start();
+      await h.edit();
+      h.remote.hold = true;
+      await h.submit();
+      expect(h.client.stateSubject.value['g1']!.text, 'Old goal');
+      await h.edit(text: 'Old goal');
+      await h.submit();
+      expect(h.remote.calls, hasLength(2));
+      expect(_inline, findsOneWidget);
+      expect(h.inlineText, 'Old goal');
+      expect(h.advanced, 0);
+      h.remote.calls[newestFirst ? 1 : 0].gate.complete();
+      await tester.pumpAndSettle();
+      expect(h.inlineText, 'Old goal');
+      await h.finish();
+      expect(h.inlineText, 'Old goal');
+      expect(h.advanced, 1);
+      await h.reload('g1', 'Old goal');
+    });
     testWidgets('inline overlap newestFirst=$newestFirst', (tester) async {
       final h = _Harness(tester);
       await h.start();

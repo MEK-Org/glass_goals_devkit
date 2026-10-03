@@ -284,13 +284,20 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
     final revision = _editRevision;
     final focusRevision = _focusRevision;
     final onEnter = widget.onEnter;
+    // An unchanged draft is a focus handoff, not a new undoable mutation.
+    // An older pending edit can still replace the live value, so submitting a
+    // reversion to that value must remain an awaited mutation in that case.
+    final shouldSave =
+        _pendingEdits.isNotEmpty || _textController.text != goal?.text;
     _pendingEdits.add(revision);
     try {
       // Preserve the editor until the async contract guarantees the updated
       // model. build reads the live state, even inside the watch throttle window.
-      await GoalWidgetsContext.of(context).syncClient.modifyGoal(
-        GoalDelta(id: path.goalId, text: _textController.text),
-      );
+      if (shouldSave) {
+        await GoalWidgetsContext.of(context).syncClient.modifyGoal(
+          GoalDelta(id: path.goalId, text: _textController.text),
+        );
+      }
       if (!mounted ||
           !_pathEquals(widget.path, path) ||
           !_editing ||
