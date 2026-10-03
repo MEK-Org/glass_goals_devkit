@@ -1,0 +1,26 @@
+name: widget_smoke
+publish_to: none
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  goals_widgets:
+    path: ../glass_goals_devkit/packages/goals_widgets
+  goals_core:
+    path: ../glass_goals_devkit/packages/goals_core
+  goals_ui_core:
+    path: ../glass_goals_devkit/packages/goals_ui_core
+dependency_overrides:
+  flutter_dropzone_platform_interface:
+    git:
+      url: https://github.com/AlabasterAxe/flutter_dropzone.git
+      ref: glass-goals
+      path: flutter_dropzone_platform_interface
+  flutter_dropzone_web:
+    git:
+      url: https://github.com/AlabasterAxe/flutter_dropzone.git
+      ref: glass-goals
+      path: flutter_dropzone_web
+flutter:
+  uses-material-design: true
