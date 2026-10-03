@@ -2,7 +2,7 @@
 
 Refs MEK-Org/glass_goals#66. Approved in [Matt's comment](https://github.com/MEK-Org/glass_goals/issues/66#issuecomment-5563418336).
 
-The baseline was freshly cloned devkit `a63fd38f2015c7ca88b483f46fe69e25ce54735b`. The app was freshly cloned at `b747c95d054af1eb7fc603496d55562421ff31d8`, pinning devkit `9d4b97d192590657c97e1172592d34170b444232`. Flutter 3.41.5 / Dart 3.11.3 were used from the actor's writable SDK. Commands below ran in the indicated package; `../../../.flutter_mnt/bin/` identifies that SDK. Logs in this directory omit only `[SYNC-DIAG]` chatter. Complete raw logs remain in the actor's `evidence/` directory.
+The baseline was freshly cloned devkit `a63fd38f2015c7ca88b483f46fe69e25ce54735b`. The app was freshly cloned at `b747c95d054af1eb7fc603496d55562421ff31d8`, pinning devkit `9d4b97d192590657c97e1172592d34170b444232`. Flutter 3.41.5 / Dart 3.11.3 were used from the actor's writable SDK. Commands below ran in the indicated package; `../../../.flutter_mnt/bin/` identifies that SDK. Logs in this directory omit `[SYNC-DIAG]` chatter and trim trailing whitespace; green suite receipts retain the completion lines. Complete raw logs remain in the actor's `evidence/` directory.
 
 ## Red receipts, before source edits
 

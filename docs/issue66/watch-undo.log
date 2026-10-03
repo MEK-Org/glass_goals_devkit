@@ -14,10 +14,10 @@ SetParent: a up=[b] down=[]; b up=[] down=[a]
   Expected: ['b']
     Actual: _CompactKeysIterable<String>:[]
      Which: at location [0] is _CompactKeysIterable<String>:[] which shorter than expected
-  
+
   package:matcher                               expect
   test/sync/sync_client_cycles_test.dart 174:5  main.<fn>
-  
+
 00:00 +8 -1: slice cycle guard retains slice identity and relationships
 00:00 +9 -1: Some tests failed.
 

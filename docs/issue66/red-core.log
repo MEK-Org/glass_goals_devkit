@@ -4,34 +4,34 @@ AddParent: a up=[b] down=[]; b up=[a] down=[a]
 00:00 +0 -1: AddParent rejects both sides of a closing edge [E]
   Expected: empty
     Actual: _CompactKeysIterable<String>:['a']
-  
+
   package:matcher                              expect
   test/sync/sync_client_cycles_test.dart 56:7  main.<fn>
-  
+
 00:00 +0 -1: AddParent op graph has bounded upward traversal
 00:02 +0 -2: AddParent op graph has bounded upward traversal [E]
   TimeoutException after 0:00:02.000000: Future not completed
   test/sync/sync_client_cycles_test.dart 37:12  _bounded
   ===== asynchronous gap ===========================
   test/sync/sync_client_cycles_test.dart 61:19  main.<fn>
-  
+
 00:02 +0 -2: AddParent allows unloaded parent and missing ancestor
 00:02 +1 -2: SetParent rejects both sides of a closing edge
 SetParent: a up=[b] down=[]; b up=[a] down=[a]
 00:02 +1 -3: SetParent rejects both sides of a closing edge [E]
   Expected: empty
     Actual: _CompactKeysIterable<String>:['a']
-  
+
   package:matcher                              expect
   test/sync/sync_client_cycles_test.dart 56:7  main.<fn>
-  
+
 00:02 +1 -3: SetParent op graph has bounded upward traversal
 00:04 +1 -4: SetParent op graph has bounded upward traversal [E]
   TimeoutException after 0:00:02.000000: Future not completed
   test/sync/sync_client_cycles_test.dart 37:12  _bounded
   ===== asynchronous gap ===========================
   test/sync/sync_client_cycles_test.dart 61:19  main.<fn>
-  
+
 00:04 +1 -4: SetParent allows unloaded parent and missing ancestor
 00:04 +2 -4: existing upward/downward cycles terminate, visiting each goal once
 00:06 +2 -5: existing upward/downward cycles terminate, visiting each goal once [E]
@@ -39,31 +39,31 @@ SetParent: a up=[b] down=[]; b up=[a] down=[a]
   test/sync/sync_client_cycles_test.dart 37:12  _bounded
   ===== asynchronous gap ===========================
   test/sync/sync_client_cycles_test.dart 86:17  main.<fn>
-  
+
 00:06 +2 -5: DAG diamond keeps all parents and visits shared ancestor once
 00:06 +2 -6: DAG diamond keeps all parents and visits shared ancestor once [E]
   Expected: ['b', 'root', 'a']
     Actual: ['b', 'root', 'a', 'root']
      Which: at location [3] is ['b', 'root', 'a', 'root'] which longer than expected
-  
+
   package:matcher                               expect
   test/sync/sync_client_cycles_test.dart 103:5  main.<fn>
-  
+
 00:06 +2 -6: cyclic SetParent still detaches prior parents and notifies watches
 00:06 +2 -7: cyclic SetParent still detaches prior parents and notifies watches [E]
   Expected: empty
     Actual: _CompactKeysIterable<String>:['a']
-  
+
   package:matcher                               expect
   test/sync/sync_client_cycles_test.dart 120:5  main.<fn>
-  
+
 00:06 +2 -7: slice cycle guard retains slice identity and relationships
 00:09 +2 -8: slice cycle guard retains slice identity and relationships [E]
   TimeoutException after 0:00:02.000000: Future not completed
   test/sync/sync_client_cycles_test.dart 37:12   _bounded
   ===== asynchronous gap ===========================
   test/sync/sync_client_cycles_test.dart 141:12  main.<fn>
-  
+
 00:09 +2 -8: Some tests failed.
 
 Failing tests:
