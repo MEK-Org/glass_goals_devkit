@@ -133,6 +133,9 @@ Map<String, Goal> _getTransitiveGoals(
   final queue = <String>[...(getNextIds(goalMap[rootGoalId]!))];
   while (queue.isNotEmpty) {
     final goalId = queue.removeLast();
+    if (result.containsKey(goalId)) {
+      continue;
+    }
     final goal = goalMap[goalId];
 
     if (goal == null || predicate != null && !predicate(goal)) {

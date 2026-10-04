@@ -339,8 +339,9 @@ class _ParentBreadcrumbState extends State<ParentBreadcrumb> {
     Goal? curGoal = _goalMap[widget.path.goalId];
     GoalPath parentPath = widget.path.parentPath;
     final renderedPath = <String>[];
+    final visited = <String>{};
 
-    while (curGoal != null) {
+    while (curGoal != null && visited.add(curGoal.id)) {
       renderedPath.add(curGoal.id);
 
       if (isAnchor(curGoal) != null) {
