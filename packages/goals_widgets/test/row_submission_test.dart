@@ -48,13 +48,18 @@ final _inline = find.descendant(
 const _outside = ValueKey('outside');
 
 class _Harness {
-  _Harness(this.tester, {this.tree = false, this.add = false, int slot = -1})
+  _Harness(this.tester,
+      {this.tree = false,
+      this.add = false,
+      this.usePendingRegistry = false,
+      int slot = -1})
     : path = ValueNotifier(
         GoalPath(add ? ['root', 'childIndex:$slot'] : ['g1']),
       );
   final WidgetTester tester;
   final bool tree;
   final bool add;
+  final bool usePendingRegistry;
   final ValueNotifier<GoalPath> path;
   final remote = _Remote();
   late final client = SyncClient(
@@ -62,6 +67,7 @@ class _Harness {
     persistenceService: remote,
   );
   final outsideFocus = FocusNode();
+  final pendingGoalRegistry = PendingGoalRegistry();
   Completer<void>? callbackGate;
   final submitted = <String>[];
   int advanced = 0;
@@ -84,6 +90,8 @@ class _Harness {
       MaterialApp(
         home: GoalWidgetsContext(
           syncClient: client,
+          pendingGoalRegistry:
+              usePendingRegistry ? pendingGoalRegistry : null,
           child: GoalActionsContext.empty(
             child: Builder(
               builder: (context) => GoalActionsContext.overrideWith(
@@ -95,11 +103,16 @@ class _Harness {
                       TimeSlice? slice,
                       GoalPath? pathBefore,
                       GoalPath? pathAfter,
-                    }) async {
+                    }) {
                       submitted.add(text);
                       final id = 'created-${submitted.length}';
-                      await callbackGate?.future;
-                      await client.modifyGoal(GoalDelta(id: id, text: text));
+                      return AddGoalSubmission(
+                        goalId: id,
+                        completion: () async {
+                          await callbackGate?.future;
+                          await client.modifyGoal(GoalDelta(id: id, text: text));
+                        }(),
+                      );
                     },
                 child: Scaffold(
                   body: Shortcuts(
@@ -169,6 +182,7 @@ class _Harness {
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(milliseconds: 32));
       client.dispose();
+      pendingGoalRegistry.dispose();
       outsideFocus.dispose();
       path.dispose();
       tester.view.reset();
@@ -375,7 +389,7 @@ void main() {
     testWidgets(
       'failed add callback restores only its own draft newer=$newer',
       (tester) async {
-        final h = _Harness(tester, add: true);
+        final h = _Harness(tester, add: true, usePendingRegistry: true);
         await h.start();
         await h.edit(adding: true);
         h.callbackGate = Completer<void>();
@@ -392,6 +406,7 @@ void main() {
           tester.widget<TextField>(_add).controller!.text,
           newer ? 'Second goal' : 'New goal',
         );
+        expect(find.byKey(const ValueKey('pending-goal-created-1')), findsNothing);
         h.callbackGate = null;
         await h.submit();
         await h.finish();

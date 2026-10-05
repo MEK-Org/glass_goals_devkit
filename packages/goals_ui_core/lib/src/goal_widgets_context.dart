@@ -6,6 +6,34 @@ import 'services/cloudstore_service.dart' show CloudstoreService;
 import 'services/document_service.dart' show DocumentService;
 import 'services/pending_operation_service.dart' show PendingOperationService;
 
+/// Coordinates one pending UI row with its authoritative tree row by id.
+class PendingGoalRegistry {
+  final Set<String> _registeredGoalIds = {};
+  final Set<String> _renderedGoalIds = {};
+
+  bool isRendered(String goalId) => _renderedGoalIds.contains(goalId);
+
+  void register(String goalId) {
+    _registeredGoalIds.add(goalId);
+  }
+
+  void acknowledge(String goalId) {
+    if (_registeredGoalIds.contains(goalId)) {
+      _renderedGoalIds.add(goalId);
+    }
+  }
+
+  void forget(String goalId) {
+    _registeredGoalIds.remove(goalId);
+    _renderedGoalIds.remove(goalId);
+  }
+
+  void dispose() {
+    _registeredGoalIds.clear();
+    _renderedGoalIds.clear();
+  }
+}
+
 /// App-wide dependency context for the goals widget package.
 ///
 /// Bundles the services that goal-rendering widgets (Breadcrumb, GoalItem,
@@ -18,6 +46,7 @@ class GoalWidgetsContext extends InheritedWidget {
   final CloudstoreService? cloudstoreService;
   final DocumentService? documentService;
   final PendingOperationService? pendingOperationService;
+  final PendingGoalRegistry? pendingGoalRegistry;
 
   const GoalWidgetsContext({
     super.key,
@@ -25,6 +54,7 @@ class GoalWidgetsContext extends InheritedWidget {
     this.cloudstoreService,
     this.documentService,
     this.pendingOperationService,
+    this.pendingGoalRegistry,
     required Widget child,
   }) : super(child: child);
 
@@ -45,6 +75,7 @@ class GoalWidgetsContext extends InheritedWidget {
     return syncClient != oldWidget.syncClient ||
         cloudstoreService != oldWidget.cloudstoreService ||
         documentService != oldWidget.documentService ||
-        pendingOperationService != oldWidget.pendingOperationService;
+        pendingOperationService != oldWidget.pendingOperationService ||
+        pendingGoalRegistry != oldWidget.pendingGoalRegistry;
   }
 }

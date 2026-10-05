@@ -9,6 +9,8 @@ import 'package:flutter/widgets.dart'
         BuildContext,
         CallbackAction,
         Center,
+        Column,
+        CrossAxisAlignment,
         FocusNode,
         FocusManager,
         FocusScopeNode,
@@ -17,11 +19,13 @@ import 'package:flutter/widgets.dart'
         MouseRegion,
         Padding,
         Row,
+        KeyedSubtree,
         SizedBox,
         Text,
         TextEditingController,
         Widget,
         WidgetsBinding,
+        ValueKey,
         StatefulWidget,
         State,
         Expanded;
@@ -53,6 +57,8 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
   int _draftRevision = 0;
   int _focusRevision = 0;
   int _pendingSubmissions = 0;
+  final Map<String, _PendingGoal> _pendingGoals = {};
+  PendingGoalRegistry? _pendingGoalRegistry;
   bool _hasMouse = hasMouseProvider.value;
   final FocusNode _focusNode = FocusNode();
   final List<StreamSubscription> _subscriptions = [];
@@ -97,12 +103,51 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
   void didUpdateWidget(AddSubgoalItemWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!pathsMatch(oldWidget.path, widget.path)) {
+      _clearPendingGoals();
       _draftRevision++;
       _focusRevision++;
       _textController.clear();
       _editing = false;
       if (pathsMatch(textFocusProvider.value, widget.path)) _startEditing();
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pendingGoalRegistry =
+        GoalWidgetsContext.maybeOf(context)?.pendingGoalRegistry;
+  }
+
+  Iterable<_PendingGoal> get _visiblePendingGoals {
+    final registry = _pendingGoalRegistry;
+    if (registry == null) return _pendingGoals.values;
+    final rendered = _pendingGoals.keys
+        .where(registry.isRendered)
+        .toList(growable: false);
+    if (rendered.isEmpty) return _pendingGoals.values;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        for (final id in rendered) {
+          _pendingGoals.remove(id);
+        }
+      });
+      for (final id in rendered) {
+        registry.forget(id);
+      }
+    });
+    return _pendingGoals.entries
+        .where((entry) => !registry.isRendered(entry.key))
+        .map((entry) => entry.value);
+  }
+
+  void _clearPendingGoals() {
+    final registry = _pendingGoalRegistry;
+    for (final id in _pendingGoals.keys) {
+      registry?.forget(id);
+    }
+    _pendingGoals.clear();
   }
 
   /// Switches the row into editing mode and focuses the text field *after*
@@ -147,6 +192,7 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
     for (final subscription in _subscriptions) {
       subscription.cancel();
     }
+    _clearPendingGoals();
     _textController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -180,18 +226,25 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
     final draft = _textController.value;
     final revision = ++_draftRevision;
     final focusRevision = _focusRevision;
-    final onAddGoal = GoalActionsContext.of(context).onAddGoal;
+    final submission = GoalActionsContext.of(context).onAddGoal(
+      path.parentPath,
+      draft.text,
+      pathBefore: widget.prevSiblingPath,
+      pathAfter: widget.nextSiblingPath,
+    );
     _pendingSubmissions++;
     // A stream echo may insert the new goal before the callback completes.
     // This reusable row now owns the NEXT draft, not the submitted one.
     _textController.clear();
+    if (_pendingGoalRegistry != null) {
+      _pendingGoalRegistry!.register(submission.goalId);
+      setState(() {
+        _pendingGoals[submission.goalId] =
+            _PendingGoal(id: submission.goalId, text: draft.text);
+      });
+    }
     try {
-      await onAddGoal(
-        path.parentPath,
-        draft.text,
-        pathBefore: widget.prevSiblingPath,
-        pathAfter: widget.nextSiblingPath,
-      );
+      await submission.completion;
       if (!mounted ||
           !pathsMatch(widget.path, path) ||
           _draftRevision != revision ||
@@ -208,6 +261,14 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
         );
       }
     } catch (_) {
+      if (mounted) {
+        setState(() {
+          _pendingGoals.remove(submission.goalId);
+        });
+      } else {
+        _pendingGoals.remove(submission.goalId);
+      }
+      _pendingGoalRegistry?.forget(submission.goalId);
       if (mounted &&
           pathsMatch(widget.path, path) &&
           _draftRevision == revision &&
@@ -241,8 +302,31 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
         cursor: SystemMouseCursors.click,
         child: Padding(
           padding: this.widget.padding,
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              for (final pending in _visiblePendingGoals)
+                KeyedSubtree(
+                  key: ValueKey('pending-goal-${pending.id}'),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: (goalsTheme?.uiUnit ?? 4) * 10,
+                        height:
+                            (goalsTheme?.uiUnit ?? 4) * (_hasMouse ? 8 : 12),
+                        child: const Center(child: Icon(Icons.circle, size: 8)),
+                      ),
+                      Expanded(
+                        child: Text(
+                          pending.text,
+                          style: theme.textTheme.bodyLarge ??
+                              theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Row(children: [
               GestureDetector(
                 onTap: () {
                   textFocusProvider.add(widget.path);
@@ -286,10 +370,18 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
                                 ?.copyWith(color: Colors.black54),
                       ),
                     ),
+              ]),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+class _PendingGoal {
+  final String id;
+  final String text;
+
+  const _PendingGoal({required this.id, required this.text});
 }

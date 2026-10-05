@@ -491,6 +491,11 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
         depth: 0,
       ));
     }
+    final pendingGoalRegistry =
+        GoalWidgetsContext.maybeOf(context)?.pendingGoalRegistry;
+    for (final item in flattenedGoals) {
+      pendingGoalRegistry?.acknowledge(item.path.goalId);
+    }
     if (mounted) {
       setState(() {
         this._flattenedGoalItems = flattenedGoals;
