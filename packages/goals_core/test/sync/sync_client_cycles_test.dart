@@ -21,16 +21,105 @@ GoalDelta _parent(String child, String? parent,
               isSlice: slice),
     );
 
-Future<SyncClient> _client() async {
+Future<SyncClient> _client(
+    {MemoryPersistenceService? persistence, bool seed = true}) async {
   final client = SyncClient(
       localStore: MemoryLocalStore(),
-      persistenceService: MemoryPersistenceService());
+      persistenceService: persistence ?? MemoryPersistenceService());
   await client.init();
-  await client.modifyGoals([
-    for (final id in ['a', 'b', 'old', 'root']) GoalDelta(id: id, text: id)
-  ]);
+  if (seed) {
+    await client.modifyGoals([
+      for (final id in ['a', 'b', 'old', 'root']) GoalDelta(id: id, text: id)
+    ]);
+  }
   return client;
 }
+
+/// A shared server for two devices with controllable delivery.
+/// MemoryPersistenceService.save keeps only the batch it was given, so each
+/// save here carries the existing ops too.
+class _SharedPersistence extends MemoryPersistenceService {
+  final _controller = StreamController<(Iterable<Op>, String)>.broadcast();
+  bool _paused = false;
+  String? _pausedCursor;
+  final List<(Iterable<Op>, String)> _pendingEvents = [];
+
+  void pauseDelivery() {
+    _paused = true;
+    _pausedCursor = maxHlc;
+  }
+
+  void resumeDelivery() {
+    _paused = false;
+    _pausedCursor = null;
+    for (final event in _pendingEvents) {
+      _controller.add(event);
+    }
+    _pendingEvents.clear();
+  }
+
+  void dispose() => _controller.close();
+
+  @override
+  Stream<(Iterable<Op>, String)> stream(String? cursor) => _controller.stream;
+
+  @override
+  Future<LoadOpsResp> load({String? cursor, int? limit}) async {
+    final resp = await super.load(cursor: cursor, limit: limit);
+    if (_paused && _pausedCursor != null) {
+      final filtered = resp.ops
+          .where((op) => op.hlcTimestamp.compareTo(_pausedCursor!) <= 0)
+          .toList();
+      return LoadOpsResp(
+        ops: filtered,
+        cursor: filtered.isNotEmpty ? filtered.last.hlcTimestamp : cursor,
+      );
+    }
+    return resp;
+  }
+
+  @override
+  Future<void> save(Iterable<Op> ops) async {
+    await super.save([...this.ops, ...ops]);
+    final event = (ops, maxHlc ?? '');
+    if (_paused) {
+      _pendingEvents.add(event);
+    } else {
+      _controller.add(event);
+    }
+  }
+}
+
+/// Both graph sides as plain lists, so a failure prints the whole shape.
+Map<String, List<String>> _edges(Map<String, Goal> goals) => {
+      for (final id in ['a', 'b'])
+        for (final (side, ids) in [
+          ('up', goals[id]!.superGoalIds),
+          ('down', goals[id]!.subGoalIds)
+        ])
+          '$id.$side': ids.toList(),
+    };
+
+const _emptyEdges = {
+  'a.up': <String>[],
+  'a.down': <String>[],
+  'b.up': <String>[],
+  'b.down': <String>[],
+};
+
+const _acyclicAUnderB = {
+  'a.up': ['b'],
+  'a.down': <String>[],
+  'b.up': <String>[],
+  'b.down': ['a'],
+};
+
+const _acyclicBUnderA = {
+  'a.up': <String>[],
+  'a.down': ['b'],
+  'b.up': ['a'],
+  'b.down': <String>[],
+};
 
 // Runs the reader on another isolate: the watchdog remains responsive even
 // when a synchronous traversal blocks that isolate's event loop.
@@ -206,5 +295,64 @@ void main() {
             id: 'remove', parentId: 'a', creationTime: _time)));
     expect(client.stateSubject.value['b']!.superGoalIds, isEmpty);
     expect(client.stateSubject.value['a']!.subGoalIds, isEmpty);
+  });
+
+  test(
+      'two devices: A→B on one, B→A on the other, both converge acyclic '
+      'after sync', () async {
+    final persistence = _SharedPersistence();
+    addTearDown(persistence.dispose);
+    final first = await _client(persistence: persistence);
+    addTearDown(first.dispose);
+    await first.sync();
+    // Ensure the second client starts with a strictly later wall-clock time
+    // so its logical clock comes after the first client's seeded edits.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    final second = await _client(persistence: persistence, seed: false);
+    addTearDown(second.dispose);
+    await second.sync();
+    expect(second.stateSubject.value.keys, containsAll(['a', 'b', 'old', 'root']));
+    expect(_edges(first.stateSubject.value), _emptyEdges);
+    expect(_edges(second.stateSubject.value), _emptyEdges);
+
+    // Partition delivery so each device performs its edit without seeing
+    // the opposing relationship.
+    persistence.pauseDelivery();
+
+    await first.modifyGoal(_parent('a', 'b'));
+
+    // Before the second device makes its edit, assert it has not seen A→B.
+    expect(_edges(second.stateSubject.value), _emptyEdges,
+        reason: 'second device has not seen A→B while partitioned');
+    expect(_edges(first.stateSubject.value), _acyclicAUnderB,
+        reason: 'first device accepted its local A→B edit');
+
+    await second.modifyGoal(_parent('b', 'a'));
+
+    // Assert both devices independently accepted opposite locally valid edges.
+    expect(_edges(second.stateSubject.value), _acyclicBUnderA,
+        reason: 'second device accepted its local B→A edit');
+    expect(_edges(first.stateSubject.value), _acyclicAUnderB,
+        reason: 'first device still has not seen B→A');
+
+    // Restore delivery and sync until both devices receive all ops.
+    persistence.resumeDelivery();
+
+    bool delivered(SyncClient client) =>
+        client.stateSubject.value['a']!.log.any((e) => e.id == 'a-b-add') &&
+        client.stateSubject.value['b']!.log.any((e) => e.id == 'b-a-add');
+    for (var i = 0; i < 20 && !(delivered(first) && delivered(second)); i++) {
+      await second.sync();
+      await first.sync();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+
+    for (final client in [first, second]) {
+      expect(delivered(client), isTrue,
+          reason: 'both devices have received both ops');
+      expect(_edges(client.stateSubject.value), _acyclicAUnderB,
+          reason:
+              'both devices converge to the acyclic graph of the earlier edit');
+    }
   });
 }
