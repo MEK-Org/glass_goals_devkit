@@ -32,6 +32,8 @@ import 'package:flutter/widgets.dart'
         Flexible,
         Focus,
         FocusNode,
+        FocusManager,
+        FocusScopeNode,
         GestureDetector,
         Icon,
         IntrinsicWidth,
@@ -118,6 +120,9 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
 
   // TODO: maybe this should be a state machine?
   bool _editing = false;
+  int _editRevision = 0;
+  int _focusRevision = 0;
+  final Set<int> _pendingEdits = {};
   bool _hovering = false;
   bool _dragging = false;
   List<GoalPath> _expandedGoals = expandedGoalsProvider.value;
@@ -146,6 +151,11 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
   void initState() {
     super.initState();
     this._focusNode.addListener(this._focusListener);
+    subscriptions.add(
+      textFocusProvider.stream.listen((path) {
+        if (!pathsMatch(path, widget.path)) _focusRevision++;
+      }),
+    );
 
     subscriptions.add(hoverEventStream.listen((hoveredPath) {
       if (!pathsMatch(hoveredPath, widget.path) && _hovering) {
@@ -207,7 +217,15 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
   _focusListener() {
     if (!this._focusNode.hasFocus &&
         pathsMatch(textFocusProvider.value, this.widget.path)) {
-      Future.delayed(Duration.zero, () => this._focusNode.requestFocus());
+      final revision = _focusRevision;
+      Future.delayed(Duration.zero, () {
+        if (mounted &&
+            revision == _focusRevision &&
+            pathsMatch(textFocusProvider.value, widget.path) &&
+            FocusManager.instance.primaryFocus is FocusScopeNode) {
+          _focusNode.requestFocus();
+        }
+      });
     }
   }
 
@@ -217,13 +235,18 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
       subscription.cancel();
     }
     _watch?.dispose();
+    _focusNode.dispose();
+    _textController.dispose();
 
     super.dispose();
   }
 
   _cancelEditing() {
+    _editRevision++;
     hoverEventStream.add(null);
-    textFocusProvider.add(null);
+    if (pathsMatch(textFocusProvider.value, widget.path)) {
+      textFocusProvider.add(null);
+    }
     if (goal != null) {
       _textController.text = goal!.text;
     }
@@ -239,6 +262,10 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
       setState(() {});
     }
     if (!_pathEquals(oldWidget.path, widget.path)) {
+      _editRevision++;
+      _focusRevision++;
+      _editing = false;
+      _textController.clear();
       _watch?.setIds(widget.path);
     }
   }
@@ -251,16 +278,43 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
     return true;
   }
 
-  _updateGoal() {
-    if (_textController.text != goal?.text) {
-      GoalWidgetsContext.of(context).syncClient.modifyGoal(
-          GoalDelta(id: widget.path.goalId, text: _textController.text));
+  Future<void> _updateGoal({bool advance = false}) async {
+    if (!_editing || _pendingEdits.contains(_editRevision)) return;
+    final path = widget.path;
+    final revision = _editRevision;
+    final focusRevision = _focusRevision;
+    final onEnter = widget.onEnter;
+    // An unchanged draft is a focus handoff, not a new undoable mutation.
+    // An older pending edit can still replace the live value, so submitting a
+    // reversion to that value must remain an awaited mutation in that case.
+    final shouldSave =
+        _pendingEdits.isNotEmpty || _textController.text != goal?.text;
+    _pendingEdits.add(revision);
+    try {
+      // Preserve the editor until the async contract guarantees the updated
+      // model. build reads the live state, even inside the watch throttle window.
+      if (shouldSave) {
+        await GoalWidgetsContext.of(context).syncClient.modifyGoal(
+          GoalDelta(id: path.goalId, text: _textController.text),
+        );
+      }
+      if (!mounted ||
+          !_pathEquals(widget.path, path) ||
+          !_editing ||
+          _editRevision != revision)
+        return;
+      final ownsFocus =
+          _focusRevision == focusRevision &&
+          pathsMatch(textFocusProvider.value, path);
+      final advanceFocus = ownsFocus && _focusNode.hasFocus;
+      setState(() => _editing = false);
+      if (ownsFocus) {
+        textFocusProvider.add(null);
+        if (advance && advanceFocus) onEnter?.call();
+      }
+    } finally {
+      _pendingEdits.remove(revision);
     }
-
-    textFocusProvider.add(null);
-    setState(() {
-      _editing = false;
-    });
   }
 
   Widget _dragWrapWidget({
@@ -309,15 +363,24 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
     if (goal == null || _editing) {
       return;
     }
+    _editRevision++;
     this._textController.text = goal!.text;
-    this._textController.selection =
-        TextSelection(baseOffset: 0, extentOffset: _textController.text.length);
+    this._textController.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: _textController.text.length,
+    );
     textFocusProvider.add(this.widget.path);
     this._focusNode.unfocus();
     setState(() {
       _editing = true;
+      final revision = _editRevision;
       Future.delayed(Duration.zero, () {
-        this._focusNode.requestFocus();
+        if (mounted &&
+            _editing &&
+            revision == _editRevision &&
+            pathsMatch(textFocusProvider.value, widget.path)) {
+          _focusNode.requestFocus();
+        }
       });
     });
   }
@@ -426,7 +489,8 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
                                   // auto-highlight when switching between windows.
                                   maxLines: hasMouse ? null : 1,
                                   style: mainTextStyle,
-                                  onEditingComplete: this._updateGoal,
+                                  onChanged: (_) => _editRevision++,
+                                  onEditingComplete: _updateGoal,
                                   onTapOutside: (_) {
                                     _updateGoal();
                                   },
@@ -523,15 +587,13 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
         if (this._editing)
           AcceptIntent: CallbackAction<AcceptIntent>(
             onInvoke: (_) {
-              this._updateGoal();
-              this.widget.onEnter?.call();
+              _updateGoal(advance: true);
             },
           ),
         if (this._editing)
           AcceptMultiLineTextIntent: CallbackAction<AcceptMultiLineTextIntent>(
             onInvoke: (_) {
-              this._updateGoal();
-              this.widget.onEnter?.call();
+              _updateGoal(advance: true);
             },
           ),
         if (!this._editing)

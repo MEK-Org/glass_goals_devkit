@@ -1,3 +1,5 @@
+import 'dart:async' show Future;
+
 import 'package:flutter/widgets.dart'
     show BuildContext, InheritedWidget, Widget;
 import 'package:goals_core/model.dart';
@@ -13,8 +15,21 @@ class GoalDragDetails {
   });
 }
 
-typedef AddGoalCallback = Function(GoalPath? parentPath, String text,
-    {TimeSlice? slice, GoalPath? pathBefore, GoalPath? pathAfter});
+/// A creation identity is available before asynchronous persistence completes.
+class AddGoalSubmission {
+  final String goalId;
+  final Future<void> completion;
+
+  const AddGoalSubmission({required this.goalId, required this.completion});
+}
+
+typedef AddGoalCallback = AddGoalSubmission Function(
+  GoalPath? parentPath,
+  String text, {
+  TimeSlice? slice,
+  GoalPath? pathBefore,
+  GoalPath? pathAfter,
+});
 
 class GoalActionsContext extends InheritedWidget {
   final Function(List<String> goalId) onSelected;
@@ -80,7 +95,8 @@ class GoalActionsContext extends InheritedWidget {
       onFocused: (GoalPath path, {bool? inPlace}) {},
       onExpanded: (GoalPath path, {bool? expanded}) {},
       onAddGoal: (GoalPath? parentPath, String text,
-          {TimeSlice? slice, GoalPath? pathBefore, GoalPath? pathAfter}) {},
+          {TimeSlice? slice, GoalPath? pathBefore, GoalPath? pathAfter}) =>
+          AddGoalSubmission(goalId: '', completion: Future.value()),
       onUnarchive: (GoalPath? goalId) {},
       onArchive: (GoalPath? goalId) {},
       onDone: (GoalPath? goalId, DateTime? dateTime) {},
