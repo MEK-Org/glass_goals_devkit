@@ -156,6 +156,23 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
     if (removed != null && mounted) setState(() {});
   }
 
+  void _retirePendingGoalAfterTreePass(String id) {
+    final registry = _pendingGoalRegistry;
+    if (registry == null) {
+      _removePendingGoal(id);
+      return;
+    }
+    registry.beginRetirement(id);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_pendingGoals.containsKey(id)) return;
+      if (registry.isRetirementReady(id)) {
+        _removePendingGoal(id);
+      } else {
+        _retirePendingGoalAfterTreePass(id);
+      }
+    });
+  }
+
   /// Switches the row into editing mode and focuses the text field *after*
   /// it has been inserted into the tree. Requesting focus in the same turn we
   /// flip `_editing` to true (which is what we used to do) requests focus on a
@@ -251,9 +268,10 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
     }
     try {
       await submission.completion;
-      // A tree can only acknowledge rows it renders. Once the save succeeds,
-      // a row outside every visible slice must not remain pending forever.
-      _removePendingGoal(submission.goalId);
+      // Wait for a post-success tree pass. A rendered row hands off without a
+      // blank frame; a slice that cannot render the goal retires its row once
+      // that pass proves the absence.
+      _retirePendingGoalAfterTreePass(submission.goalId);
       if (!mounted ||
           !pathsMatch(widget.path, path) ||
           _draftRevision != revision ||

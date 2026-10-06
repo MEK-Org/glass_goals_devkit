@@ -10,11 +10,19 @@ import 'services/pending_operation_service.dart' show PendingOperationService;
 class PendingGoalRegistry {
   final Set<String> _registeredGoalIds = {};
   final Set<String> _renderedGoalIds = {};
+  final Set<String> _retiringGoalIds = {};
+  final Set<String> _unrenderableGoalIds = {};
 
   bool isRendered(String goalId) => _renderedGoalIds.contains(goalId);
 
+  bool isRetirementReady(String goalId) =>
+      _renderedGoalIds.contains(goalId) ||
+      _unrenderableGoalIds.contains(goalId);
+
   void register(String goalId) {
     _registeredGoalIds.add(goalId);
+    _retiringGoalIds.remove(goalId);
+    _unrenderableGoalIds.remove(goalId);
   }
 
   void acknowledge(String goalId) {
@@ -23,14 +31,36 @@ class PendingGoalRegistry {
     }
   }
 
+  /// Marks [goalId] for retirement after a tree has processed the successful
+  /// save. This deliberately starts after completion so a held save cannot be
+  /// retired by a stale tree pass.
+  void beginRetirement(String goalId) {
+    if (_registeredGoalIds.contains(goalId)) {
+      _retiringGoalIds.add(goalId);
+    }
+  }
+
+  /// Records that a flattened tree has finished a pass without rendering each
+  /// retiring pending goal. Such a row belongs to an unavailable slice and can
+  /// now leave without waiting forever for an acknowledgement.
+  void completeRenderPass() {
+    _unrenderableGoalIds.addAll(
+      _retiringGoalIds.where((id) => !_renderedGoalIds.contains(id)),
+    );
+  }
+
   void forget(String goalId) {
     _registeredGoalIds.remove(goalId);
     _renderedGoalIds.remove(goalId);
+    _retiringGoalIds.remove(goalId);
+    _unrenderableGoalIds.remove(goalId);
   }
 
   void dispose() {
     _registeredGoalIds.clear();
     _renderedGoalIds.clear();
+    _retiringGoalIds.clear();
+    _unrenderableGoalIds.clear();
   }
 }
 

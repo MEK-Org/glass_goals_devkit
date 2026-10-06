@@ -496,6 +496,7 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
     for (final item in flattenedGoals) {
       pendingGoalRegistry?.acknowledge(item.path.goalId);
     }
+    pendingGoalRegistry?.completeRenderPass();
     if (mounted) {
       setState(() {
         this._flattenedGoalItems = flattenedGoals;

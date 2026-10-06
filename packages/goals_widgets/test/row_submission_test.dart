@@ -326,16 +326,17 @@ void main() {
     expect(find.text('New goal', findRichText: true), findsOneWidget);
     expect(find.byKey(const ValueKey('pending-goal-created-1')), findsOneWidget);
 
-    await h.finish();
+    h.remote.release();
 
-    for (var i = 0; i < 3; i++) {
+    for (var i = 0; i < 4; i++) {
       await tester.pump(const Duration(milliseconds: 16));
       expect(find.text('New goal', findRichText: true), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('pending-goal-created-1')),
-        findsNothing,
-      );
     }
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('pending-goal-created-1')),
+      findsNothing,
+    );
     await h.reload('created-1', 'New goal');
   });
   for (final slot in [-1, 0]) {
