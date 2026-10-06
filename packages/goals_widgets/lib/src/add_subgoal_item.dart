@@ -162,15 +162,7 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
       _removePendingGoal(id);
       return;
     }
-    registry.beginRetirement(id);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_pendingGoals.containsKey(id)) return;
-      if (registry.isRetirementReady(id)) {
-        _removePendingGoal(id);
-      } else {
-        _retirePendingGoalAfterTreePass(id);
-      }
-    });
+    registry.beginRetirement(id, () => _removePendingGoal(id));
   }
 
   /// Switches the row into editing mode and focuses the text field *after*
@@ -268,9 +260,9 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
     }
     try {
       await submission.completion;
-      // Wait for a post-success tree pass. A rendered row hands off without a
-      // blank frame; a slice that cannot render the goal retires its row once
-      // that pass proves the absence.
+      // Ask the trees for a post-success pass. A rendered row hands off
+      // without a blank frame; a goal no tree renders or is still loading
+      // retires its row once those passes prove the absence.
       _retirePendingGoalAfterTreePass(submission.goalId);
       if (!mounted ||
           !pathsMatch(widget.path, path) ||

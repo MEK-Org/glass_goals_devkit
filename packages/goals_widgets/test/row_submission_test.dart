@@ -314,31 +314,63 @@ void main() {
     expect(h.pendingGoalRegistry.isRendered('created-1'), isFalse);
     await h.reload('created-1', 'New goal');
   });
-  testWidgets('rendered tree handoff keeps one goal representation', (
-    tester,
-  ) async {
-    final h = _Harness(tester, tree: true, usePendingRegistry: true);
+  testWidgets('hidden tree add retires after an early echo', (tester) async {
+    final h = _Harness(
+      tester,
+      tree: true,
+      usePendingRegistry: true,
+      hideCreatedGoals: true,
+    );
     await h.start();
     await h.edit(adding: true);
-    h.remote.hold = true;
+    h.remote
+      ..hold = true
+      ..echo = true;
     await h.submit();
-
-    expect(find.text('New goal', findRichText: true), findsOneWidget);
-    expect(find.byKey(const ValueKey('pending-goal-created-1')), findsOneWidget);
+    // Let the echo reach the trees while the save is still held, so no tree
+    // pass is left to observe the successful completion.
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+        find.byKey(const ValueKey('pending-goal-created-1')), findsOneWidget);
 
     h.remote.release();
-
-    for (var i = 0; i < 4; i++) {
-      await tester.pump(const Duration(milliseconds: 16));
-      expect(find.text('New goal', findRichText: true), findsOneWidget);
+    for (final step in const [16, 100, 5000]) {
+      await tester.pump(Duration(milliseconds: step));
     }
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey('pending-goal-created-1')),
-      findsNothing,
-    );
+
+    expect(find.byKey(const ValueKey('pending-goal-created-1')), findsNothing);
+    h.pendingGoalRegistry.acknowledge('created-1');
+    expect(h.pendingGoalRegistry.isRendered('created-1'), isFalse);
     await h.reload('created-1', 'New goal');
   });
+  for (final (step, frames) in const [(16, 4), (1, 32)]) {
+    testWidgets('rendered tree handoff keeps one goal representation '
+        'every ${step}ms', (tester) async {
+      final h = _Harness(tester, tree: true, usePendingRegistry: true);
+      await h.start();
+      await h.edit(adding: true);
+      h.remote.hold = true;
+      await h.submit();
+
+      expect(find.text('New goal', findRichText: true), findsOneWidget);
+      expect(
+          find.byKey(const ValueKey('pending-goal-created-1')), findsOneWidget);
+
+      h.remote.release();
+
+      for (var i = 0; i < frames; i++) {
+        await tester.pump(Duration(milliseconds: step));
+        expect(find.text('New goal', findRichText: true), findsOneWidget,
+            reason: 'frame ${i + 1} at +${(i + 1) * step}ms');
+      }
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('pending-goal-created-1')),
+        findsNothing,
+      );
+      await h.reload('created-1', 'New goal');
+    });
+  }
   for (final slot in [-1, 0]) {
     testWidgets('add slot $slot hands off only after callback', (tester) async {
       final h = _Harness(tester, add: true, slot: slot);

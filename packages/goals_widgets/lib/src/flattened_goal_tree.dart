@@ -93,6 +93,9 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
   /// after the final visible set is computed.
   WatchedGoalSet? _watch;
 
+  /// Registry this tree reports its rendered and still-loading goals to.
+  PendingGoalRegistry? _pendingGoalRegistry;
+
   /// Synchronous snapshot of the watched goals. Reads the watch set's live
   /// value (rather than a copy taken off the throttled stream) so a mutation
   /// that was just awaited — and any child it adopted — is visible in the same
@@ -225,6 +228,17 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final registry = GoalWidgetsContext.maybeOf(context)?.pendingGoalRegistry;
+    if (registry != _pendingGoalRegistry) {
+      _pendingGoalRegistry?.detachTree(this);
+      _pendingGoalRegistry = registry
+        ?..attachTree(this, _updateFlattenedGoalItems);
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
     _subscriptions.add(hasMouseProvider.stream.listen((hasMouse) {
@@ -292,6 +306,8 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
     final goalMap = _goalMap;
     final priorityComparator = getPriorityComparator(goalMap);
     final List<FlattenedGoalItem> flattenedGoals = [];
+    // Reached but not yet loaded; a pending row for one of these must wait.
+    final unloadedGoalIds = <String>{};
 
     final rootGoalPaths = this.widget.rootGoalPaths ??
         syncClient.getRootGoalIds().map((id) => GoalPath([id])).toList();
@@ -335,6 +351,7 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
         if (goal == null) {
           // If the goal is not found in the map, we assume it is missing and
           // will try to load it later.
+          unloadedGoalIds.add(fullGoalPath.goalId);
           return TraversalDecision.dontRecurse;
         }
 
@@ -491,12 +508,12 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
         depth: 0,
       ));
     }
-    final pendingGoalRegistry =
-        GoalWidgetsContext.maybeOf(context)?.pendingGoalRegistry;
+    final pendingGoalRegistry = _pendingGoalRegistry;
     for (final item in flattenedGoals) {
       pendingGoalRegistry?.acknowledge(item.path.goalId);
     }
-    pendingGoalRegistry?.completeRenderPass();
+    pendingGoalRegistry?.completeRenderPass(this,
+        loadingGoalIds: unloadedGoalIds);
     if (mounted) {
       setState(() {
         this._flattenedGoalItems = flattenedGoals;
@@ -579,6 +596,10 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
       // are no longer reachable (e.g. children of a collapsed parent on
       // a later fetch) are released here.
       watch?.setIds(traversedIds);
+      // A goal this tree was still loading may now render or be proven absent.
+      if (_pendingGoalRegistry?.isLoadingFor(this) ?? false) {
+        _updateFlattenedGoalItems();
+      }
     }
   }
 
@@ -640,6 +661,7 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
       sub.cancel();
     }
     _watch?.dispose();
+    _pendingGoalRegistry?.detachTree(this);
     this._focusNode.dispose();
     super.dispose();
   }
