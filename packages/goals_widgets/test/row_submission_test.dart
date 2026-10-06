@@ -52,6 +52,7 @@ class _Harness {
       {this.tree = false,
       this.add = false,
       this.usePendingRegistry = false,
+      this.hideCreatedGoals = false,
       int slot = -1})
     : path = ValueNotifier(
         GoalPath(add ? ['root', 'childIndex:$slot'] : ['g1']),
@@ -60,6 +61,7 @@ class _Harness {
   final bool tree;
   final bool add;
   final bool usePendingRegistry;
+  final bool hideCreatedGoals;
   final ValueNotifier<GoalPath> path;
   final remote = _Remote();
   late final client = SyncClient(
@@ -132,7 +134,11 @@ class _Harness {
                                   path: const GoalPath(['ui:tree']),
                                   rootGoalPaths: snapshot.data!.keys
                                       .where(
-                                        (id) => id != 'g2' && id != 'unrelated',
+                                        (id) =>
+                                            id != 'g2' &&
+                                            id != 'unrelated' &&
+                                            (!hideCreatedGoals ||
+                                                !id.startsWith('created-')),
                                       )
                                       .map((id) => GoalPath([id]))
                                       .toList(),
@@ -283,6 +289,55 @@ void main() {
       }
     });
   }
+  testWidgets('successful hidden tree add retires its pending row and registry',
+      (
+    tester,
+  ) async {
+    final h = _Harness(
+      tester,
+      tree: true,
+      usePendingRegistry: true,
+      hideCreatedGoals: true,
+    );
+    await h.start();
+    await h.edit(adding: true);
+    h.remote.hold = true;
+    await h.submit();
+
+    expect(
+        find.byKey(const ValueKey('pending-goal-created-1')), findsOneWidget);
+
+    await h.finish();
+
+    expect(find.byKey(const ValueKey('pending-goal-created-1')), findsNothing);
+    h.pendingGoalRegistry.acknowledge('created-1');
+    expect(h.pendingGoalRegistry.isRendered('created-1'), isFalse);
+    await h.reload('created-1', 'New goal');
+  });
+  testWidgets('rendered tree handoff keeps one goal representation', (
+    tester,
+  ) async {
+    final h = _Harness(tester, tree: true, usePendingRegistry: true);
+    await h.start();
+    await h.edit(adding: true);
+    h.remote.hold = true;
+    await h.submit();
+
+    expect(find.text('New goal', findRichText: true), findsOneWidget);
+    expect(find.byKey(const ValueKey('pending-goal-created-1')), findsOneWidget);
+
+    await h.finish();
+
+    for (var i = 0; i < 3; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.text('New goal', findRichText: true), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('pending-goal-created-1')),
+        findsNothing,
+      );
+    }
+    await h.reload('created-1', 'New goal');
+  });
   for (final slot in [-1, 0]) {
     testWidgets('add slot $slot hands off only after callback', (tester) async {
       final h = _Harness(tester, add: true, slot: slot);

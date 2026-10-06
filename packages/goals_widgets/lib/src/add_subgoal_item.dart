@@ -150,6 +150,12 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
     _pendingGoals.clear();
   }
 
+  void _removePendingGoal(String id) {
+    final removed = _pendingGoals.remove(id);
+    _pendingGoalRegistry?.forget(id);
+    if (removed != null && mounted) setState(() {});
+  }
+
   /// Switches the row into editing mode and focuses the text field *after*
   /// it has been inserted into the tree. Requesting focus in the same turn we
   /// flip `_editing` to true (which is what we used to do) requests focus on a
@@ -245,6 +251,9 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
     }
     try {
       await submission.completion;
+      // A tree can only acknowledge rows it renders. Once the save succeeds,
+      // a row outside every visible slice must not remain pending forever.
+      _removePendingGoal(submission.goalId);
       if (!mounted ||
           !pathsMatch(widget.path, path) ||
           _draftRevision != revision ||
@@ -261,14 +270,7 @@ class _AddSubgoalItemWidgetState extends State<AddSubgoalItemWidget> {
         );
       }
     } catch (_) {
-      if (mounted) {
-        setState(() {
-          _pendingGoals.remove(submission.goalId);
-        });
-      } else {
-        _pendingGoals.remove(submission.goalId);
-      }
-      _pendingGoalRegistry?.forget(submission.goalId);
+      _removePendingGoal(submission.goalId);
       if (mounted &&
           pathsMatch(widget.path, path) &&
           _draftRevision == revision &&
