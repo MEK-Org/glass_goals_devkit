@@ -23,8 +23,8 @@ dependencies:
   intl: any
   multi_split_view:
     git:
-      url: https://github.com/AlabasterAxe/multi_split_view
-      ref: master
+      url: https://github.com/MEK-Org/multi_split_view.git
+      ref: mek-org
   google_fonts: ^6.1.0
   rxdart: ^0.28.0
   fade_shimmer: ^2.4.0
