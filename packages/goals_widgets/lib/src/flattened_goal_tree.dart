@@ -975,7 +975,16 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
                 final index = _flattenedGoalItems.indexWhere(
                     (item) => pathsMatch(item.path, hoverEventStream.value));
                 if (index == -1) return;
-                if (index < _flattenedGoalItems.length - 1) {
+                if (index == 0) {
+                  if (_flattenedGoalItems.length > 1 &&
+                      parseChildIndexPathPart(
+                              _flattenedGoalItems[1].path.goalId) ==
+                          null) {
+                    hoverEventStream.add(_flattenedGoalItems[1].path);
+                  } else {
+                    hoverEventStream.add(null);
+                  }
+                } else if (index < _flattenedGoalItems.length - 1) {
                   hoverEventStream.add(_flattenedGoalItems[index - 1].path);
                 } else {
                   hoverEventStream.add(null);
