@@ -77,6 +77,19 @@ class _GoalSeparatorState extends State<GoalSeparator> {
   }
 
   @override
+  void didUpdateWidget(GoalSeparator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final shouldAdjacentHover =
+        pathsMatch(hoverEventStream.value, widget.nextGoalPath) ||
+        pathsMatch(hoverEventStream.value, widget.prevGoalPath);
+    if (_adjacentHover != shouldAdjacentHover) {
+      setState(() {
+        _adjacentHover = shouldAdjacentHover;
+      });
+    }
+  }
+
+  @override
   dispose() {
     for (final subscription in _subscriptions) {
       subscription.cancel();

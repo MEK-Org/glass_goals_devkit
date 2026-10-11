@@ -22,7 +22,8 @@ import 'package:goals_ui_core/core.dart'
         selectedGoalsProvider,
         textFocusProvider,
         worldContextProvider;
-import 'package:goals_widgets/goals_widgets.dart' show FlattenedGoalTree;
+import 'package:goals_widgets/goals_widgets.dart'
+    show FlattenedGoalTree, GoalItemWidget;
 
 class _Remote extends MemoryPersistenceService {
   Future<void> persist(List<Op> batch) => super.save([
@@ -98,13 +99,19 @@ void main() {
                     }
                   },
                   child: FlattenedGoalTree(
+                    predicate: (worldContext, goalMap, path, goal) =>
+                        getGoalStatus(worldContext, goal)?.status !=
+                        GoalStatus.archived,
                     showAddGoal: showAddGoal,
                     rootGoalPaths: rootGoalPaths ?? [
                       GoalPath(const ['g1']),
                       GoalPath(const ['g2']),
                       GoalPath(const ['g3']),
                     ],
-                    hoverActionsBuilder: (_) => const SizedBox.shrink(),
+                    hoverActionsBuilder: (path) => KeyedSubtree(
+                      key: ValueKey('hover-action-${path?.goalId}'),
+                      child: const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
@@ -113,6 +120,32 @@ void main() {
         ),
       ),
     );
+  }
+
+  bool isGoalItemRenderedHovered(WidgetTester tester, String goalId) {
+    final itemFinder = find.byWidgetPredicate(
+      (w) => w is GoalItemWidget && w.path == GoalPath([goalId]),
+    );
+    if (itemFinder.evaluate().isEmpty) return false;
+
+    final hasHoverAction = find
+        .descendant(
+          of: itemFinder,
+          matching: find.byKey(ValueKey('hover-action-$goalId')),
+        )
+        .evaluate()
+        .isNotEmpty;
+
+    final context = tester.element(itemFinder);
+    final hoverColor = Theme.of(context).hoverColor;
+    final containers = tester.widgetList<Container>(
+      find.descendant(of: itemFinder, matching: find.byType(Container)),
+    );
+    final hasHoverBackground = containers.any((c) =>
+        c.decoration is BoxDecoration &&
+        (c.decoration as BoxDecoration).color == hoverColor);
+
+    return hasHoverAction && hasHoverBackground;
   }
 
   testWidgets(
@@ -125,12 +158,25 @@ void main() {
     hoverEventStream.add(GoalPath(const ['g1']));
     await tester.pumpAndSettle();
 
+    expect(isGoalItemRenderedHovered(tester, 'g1'), isTrue);
+    expect(isGoalItemRenderedHovered(tester, 'g2'), isFalse);
+    expect(isGoalItemRenderedHovered(tester, 'g3'), isFalse);
+
     // Press Backspace
     await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
     await tester.pumpAndSettle();
 
     expect(archivedPaths, equals([GoalPath(const ['g1'])]));
     expect(hoverEventStream.value, equals(GoalPath(const ['g2'])));
+
+    // g1 should be removed from the rendered tree
+    expect(find.text('Goal 1'), findsNothing);
+
+    // Rendered hover verification: new first row (g2) must carry hover, g3 must not
+    expect(isGoalItemRenderedHovered(tester, 'g2'), isTrue,
+        reason: 'The new first row (g2) must visibly render hovered');
+    expect(isGoalItemRenderedHovered(tester, 'g3'), isFalse,
+        reason: 'The formerly third row (g3) must NOT render hovered');
   });
 
   testWidgets(
@@ -143,12 +189,17 @@ void main() {
     hoverEventStream.add(GoalPath(const ['g2']));
     await tester.pumpAndSettle();
 
+    expect(isGoalItemRenderedHovered(tester, 'g2'), isTrue);
+
     // Press Backspace
     await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
     await tester.pumpAndSettle();
 
     expect(archivedPaths, equals([GoalPath(const ['g2'])]));
     expect(hoverEventStream.value, equals(GoalPath(const ['g1'])));
+    expect(find.text('Goal 2'), findsNothing);
+    expect(isGoalItemRenderedHovered(tester, 'g1'), isTrue);
+    expect(isGoalItemRenderedHovered(tester, 'g3'), isFalse);
   });
 
   testWidgets(
@@ -161,12 +212,17 @@ void main() {
     hoverEventStream.add(GoalPath(const ['g3']));
     await tester.pumpAndSettle();
 
+    expect(isGoalItemRenderedHovered(tester, 'g3'), isTrue);
+
     // Press Backspace
     await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
     await tester.pumpAndSettle();
 
     expect(archivedPaths, equals([GoalPath(const ['g3'])]));
     expect(hoverEventStream.value, isNull);
+    expect(find.text('Goal 3'), findsNothing);
+    expect(isGoalItemRenderedHovered(tester, 'g1'), isFalse);
+    expect(isGoalItemRenderedHovered(tester, 'g2'), isFalse);
   });
 
   testWidgets(
@@ -179,12 +235,17 @@ void main() {
     hoverEventStream.add(GoalPath(const ['g3']));
     await tester.pumpAndSettle();
 
+    expect(isGoalItemRenderedHovered(tester, 'g3'), isTrue);
+
     // Press Backspace
     await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
     await tester.pumpAndSettle();
 
     expect(archivedPaths, equals([GoalPath(const ['g3'])]));
     expect(hoverEventStream.value, equals(GoalPath(const ['g2'])));
+    expect(find.text('Goal 3'), findsNothing);
+    expect(isGoalItemRenderedHovered(tester, 'g2'), isTrue);
+    expect(isGoalItemRenderedHovered(tester, 'g1'), isFalse);
   });
 
   testWidgets(
@@ -197,11 +258,13 @@ void main() {
 
     hoverEventStream.add(GoalPath(const ['g1']));
     await tester.pumpAndSettle();
+    expect(isGoalItemRenderedHovered(tester, 'g1'), isTrue);
     await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
     await tester.pumpAndSettle();
 
     expect(archivedPaths, equals([GoalPath(const ['g1'])]));
     expect(hoverEventStream.value, isNull);
+    expect(find.text('Goal 1'), findsNothing);
 
     archivedPaths.clear();
 
@@ -212,11 +275,13 @@ void main() {
 
     hoverEventStream.add(GoalPath(const ['g2']));
     await tester.pumpAndSettle();
+    expect(isGoalItemRenderedHovered(tester, 'g2'), isTrue);
     await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
     await tester.pumpAndSettle();
 
     expect(archivedPaths, equals([GoalPath(const ['g2'])]));
     expect(hoverEventStream.value, isNull);
+    expect(find.text('Goal 2'), findsNothing);
   });
 
   testWidgets(

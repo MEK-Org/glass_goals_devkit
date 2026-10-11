@@ -674,7 +674,7 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
     final shouldAnimate =
         swipingPath != null && thisPath.startsWith(swipingPath);
     return GestureDetector(
-      key: ValueKey(itemIndex),
+      key: ValueKey(thisPath),
       behavior: HitTestBehavior.translucent,
       onHorizontalDragStart: (DragStartDetails deets) {
         setState(() {
@@ -745,6 +745,7 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
       final flattenedGoal = this._flattenedGoalItems[i];
       final goalId = flattenedGoal.path.goalId;
       goalItems.add(GoalSeparator(
+          key: ValueKey("separator:${flattenedGoal.path}"),
           isFirst: i == 0,
           prevGoalPath: prevGoal?.path ?? [...this.widget.path],
           nextGoalPath: flattenedGoal.path,
@@ -779,6 +780,7 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
       goalItems.add(parseChildIndexPathPart(goalId) == null
           ? _swipeWrap(
               child: GoalItemWidget(
+                key: ValueKey(flattenedGoal.path),
                 onFileDropOnGoal: widget.onFileDropOnGoal,
                 onDropGoal: (details) {
                   onDropGoal(
@@ -841,6 +843,7 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
               ),
               itemIndex: i)
           : AddSubgoalItemWidget(
+              key: ValueKey(flattenedGoal.path),
               path: flattenedGoal.path,
               prevSiblingPath: _getPrevSiblingPath(i),
               nextSiblingPath: this
@@ -860,6 +863,7 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
     if (!this.widget.showAddGoal && this._flattenedGoalItems.isNotEmpty) {
       goalItems.add(
         GoalSeparator(
+          key: const ValueKey("separator:last"),
           goalMap: goalMap,
           isFirst: false,
           prevGoalPath: this._flattenedGoalItems.last.path,
