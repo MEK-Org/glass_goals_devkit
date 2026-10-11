@@ -268,6 +268,12 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
       _textController.clear();
       _watch?.setIds(widget.path);
     }
+    final shouldHover = pathsMatch(hoverEventStream.value, widget.path);
+    if (_hovering != shouldHover) {
+      setState(() {
+        _hovering = shouldHover;
+      });
+    }
   }
 
   static bool _pathEquals(GoalPath a, GoalPath b) {
