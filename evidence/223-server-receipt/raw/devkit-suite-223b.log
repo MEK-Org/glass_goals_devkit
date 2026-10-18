@@ -1,0 +1,2617 @@
+# cmd: dart test
+# cwd: /home/siliconfamiliar_ismattkelleraliv/.rusa/workers/0e21b069-8234-4534-ba54-f201fff22d55/gg-223/third_party/glass_goals_devkit/packages/goals_core
+# started_utc: 2026-10-18T13:02:21.737Z
+# git_head: 51e15c430de01c7243bb59481002de2ae532c7a3 dirty_lines=4
+# dart: Dart SDK version: 3.10.3 (stable) (Tue Dec 2 01:04:53 2025 -0800) on "linux_x64"
+# ---
+00:00 +0: loading test/goal_path_test.dart
+00:00 +0: test/goal_path_test.dart: GoalPath Equality
+00:00 +1: test/goal_path_test.dart: not equal
+00:00 +2: test/goal_path_test.dart: List Contains
+00:00 +3: test/goal_path_test.dart: ends with
+00:00 +4: test/goal_path_test.dart: containsPath
+00:00 +5: test/note_history_test.dart: coalesces chained note updates and archives by the current identity
+00:00 +6: test/instance_test.dart: create instance status entry adds new goal to goal map
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:00 +7: test/instance_test.dart: setting status on origin does not set status on instance
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:00 +8: test/instance_test.dart: setting status on instance subgoal does not affect origin subgoal
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:00 +9: test/instance_test.dart: get instance path
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:00 +10: test/instance_test.dart: get instance path, non instance
+00:00 +11: test/instance_test.dart: get instance path, nested instance
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:00 +12: test/instance_test.dart: doubly nested instance statuses do not go back
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:00 +13: test/instance_test.dart: Rename Instance
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=5
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:00 +14: test/instance_test.dart: Load Instance
+  Skip: Not Passing Yet
+00:00 +14 ~1: test/query_test.dart: getActiveGoalExpiringSoonest
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +15 ~1: test/query_test.dart: getActiveGoalExpiringSoonest, unset active
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +16 ~1: test/date_utils_test.dart: status is between dates
+00:01 +16 ~1: test/query_test.dart: getGoalStatus, happy path
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +17 ~1: test/date_utils_test.dart: status is between dates
+00:01 +17 ~1: test/query_test.dart: getGoalStatus, archived status
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +18 ~1: test/date_utils_test.dart: status is between dates
+00:01 +18 ~1: test/query_test.dart: getGoalStatus, patches
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +19 ~1: test/date_utils_test.dart: status is between dates
+00:01 +20 ~1: test/query_test.dart: getGoalsRequiringAttention, clustering
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +21 ~1: test/query_test.dart: getGoalsRequiringAttention, subclustering
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +22 ~1: test/query_test.dart: getTransitiveSubgoals
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +23 ~1: test/query_test.dart: getTransitiveSubgoals, with predicate
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +24 ~1: test/query_test.dart: traverseDown
+00:01 +25 ~1: test/query_test.dart: traverseAllAsync loads children
+00:01 +26 ~1: test/query_test.dart: traverseAllAsync, breadth first
+00:01 +27 ~1: test/query_test.dart: traverseAllAsync, depth first
+00:01 +28 ~1: test/query_test.dart: traverseAll, breadth first
+00:01 +29 ~1: test/query_test.dart: traverseAll, depth first
+00:01 +30 ~1: test/query_test.dart: traverseUp
+00:01 +31 ~1: test/query_test.dart: traverseDown, stopTraversal
+00:01 +32 ~1: test/query_test.dart: traverseDown, dontRecurse
+00:01 +33 ~1: test/query_test.dart: traverseDown, dontRecurse
+00:01 +34 ~1: test/query_test.dart: traverseDown, missing from map
+00:01 +35 ~1: test/query_test.dart: traverseDownAsync, depth first
+00:01 +36 ~1: test/query_test.dart: traverseDownAsync sorts cold children with childTraversalComparatorAsync and preserves onVisit loaded-goal access
+00:01 +37 ~1: test/query_test.dart: async traversals reject both childTraversalComparator and childTraversalComparatorAsync before visiting
+00:01 +38 ~1: test/query_test.dart: traverseDownAsync, breadth first
+00:01 +39 ~1: test/query_test.dart: getAbbreviatedLogEntries
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +40 ~1: test/query_test.dart: traverseParallelLoad loads and visits all goals in tree
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _pull: start cursor=001792328545749:00000:5qTy
+[SYNC-DIAG] _pull: loaded 4 ops, newCursor=001792328545750:00007:5qTy
+[SYNC-DIAG] _pull: end cursor=001792328545750:00007:5qTy
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328545750:00007:5qTy unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328545750:00007:5qTy
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328545750:00007:5qTy
+[SYNC-DIAG] _pull: end cursor=001792328545750:00007:5qTy
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:01 +41 ~1: test/query_test.dart: traverseParallelLoad loads and visits all goals in deeper tree
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=6 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=6
+[SYNC-DIAG] _push: save resolved successfully for 6 ops
+[SYNC-DIAG] _push: end unsyncedCount=7
+[SYNC-DIAG] _pull: start cursor=001792328545856:00000:QTB8
+[SYNC-DIAG] _pull: loaded 6 ops, newCursor=001792328545857:0000b:QTB8
+[SYNC-DIAG] _pull: end cursor=001792328545857:0000b:QTB8
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328545857:0000b:QTB8
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328545857:0000b:QTB8
+[SYNC-DIAG] _pull: end cursor=001792328545857:0000b:QTB8
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328545857:0000b:QTB8 unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328545857:0000b:QTB8
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328545857:0000b:QTB8
+[SYNC-DIAG] _pull: end cursor=001792328545857:0000b:QTB8
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:01 +42 ~1: test/goal_names_index_test.dart: Goal Names Index creates and maintains index correctly
+00:01 +43 ~1: test/goal_names_index_test.dart: Goal Names Index creates and maintains index correctly
+[SYNC-DIAG] SyncClient.init: start
+00:01 +44 ~1: test/goal_names_index_test.dart: Goal Names Index creates and maintains index correctly
+00:01 +45 ~1: test/goal_names_index_test.dart: Goal Names Index creates and maintains index correctly
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+00:01 +46 ~1: test/goal_names_index_test.dart: Goal Names Index creates and maintains index correctly
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+00:01 +47 ~1: test/goal_names_index_test.dart: Goal Names Index creates and maintains index correctly
+[SYNC-DIAG] _pull: end cursor=null
+00:01 +48 ~1: test/goal_names_index_test.dart: Goal Names Index creates and maintains index correctly
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+00:01 +49 ~1: test/goal_names_index_test.dart: Goal Names Index creates and maintains index correctly
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=3 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=3
+[SYNC-DIAG] _push: save resolved successfully for 3 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+00:01 +50 ~1: test/goal_names_index_test.dart: Goal Names Index updates index when goal text changes
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:01 +51 ~1: test/goal_names_index_test.dart: Goal Names Index handles case-insensitive search
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:01 +52 ~1: test/goal_names_index_test.dart: Goal Names Index handles empty search correctly
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:01 +53 ~1: test/goal_names_index_test.dart: Goal Names Index search returns ids for goals never loaded into the working set (persisted grandchildren of an unloaded subtree) (#77)
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=3 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=3
+[SYNC-DIAG] _push: save resolved successfully for 3 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328546103:00005:e8Cu unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328546103:00005:e8Cu
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328546103:00005:e8Cu
+[SYNC-DIAG] _pull: end cursor=001792328546103:00005:e8Cu
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:01 +54 ~1: test/book_metadata_test.dart: (setUpAll)
+00:01 +54 ~1: test/book_metadata_test.dart: BookLogEntry round-trips through the book module
+00:01 +55 ~1: test/book_metadata_test.dart: BookSectionLogEntry still parses through the book module
+00:01 +56 ~1: test/book_metadata_test.dart: (tearDownAll)
+00:01 +56 ~1: test/compressed_uuid_test.dart: UUID round trip
+00:01 +57 ~1: test/compressed_uuid_test.dart: detects invalid encoded value
+Invalid UUID bytes: [178, 137, 158, 173, 169, 221, 162, 107, 45, 174, 41, 224], maskedValue: 755583248945161661579264
+00:01 +58 ~1: test/compressed_uuid_test.dart: decode works
+00:01 +59 ~1: test/compressed_uuid_test.dart: toNewId
+Invalid UUID bytes: [178, 137, 158, 173, 169, 221, 162, 107, 45, 174, 41, 224], maskedValue: 755583248945161661579264
+Invalid UUID bytes: [178, 137, 158, 173, 169, 221, 162, 107, 45, 174, 41, 224], maskedValue: 755583248945161661579264
+00:01 +60 ~1: test/sync/sync_client_reactive_watch_test.dart: reactive watch sets a watched parent adopts a newly-added child by the time the modify future resolves
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:02 +61 ~1: test/sync/local_store_test.dart: MemoryLocalStore storeSyncedOps indexes simple DeltaOp
+00:02 +61 ~1: test/sync/sync_client_reactive_watch_test.dart: reactive watch sets an adopted child is dropped again once the parent no longer lists it
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:02 +62 ~1: test/sync/local_store_test.dart: MemoryLocalStore storeSyncedOps indexes simple DeltaOp
+00:02 +63 ~1: test/sync/local_store_test.dart: MemoryLocalStore storeSyncedOps indexes AddParentLogEntry for child and parent
+00:02 +64 ~1: test/sync/local_store_test.dart: MemoryLocalStore getIndexedOpsForGoal retrieves multiple ops
+00:02 +65 ~1: test/sync/local_store_test.dart: MemoryLocalStore getIndexedOpsForGoal returns empty for non-existent goal
+00:02 +66 ~1: test/sync/local_store_test.dart: MemoryLocalStore evictCachedOps evicts ops older than before
+00:02 +67 ~1: test/sync/sync_client_test.dart: add subgoal
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +67 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef loads the goal and pins it
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +67 ~1: test/sync/sync_client_test.dart: add subgoal
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +67 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef loads the goal and pins it
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +67 ~1: test/sync/sync_client_test.dart: add subgoal
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +68 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef loads the goal and pins it
+00:02 +68 ~1: test/sync/sync_client_test.dart: add subsubgoal
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +69 ~1: test/sync/sync_client_test.dart: add subsubgoal
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +70 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef multiple refs to the same id share the pin count
+00:02 +70 ~1: test/sync/sync_client_test.dart: modifies existing goal
+[SYNC-DIAG] SyncClient.init: start
+00:02 +70 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef multiple refs to the same id share the pin count
+[SYNC-DIAG] SyncClient.init: start
+00:02 +70 ~1: test/sync/sync_client_test.dart: modifies existing goal
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+00:02 +70 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef multiple refs to the same id share the pin count
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+00:02 +70 ~1: test/sync/sync_client_test.dart: modifies existing goal
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +70 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef multiple refs to the same id share the pin count
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +70 ~1: test/sync/sync_client_test.dart: modifies existing goal
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +70 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef multiple refs to the same id share the pin count
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +70 ~1: test/sync/sync_client_test.dart: modifies existing goal
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +71 ~1: test/sync/sync_client_test.dart: modifies existing goal
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +71 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef dispose is idempotent
+[SYNC-DIAG] SyncClient.init: start
+00:02 +72 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef dispose is idempotent
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +72 ~1: test/sync/sync_client_test.dart: applies 2 ops
+[SYNC-DIAG] SyncClient.init: start
+00:02 +73 ~1: test/sync/sync_client_test.dart: applies 2 ops
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +73 ~1: test/sync/sync_client_phase_b_test.dart: loadGoalRef / GoalRef goal is null for a never-loaded id
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +74 ~1: test/sync/sync_client_test.dart: applies 2 ops
+00:02 +74 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet emits the current value on first listen
+[SYNC-DIAG] SyncClient.init: start
+00:02 +74 ~1: test/sync/sync_client_test.dart: applies 2 ops
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +74 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet emits the current value on first listen
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +74 ~1: test/sync/sync_client_test.dart: applies 2 ops
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +75 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet emits the current value on first listen
+00:02 +75 ~1: test/sync/sync_client_test.dart: rehomes goal
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +76 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet emits the current value on first listen
+00:02 +76 ~1: test/sync/sync_client_test.dart: undo
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +77 ~1: test/sync/sync_client_test.dart: undo
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +77 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet pins watched ids, unpins on dispose
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +77 ~1: test/sync/sync_client_test.dart: undo
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +77 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet pins watched ids, unpins on dispose
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +77 ~1: test/sync/sync_client_test.dart: undo
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +78 ~1: test/sync/sync_client_test.dart: undo
+00:02 +79 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet emits when an op modifies a watched goal
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +79 ~1: test/sync/sync_client_test.dart: indexed correctly
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+00:02 +79 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet emits when an op modifies a watched goal
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +79 ~1: test/sync/sync_client_test.dart: indexed correctly
+[SYNC-DIAG] _pull: start cursor=null
+00:02 +79 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet emits when an op modifies a watched goal
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +79 ~1: test/sync/sync_client_test.dart: indexed correctly
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:02 +80 ~1: test/sync/sync_client_test.dart: indexed correctly
+00:02 +80 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet does not emit when an op modifies only unwatched goals
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +81 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet does not emit when an op modifies only unwatched goals
+00:02 +82 ~1: test/sync/sync_client_test.dart: undo, persistence
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+00:02 +82 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet multiple watchers of the same id share the pin
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +82 ~1: test/sync/sync_client_test.dart: undo, persistence
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +82 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet multiple watchers of the same id share the pin
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +82 ~1: test/sync/sync_client_test.dart: undo, persistence
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+00:02 +83 ~1: test/sync/sync_client_test.dart: undo, persistence
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+00:02 +83 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet add/remove/setIds adjust pins idempotently
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +83 ~1: test/sync/sync_client_test.dart: undo, persistence
+[SYNC-DIAG] SyncClient.init: start
+00:02 +83 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet add/remove/setIds adjust pins idempotently
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +84 ~1: test/sync/sync_client_test.dart: undo, persistence
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328547002:00001:F1Tc unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328547002:00001:F1Tc
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328547002:00001:F1Tc
+00:02 +84 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet undo wakes only the watcher whose goal was affected
+[SYNC-DIAG] SyncClient.init: start
+00:02 +84 ~1: test/sync/sync_client_test.dart: undo, persistence
+[SYNC-DIAG] _pull: end cursor=001792328547002:00001:F1Tc
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+00:02 +84 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet undo wakes only the watcher whose goal was affected
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +84 ~1: test/sync/sync_client_test.dart: undo, persistence
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +84 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet undo wakes only the watcher whose goal was affected
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +85 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet undo wakes only the watcher whose goal was affected
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +85 ~1: test/sync/sync_client_test.dart: redo, persistence
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328547024:00003:ftPX unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328547024:00003:ftPX
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328547024:00003:ftPX
+[SYNC-DIAG] _pull: end cursor=001792328547024:00003:ftPX
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +86 ~1: test/sync/sync_client_test.dart: redo, persistence
+00:02 +86 ~1: test/sync/sync_client_phase_b_test.dart: watchGoals / WatchedGoalSet cold subscribe: subject wakes once the goal loads
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +87 ~1: test/sync/sync_client_test.dart: redo, persistence
+00:02 +88 ~1: test/sync/sync_client_test.dart: create instance
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+[SYNC-DIAG] _push: skipped (no persistenceService)
+00:02 +89 ~1: test/sync/sync_client_test.dart: modifying a not-yet-loaded grandchild causes it to load
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328547059:00002:Cq9O unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328547059:00002:Cq9O
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=001792328547059:00002:Cq9O
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:02 +90 ~1: test/sync/sync_client_test.dart: edit goal without goal name
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:02 +91 ~1: test/sync/sync_client_test.dart: not performing unnecessary saves
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:02 +92 ~1: test/sync/sync_client_test.dart: simulate reload
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328547111:00001:1QtQ unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328547111:00001:1QtQ
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328547111:00001:1QtQ
+[SYNC-DIAG] _pull: end cursor=001792328547111:00001:1QtQ
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +93 ~1: test/sync/sync_client_test.dart: async emit reflects the modification once its future resolves
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:02 +94 ~1: test/sync/sync_client_test.dart: loadGoal correctly loads goal
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328547130:00002:e6iN unsyncedCount=1
+[SYNC-DIAG] _pull: start cursor=001792328547130:00002:e6iN
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328547130:00002:e6iN
+[SYNC-DIAG] _pull: end cursor=001792328547130:00002:e6iN
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +95 ~1: test/sync/sync_client_test.dart: simple reload test
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328547156:00003:A9jo unsyncedCount=1
+[SYNC-DIAG] _pull: start cursor=001792328547156:00003:A9jo
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328547156:00003:A9jo
+[SYNC-DIAG] _pull: end cursor=001792328547156:00003:A9jo
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +96 ~1: test/sync/sync_client_test.dart: loadGoal should load child relationships even if child has already been loaded
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328547174:00005:Vllr unsyncedCount=1
+[SYNC-DIAG] _pull: start cursor=001792328547174:00005:Vllr
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328547174:00005:Vllr
+[SYNC-DIAG] _pull: end cursor=001792328547174:00005:Vllr
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:02 +97 ~1: test/sync/sync_client_test.dart: remote ops for already-loaded goals trigger a stateSubject emit
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 1 ops, newCursor=001792328547222:00001:Vyv0
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:02 +98 ~1: test/sync/sync_client_perf_test.dart: add-child time vs corpus size
+  Skip: manual perf benchmark — run with RUN_PERF_TESTS=1
+00:03 +98 ~2: test/sync/sync_client_server_receipt_test.dart: successful push keeps the op pending and visible until the server echo acknowledges it once
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+00:03 +98 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+[SYNC-DIAG] SyncClient.init: start
+00:03 +98 ~2: test/sync/sync_client_server_receipt_test.dart: successful push keeps the op pending and visible until the server echo acknowledges it once
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+00:03 +98 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:03 +98 ~2: test/sync/sync_client_server_receipt_test.dart: successful push keeps the op pending and visible until the server echo acknowledges it once
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+00:03 +98 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+00:03 +98 ~2: test/sync/sync_client_server_receipt_test.dart: successful push keeps the op pending and visible until the server echo acknowledges it once
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:03 +98 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+00:03 +99 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+[SYNC-DIAG] _push: end unsyncedCount=4
+00:03 +99 ~2: test/sync/sync_client_server_receipt_test.dart: cold restart before the echo keeps the change and does not resend it
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=2
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=2
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:03 +100 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+00:03 +100 ~2: test/sync/sync_client_server_receipt_test.dart: cold restart acknowledges pushed ops received by the initial pull
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+00:03 +100 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+00:03 +100 ~2: test/sync/sync_client_server_receipt_test.dart: cold restart acknowledges pushed ops received by the initial pull
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:03 +100 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+[SYNC-DIAG] _push: end unsyncedCount=6
+00:03 +100 ~2: test/sync/sync_client_server_receipt_test.dart: cold restart acknowledges pushed ops received by the initial pull
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=1
+[SYNC-DIAG] _pull: start cursor=null
+00:03 +100 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+AddParent: a up=[b] down=[]; b up=[] down=[a]
+00:03 +100 ~2: test/sync/sync_client_server_receipt_test.dart: cold restart acknowledges pushed ops received by the initial pull
+[SYNC-DIAG] _pull: loaded 1 ops, newCursor=001792328547847:00001:726l
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:03 +101 ~2: test/sync/sync_client_cycles_test.dart: AddParent rejects both sides of a closing edge
+00:03 +101 ~2: test/sync/sync_client_server_receipt_test.dart: cold restart after the cursor passed an unreceived op still receives it
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:03 +102 ~2: test/sync/sync_client_server_receipt_test.dart: cold restart after the cursor passed an unreceived op still receives it
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 1 ops, newCursor=001792328547875:00001:ryFX
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328547888:00002:aYDP unsyncedCount=1
+[SYNC-DIAG] _pull: start cursor=001792328547874:00000:ryFX
+[SYNC-DIAG] _pull: loaded 2 ops, newCursor=001792328547888:00002:aYDP
+[SYNC-DIAG] _pull: end cursor=001792328547888:00002:aYDP
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:03 +103 ~2: test/sync/sync_client_cycles_test.dart: AddParent op graph has bounded upward traversal
+00:03 +103 ~2: test/sync/sync_client_server_receipt_test.dart: failed push stays pending and retries; success then awaits receipt
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: SAVE FAILED error=Bad state: simulated REST failure
+[SYNC-DIAG] _push: stack=#0      DelayedEchoServer.save (file:///home/siliconfamiliar_ismattkelleraliv/.rusa/workers/0e21b069-8234-4534-ba54-f201fff22d55/gg-223/third_party/glass_goals_devkit/packages/goals_core/test/sync/sync_client_server_receipt_test.dart:30:7)
+<asynchronous suspension>
+#1      SyncClient._push (package:goals_core/src/sync/sync_client.dart:1394:11)
+<asynchronous suspension>
+#2      SyncClient._handleNewUnsyncedOps (package:goals_core/src/sync/sync_client.dart:545:5)
+<asynchronous suspension>
+#3      SyncClient._modifyGoals (package:goals_core/src/sync/sync_client.dart:779:5)
+<asynchronous suspension>
+#4      SyncClient.modifyGoal (package:goals_core/src/sync/sync_client.dart:199:5)
+<asynchronous suspension>
+#5      main.<anonymous closure> (file:///home/siliconfamiliar_ismattkelleraliv/.rusa/workers/0e21b069-8234-4534-ba54-f201fff22d55/gg-223/third_party/glass_goals_devkit/packages/goals_core/test/sync/sync_client_server_receipt_test.dart:268:5)
+<asynchronous suspension>
+#6      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:15)
+<asynchronous suspension>
+#7      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#8      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+
+[_push] Save failed: Bad state: simulated REST failure
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:03 +104 ~2: test/sync/sync_client_server_receipt_test.dart: failed push stays pending and retries; success then awaits receipt
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 1 ops, newCursor=001792328547975:00000:xUls
+00:03 +104 ~2: test/sync/sync_client_cycles_test.dart: AddParent allows unloaded parent and missing ancestor
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+00:03 +104 ~2: test/sync/sync_client_server_receipt_test.dart: failed push stays pending and retries; success then awaits receipt
+[SYNC-DIAG] _pull: end cursor=null
+00:03 +104 ~2: test/sync/sync_client_cycles_test.dart: AddParent allows unloaded parent and missing ancestor
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+00:03 +104 ~2: test/sync/sync_client_server_receipt_test.dart: failed push stays pending and retries; success then awaits receipt
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+00:03 +104 ~2: test/sync/sync_client_cycles_test.dart: AddParent allows unloaded parent and missing ancestor
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+00:03 +105 ~2: test/sync/sync_client_cycles_test.dart: AddParent allows unloaded parent and missing ancestor
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+00:03 +105 ~2: test/sync/sync_client_server_receipt_test.dart: other clients converge while the author awaits its own echo
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+00:03 +105 ~2: test/sync/sync_client_cycles_test.dart: AddParent allows unloaded parent and missing ancestor
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+00:03 +105 ~2: test/sync/sync_client_server_receipt_test.dart: other clients converge while the author awaits its own echo
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+00:03 +105 ~2: test/sync/sync_client_cycles_test.dart: AddParent allows unloaded parent and missing ancestor
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+00:03 +105 ~2: test/sync/sync_client_server_receipt_test.dart: other clients converge while the author awaits its own echo
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:03 +105 ~2: test/sync/sync_client_cycles_test.dart: AddParent allows unloaded parent and missing ancestor
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+00:03 +105 ~2: test/sync/sync_client_server_receipt_test.dart: other clients converge while the author awaits its own echo
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:03 +106 ~2: test/sync/sync_client_server_receipt_test.dart: other clients converge while the author awaits its own echo
+00:03 +106 ~2: test/sync/sync_client_cycles_test.dart: SetParent rejects both sides of a closing edge
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+00:03 +106 ~2: test/sync/sync_client_server_receipt_test.dart: other clients converge while the author awaits its own echo
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:03 +106 ~2: test/sync/sync_client_cycles_test.dart: SetParent rejects both sides of a closing edge
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+00:03 +107 ~2: test/sync/sync_client_cycles_test.dart: SetParent rejects both sides of a closing edge
+SetParent: a up=[b] down=[]; b up=[] down=[a]
+00:03 +108 ~2: test/sync/sync_client_server_receipt_test.dart: undo and redo around server receipt keep op identity and order
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+00:03 +109 ~2: test/sync/sync_client_server_receipt_test.dart: undo and redo around server receipt keep op identity and order
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+00:03 +109 ~2: test/sync/sync_client_cycles_test.dart: SetParent allows unloaded parent and missing ancestor
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+00:03 +109 ~2: test/sync/sync_client_server_receipt_test.dart: undo and redo around server receipt keep op identity and order
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:03 +109 ~2: test/sync/sync_client_cycles_test.dart: SetParent allows unloaded parent and missing ancestor
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+00:03 +110 ~2: test/sync/sync_client_server_receipt_test.dart: undo and redo around server receipt keep op identity and order
+00:03 +111 ~2: test/sync/sync_client_server_receipt_test.dart: undo and redo around server receipt keep op identity and order
+00:03 +111 ~2: test/sync/sync_client_cycles_test.dart: DAG diamond keeps all parents and visits shared ancestor once
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:03 +112 ~2: test/sync/sync_client_cycles_test.dart: DAG diamond keeps all parents and visits shared ancestor once
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=8
+00:03 +113 ~2: test/sync/sync_client_cycles_test.dart: cyclic SetParent still detaches prior parents and notifies watches
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=2 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=2
+[SYNC-DIAG] _push: save resolved successfully for 2 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+00:03 +114 ~2: test/sync/sync_client_cycles_test.dart: slice cycle guard retains slice identity and relationships
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+00:03 +115 ~2: test/sync/sync_client_cycles_test.dart: two devices: A→B on one, B→A on the other, both converge acyclic after sync
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=4 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=4
+[SYNC-DIAG] _push: save resolved successfully for 4 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _pull: start cursor=001792328548336:00007:8FKT
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328548336:00007:8FKT
+[SYNC-DIAG] _pull: end cursor=001792328548336:00007:8FKT
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 4 ops, newCursor=001792328548336:00007:8FKT
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 4 ops, newCursor=001792328548336:00007:8FKT
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _pull: start cursor=001792328548351:00004:8FKT
+[SYNC-DIAG] _pull: loaded 1 ops, newCursor=001792328548374:00004:psNr
+[SYNC-DIAG] _pull: end cursor=001792328548374:00004:psNr
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328548351:00004:8FKT
+[SYNC-DIAG] _pull: loaded 1 ops, newCursor=001792328548374:00004:psNr
+[SYNC-DIAG] _pull: end cursor=001792328548351:00004:8FKT
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+00:04 +116 ~2: test/sync/sync_client_eviction_test.dart: SyncClient eviction policy resident count plateaus at the cap when all goals are unpinned
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=6
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=7
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=7
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=8
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=8
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=9
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=9
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=10
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=10
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=11
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=11
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=12
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=12
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=13
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=13
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=14
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=14
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=15
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=15
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=16
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=16
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=17
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=17
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=18
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=18
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=19
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=19
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=20
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=20
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=21
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=21
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=22
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=22
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=23
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=23
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=24
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=24
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=25
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=25
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=26
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=26
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=27
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=27
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=28
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=28
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=29
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=29
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=30
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=30
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=31
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=31
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=32
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=32
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=33
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=33
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=34
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=34
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=35
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=35
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=36
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=36
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=37
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=37
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=38
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=38
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=39
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=39
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=40
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=40
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=41
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=41
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=42
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=42
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=43
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=43
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=44
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=44
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=45
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=45
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=46
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=46
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=47
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=47
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=48
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=48
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=49
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=49
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=50
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=50
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=51
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=51
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=52
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=52
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=53
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=53
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=54
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=54
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=55
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=55
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=56
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=56
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=57
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=57
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=58
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=58
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=59
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=59
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=60
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=60
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=61
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=61
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=62
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=62
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=63
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=63
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=64
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=64
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=65
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=65
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=66
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=66
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=67
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=67
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=68
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=68
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=69
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=69
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=70
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=70
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=71
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=71
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=72
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=72
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=73
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=73
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=74
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=74
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=75
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=75
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=76
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=76
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=77
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=77
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=78
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=78
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=79
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=79
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=80
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=80
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=81
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=81
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=82
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=82
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=83
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=83
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=84
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=84
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=85
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=85
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=86
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=86
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=87
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=87
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=88
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=88
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=89
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=89
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=90
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=90
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=91
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=91
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=92
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=92
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=93
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=93
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=94
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=94
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=95
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=95
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=96
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=96
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=97
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=97
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=98
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=98
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=99
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=99
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=100
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328549078:00026:cRn5 unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328549078:00026:cRn5
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328549078:00026:cRn5
+[SYNC-DIAG] _pull: end cursor=001792328549078:00026:cRn5
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:04 +117 ~2: test/sync/sync_client_eviction_test.dart: SyncClient eviction policy pinned goals are never evicted, even when over cap
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=6
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=7
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=7
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=8
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=8
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=9
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=9
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=10
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=10
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=11
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=11
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=12
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=12
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=13
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=13
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=14
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=14
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=15
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=15
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=16
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=16
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=17
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=17
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=18
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=18
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=19
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=19
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=20
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=20
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=21
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=21
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=22
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=22
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=23
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=23
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=24
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=24
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=25
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=25
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=26
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=26
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=27
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=27
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=28
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=28
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=29
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=29
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=30
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=30
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=31
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=31
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=32
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=32
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=33
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=33
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=34
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=34
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=35
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=35
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=36
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=36
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=37
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=37
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=38
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=38
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=39
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=39
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=40
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=40
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=41
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=41
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=42
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=42
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=43
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=43
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=44
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=44
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=45
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=45
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=46
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=46
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=47
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=47
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=48
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=48
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=49
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=49
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=50
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=50
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=51
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=51
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=52
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=52
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=53
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=53
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=54
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=54
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=55
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328549480:0001h:1sFD unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328549480:0001h:1sFD
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328549480:0001h:1sFD
+[SYNC-DIAG] _pull: end cursor=001792328549480:0001h:1sFD
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:05 +118 ~2: test/sync/sync_client_eviction_test.dart: SyncClient eviction policy LRU oldest unpinned goal evicted first
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328549567:00003:qHCS unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328549567:00003:qHCS
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328549567:00003:qHCS
+[SYNC-DIAG] _pull: end cursor=001792328549567:00003:qHCS
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:05 +119 ~2: test/sync/sync_client_eviction_test.dart: SyncClient eviction policy re-watching an evicted id rehydrates from the local op log
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=6
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=7
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=7
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=8
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=8
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=9
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=9
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=10
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=10
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=11
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=11
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=12
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=12
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=13
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=13
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=14
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=14
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=15
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=15
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=16
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=16
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=17
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=17
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=18
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=18
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=19
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=19
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=20
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=20
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=21
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328549620:00015:9vNz unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328549620:00015:9vNz
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328549620:00015:9vNz
+[SYNC-DIAG] _pull: end cursor=001792328549620:00015:9vNz
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:05 +120 ~2: test/sync/sync_client_eviction_test.dart: SyncClient eviction policy eviction does not fire below the cap
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=6
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=7
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=7
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=8
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=8
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=9
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=9
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=10
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=10
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=11
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=11
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=12
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=12
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=13
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=13
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=14
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=14
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=15
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=15
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=16
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=16
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=17
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=17
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=18
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=18
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=19
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=19
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=20
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=20
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=21
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=21
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=22
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=22
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=23
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=23
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=24
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=24
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=25
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=25
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=26
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=26
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=27
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=27
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=28
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=28
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=29
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=29
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=30
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=30
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=31
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=31
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=32
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=32
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=33
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=33
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=34
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=34
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=35
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=35
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=36
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=36
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=37
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=37
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=38
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=38
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=39
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=39
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=40
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=40
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=41
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=41
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=42
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=42
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=43
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=43
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=44
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=44
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=45
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=45
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=46
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=46
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=47
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=47
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=48
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=48
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=49
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=49
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=50
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328549694:0001d:dlPv unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328549694:0001d:dlPv
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328549694:0001d:dlPv
+[SYNC-DIAG] _pull: end cursor=001792328549694:0001d:dlPv
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:05 +121 ~2: test/sync/sync_client_eviction_test.dart: SyncClient eviction policy watchGoals pins survive eviction pressure
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=6
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=7
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=7
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=8
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=8
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=9
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=9
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=10
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=10
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=11
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=11
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=12
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=12
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=13
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=13
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=14
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=14
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=15
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=15
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=16
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=16
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=17
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=17
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=18
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=18
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=19
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=19
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=20
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=20
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=21
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=21
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=22
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=22
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=23
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=23
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=24
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=24
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=25
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=25
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=26
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=26
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=27
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=27
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=28
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=28
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=29
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=29
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=30
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=30
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=31
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=31
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=32
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=32
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=33
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=33
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=34
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=34
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=35
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=35
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=36
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=36
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=37
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=37
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=38
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=38
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=39
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=39
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=40
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=40
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=41
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=41
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=42
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=42
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=43
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=43
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=44
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=44
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=45
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=45
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=46
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=46
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=47
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=47
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=48
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=48
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=49
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=49
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=50
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=50
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=51
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328549769:0001e:KxUv unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328549769:0001e:KxUv
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328549769:0001e:KxUv
+[SYNC-DIAG] _pull: end cursor=001792328549769:0001e:KxUv
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:05 +122 ~2: test/sync/sync_client_eviction_test.dart: SyncClient eviction policy reloading an evicted goal preserves its content
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=null unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=null
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=null
+[SYNC-DIAG] _pull: end cursor=null
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=0
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=1
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=1
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=2
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=2
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=3
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=3
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=4
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=4
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=5
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=5
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=6
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=6
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=7
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=7
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=8
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=8
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=9
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=9
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=10
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=10
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=11
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=11
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=12
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=12
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=13
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=13
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=14
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=14
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=15
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=15
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=16
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=16
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=17
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=17
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=18
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=18
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=19
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=19
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=20
+[SYNC-DIAG] _push: start unsyncedCount=1 awaitingReceipt=20
+[SYNC-DIAG] _push: calling persistenceService.save batchSize=1
+[SYNC-DIAG] _push: save resolved successfully for 1 ops
+[SYNC-DIAG] _push: end unsyncedCount=21
+[SYNC-DIAG] SyncClient.init: start
+[SYNC-DIAG] SyncClient.init: after localStore.init cursor=001792328549828:00015:KoTX unsyncedCount=0
+[SYNC-DIAG] _pull: start cursor=001792328549828:00015:KoTX
+[SYNC-DIAG] _pull: loaded 0 ops, newCursor=001792328549828:00015:KoTX
+[SYNC-DIAG] _pull: end cursor=001792328549828:00015:KoTX
+[SYNC-DIAG] _push: start unsyncedCount=0 awaitingReceipt=0
+[SYNC-DIAG] _push: end unsyncedCount=0
+[SYNC-DIAG] SyncClient.init: sync() completed
+00:05 +123 ~2: All tests passed!
+# ---
+# ended_utc: 2026-10-18T13:02:30.019Z
+# exit: 0

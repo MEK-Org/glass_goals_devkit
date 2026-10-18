@@ -1,0 +1,21 @@
+# cmd: dart test test/sync/sync_client_server_receipt_test.dart
+# cwd: /home/siliconfamiliar_ismattkelleraliv/.rusa/workers/0e21b069-8234-4534-ba54-f201fff22d55/gg-223/third_party/glass_goals_devkit/packages/goals_core
+# started_utc: 2026-10-18T13:00:56.375Z
+# git_head: 51e15c430de01c7243bb59481002de2ae532c7a3 dirty_lines=1
+# dart: Dart SDK version: 3.10.3 (stable) (Tue Dec 2 01:04:53 2025 -0800) on "linux_x64"
+# ---
+00:00 +0: loading test/sync/sync_client_server_receipt_test.dart
+00:00 +0 -1: loading test/sync/sync_client_server_receipt_test.dart [E]
+  Failed to load "test/sync/sync_client_server_receipt_test.dart":
+  test/sync/sync_client_server_receipt_test.dart:161:19: Error: The getter 'numAwaitingReceiptOps' isn't defined for the type 'SyncClient'.
+   - 'SyncClient' is from 'package:goals_core/src/sync/sync_client.dart' ('lib/src/sync/sync_client.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'numAwaitingReceiptOps'.
+      expect(client.numAwaitingReceiptOps, equals(0));
+                    ^^^^^^^^^^^^^^^^^^^^^
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  test/sync/sync_client_server_receipt_test.dart: loading test/sync/sync_client_server_receipt_test.dart
+# ---
+# ended_utc: 2026-10-18T13:00:58.134Z
+# exit: 1
