@@ -69,6 +69,8 @@ abstract class LocalStore {
 class CacheMissException implements Exception {
   final String message;
   CacheMissException(this.message);
+  @override
+  String toString() => 'CacheMissException: $message';
 }
 
 class MemoryLocalStore extends CachingLocalStore {
@@ -173,6 +175,7 @@ class CachingLocalStore implements LocalStore {
   @override
   Future<void> init() async {
     await repo.init();
+    await _repairLegacySetParentIndices();
   }
 
   @override
@@ -276,6 +279,162 @@ class CachingLocalStore implements LocalStore {
     };
 
     return newEntry;
+  }
+
+  /// One-time bounded repair for legacy local stores where SetParent was only
+  /// indexed under replacement parents. Scans historical synced/unsynced ops and
+  /// ensures every historical parent of a goal that was moved or cleared has the
+  /// SetParent (and any EnableOp/DisableOp) added to its per-goal index.
+  /// Preserves all unsyncedOps, ackedOpIds, and sync cursors.
+  Future<void> _repairLegacySetParentIndices() async {
+    const repairKey = 'setParentIndexRepairVersion';
+    if (await repo.loadString(repairKey) == '1') {
+      return;
+    }
+
+    final allSyncedOps = await repo.loadAllSyncedOps();
+    final allOps = [...allSyncedOps, ...repo.getUnsyncedOps()];
+    if (allOps.isEmpty) {
+      await repo.storeString(repairKey, '1');
+      return;
+    }
+
+    final setParentOps = <DeltaOp>[];
+    final relatedOpsForSetParent = <String, List<Op>>{};
+
+    for (final op in allOps) {
+      if (op is DeltaOp && op.delta.logEntry is SetParentLogEntry) {
+        setParentOps.add(op);
+      } else if (op is EnableOp || op is DisableOp) {
+        final targetOpId = op is EnableOp ? op.opId : (op as DisableOp).opId;
+        relatedOpsForSetParent.putIfAbsent(targetOpId, () => []).add(op);
+      }
+    }
+
+    if (setParentOps.isEmpty) {
+      await repo.storeString(repairKey, '1');
+      return;
+    }
+
+    final opsByChild = <String, List<DeltaOp>>{};
+    for (final op in allOps) {
+      if (op is DeltaOp) {
+        opsByChild.putIfAbsent(op.delta.id, () => []).add(op);
+      }
+    }
+
+    final parentOpIdsToAdd = <String, Set<String>>{};
+
+    for (final setParentOp in setParentOps) {
+      final childId = setParentOp.delta.id;
+      final childOps = opsByChild[childId] ?? [];
+
+      final opsToIndex = <Op>[
+        setParentOp,
+        ...?relatedOpsForSetParent[setParentOp.id],
+      ];
+
+      for (final childOp in childOps) {
+        if (childOp.hlcTimestamp.comesAfter(setParentOp.hlcTimestamp)) {
+          continue;
+        }
+
+        String? historicalParentId;
+        switch (childOp.delta.logEntry) {
+          case AddParentLogEntry(parentId: final parentId) ||
+                RemoveParentLogEntry(parentId: final parentId):
+            historicalParentId = parentId;
+          case SetParentLogEntry(parentId: final parentId):
+            historicalParentId = parentId;
+          default:
+            break;
+        }
+
+        if (historicalParentId != null) {
+          final set = parentOpIdsToAdd.putIfAbsent(
+              historicalParentId, () => <String>{});
+          for (final op in opsToIndex) {
+            set.add(op.id);
+          }
+        }
+      }
+    }
+
+    if (parentOpIdsToAdd.isNotEmpty) {
+      final existingEntries =
+          await repo.loadGoalIndexEntries(parentOpIdsToAdd.keys);
+      final entriesToWrite = <String, Map<String, dynamic>>{};
+
+      for (final MapEntry(:key, :value) in parentOpIdsToAdd.entries) {
+        final parentId = key;
+        final opIdsToAdd = value;
+        final existingEntry = existingEntries[parentId];
+        final currentOpIds =
+            (existingEntry?["opIds"] as List<dynamic>?)?.cast<String>() ?? [];
+        final updatedOpIds = <String>{...currentOpIds, ...opIdsToAdd};
+        if (updatedOpIds.length != currentOpIds.length) {
+          entriesToWrite[parentId] = {
+            "opIds": updatedOpIds.toList(),
+          };
+        }
+      }
+
+      if (entriesToWrite.isNotEmpty) {
+        await repo.storeGoalIndexEntries(entriesToWrite);
+      }
+    }
+
+    final goalsWithSetParents = repo.getIndexGoalIds('goalsWithSetParents');
+    for (final op in setParentOps) {
+      goalsWithSetParents.add(op.delta.id);
+    }
+    await repo.setIndexGoalIds('goalsWithSetParents', goalsWithSetParents);
+
+    await repo.storeString(repairKey, '1');
+  }
+
+  /// When a parent relationship is introduced out of order or late (e.g. AddParent
+  /// arrives after a subsequent SetParent was already stored), ensure any later
+  /// SetParent operations (and their EnableOp/DisableOp) targeting this child are
+  /// also indexed for [parentId] so cold reload of [parentId] observes the detach.
+  Future<void> _indexLaterSetParentsForParent({
+    required String parentId,
+    required String childId,
+    required String afterHlc,
+    required Map<String, Map<String, dynamic>> goalIndexEntriesToWrite,
+  }) async {
+    final childOps = await loadOpsForGoal(childId);
+    final laterSetParentOps = <DeltaOp>[];
+    for (final childOp in childOps) {
+      if (childOp is DeltaOp &&
+          childOp.delta.logEntry is SetParentLogEntry &&
+          childOp.hlcTimestamp.comesAfter(afterHlc)) {
+        laterSetParentOps.add(childOp);
+      }
+    }
+    if (laterSetParentOps.isEmpty) {
+      return;
+    }
+
+    final laterSetParentOpIds = laterSetParentOps.map((o) => o.id).toSet();
+    final opsToIndex = <Op>[...laterSetParentOps];
+
+    for (final childOp in childOps) {
+      if (childOp is EnableOp && laterSetParentOpIds.contains(childOp.opId)) {
+        opsToIndex.add(childOp);
+      } else if (childOp is DisableOp &&
+          laterSetParentOpIds.contains(childOp.opId)) {
+        opsToIndex.add(childOp);
+      }
+    }
+
+    for (final opToIndex in opsToIndex) {
+      final newEntry = await _computeNewGoalIndexEntry(parentId, opToIndex);
+      if (newEntry != null) {
+        _goalOpsIndexCache[parentId] = newEntry;
+        goalIndexEntriesToWrite[parentId] = newEntry;
+      }
+    }
   }
 
   /// Returns every goal whose cold load needs [op]. A SetParent records the
@@ -460,11 +619,13 @@ class CachingLocalStore implements LocalStore {
   }
 
   Future<void> _doOpStorage(Iterable<Op> ops) async {
+    final sortedOps = ops.toList()
+      ..sort((a, b) => a.hlcTimestamp.compareTo(b.hlcTimestamp));
     final stringsToWrite = <String, String>{};
     final goalIndexEntriesToWrite = <String, Map<String, dynamic>>{};
     final opsToWrite = <Op>[];
     String? maxHlc;
-    for (final op in ops) {
+    for (final op in sortedOps) {
       maxHlc = maxHlc == null
           ? op.hlcTimestamp
           : (op.hlcTimestamp.comesAfter(maxHlc) ? op.hlcTimestamp : maxHlc);
@@ -496,11 +657,31 @@ class CachingLocalStore implements LocalStore {
       } else {
         opsToWrite.add(op);
       }
+    }
 
-      // Index the op for the goal
+    if (maxHlc != null) {
+      repo.cursor = maxHlc;
+    }
+
+    await repo.storeStrings(stringsToWrite);
+    await repo.storeSyncedOps(opsToWrite);
+
+    // Index the ops for their goals
+    for (final op in sortedOps) {
+      final opLogger = Logger(op.id);
       opLogger.fine("indexing op for goal");
       switch (op) {
         case DeltaOp op:
+          if (op.delta.logEntry is SetParentLogEntry) {
+            final goalsWithSetParents =
+                repo.getIndexGoalIds('goalsWithSetParents');
+            if (!goalsWithSetParents.contains(op.delta.id)) {
+              goalsWithSetParents.add(op.delta.id);
+              await repo.setIndexGoalIds(
+                  'goalsWithSetParents', goalsWithSetParents);
+            }
+          }
+
           final affectedGoalIds = op.delta.logEntry is SetParentLogEntry
               ? await _indexGoalIdsForSetParent(op)
               : getAffectedGoalIdsFromDeltaOp(op);
@@ -512,6 +693,24 @@ class CachingLocalStore implements LocalStore {
               _goalOpsIndexCache[goalId] = newEntry;
               goalIndexEntriesToWrite[goalId] = newEntry;
             }
+          }
+
+          final logEntry = op.delta.logEntry;
+          final introducedParentId = switch (logEntry) {
+            AddParentLogEntry(parentId: final parentId) => parentId,
+            SetParentLogEntry(parentId: final parentId) => parentId,
+            _ => null,
+          };
+          if (introducedParentId != null &&
+              repo
+                  .getIndexGoalIds('goalsWithSetParents')
+                  .contains(op.delta.id)) {
+            await _indexLaterSetParentsForParent(
+              parentId: introducedParentId,
+              childId: op.delta.id,
+              afterHlc: op.hlcTimestamp,
+              goalIndexEntriesToWrite: goalIndexEntriesToWrite,
+            );
           }
         case EnableOp(opId: final opId) || DisableOp(opId: final opId):
           final affectedOp = await _getOp(opId);
@@ -542,12 +741,7 @@ class CachingLocalStore implements LocalStore {
           break;
       }
     }
-    if (maxHlc != null) {
-      repo.cursor = maxHlc;
-    }
 
-    await repo.storeStrings(stringsToWrite);
-    await repo.storeSyncedOps(opsToWrite);
     await repo.storeGoalIndexEntries(goalIndexEntriesToWrite);
   }
 

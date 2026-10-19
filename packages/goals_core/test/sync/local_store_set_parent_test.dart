@@ -61,4 +61,181 @@ void main() {
       reason: 'Undo must also reach the former parent on a cold reload',
     );
   });
+
+  test('SetParent in same batch with AddParent is indexed for former parent',
+      () async {
+    final store = MemoryLocalStore();
+    final clock = HLC.now('client1');
+    final adopt = DeltaOp(
+      id: 'adopt',
+      hlcTimestamp: clock.pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: AddParentLogEntry(
+          id: 'adopt-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'source',
+        ),
+      ),
+    );
+    final move = DeltaOp(
+      id: 'move',
+      hlcTimestamp: clock.increment().pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: SetParentLogEntry(
+          id: 'move-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'destination',
+        ),
+      ),
+    );
+
+    // Same batch with move arriving before adopt in the list
+    await store.storeSyncedOps([move, adopt]);
+
+    final sourceOps = await store.loadOpsForGoal('source');
+    expect(
+      sourceOps.map((op) => op.id),
+      contains('move'),
+      reason: 'same-batch SetParent must be indexed for former parent',
+    );
+  });
+
+  test('SetParent arrival before AddParent is indexed for former parent',
+      () async {
+    final store = MemoryLocalStore();
+    final clock = HLC.now('client1');
+    final adopt = DeltaOp(
+      id: 'adopt',
+      hlcTimestamp: clock.pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: AddParentLogEntry(
+          id: 'adopt-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'source',
+        ),
+      ),
+    );
+    final move = DeltaOp(
+      id: 'move',
+      hlcTimestamp: clock.increment().pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: SetParentLogEntry(
+          id: 'move-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'destination',
+        ),
+      ),
+    );
+
+    // Arrive in reverse order (move first, then adopt)
+    await store.storeSyncedOps([move]);
+    await store.storeSyncedOps([adopt]);
+
+    final sourceOps = await store.loadOpsForGoal('source');
+    expect(
+      sourceOps.map((op) => op.id),
+      contains('move'),
+      reason: 'former parent must receive move even if adopt arrives later',
+    );
+  });
+
+  test('SetParent with null parentId is indexed for former parent', () async {
+    final store = MemoryLocalStore();
+    final clock = HLC.now('client1');
+    final adopt = DeltaOp(
+      id: 'adopt',
+      hlcTimestamp: clock.pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: AddParentLogEntry(
+          id: 'adopt-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'source',
+        ),
+      ),
+    );
+    final clear = DeltaOp(
+      id: 'clear',
+      hlcTimestamp: clock.increment().pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: SetParentLogEntry(
+          id: 'clear-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: null,
+        ),
+      ),
+    );
+
+    await store.storeSyncedOps([adopt]);
+    await store.storeSyncedOps([clear]);
+
+    final sourceOps = await store.loadOpsForGoal('source');
+    expect(
+      sourceOps.map((op) => op.id),
+      contains('clear'),
+      reason: 'clearing parent must reach former parent index',
+    );
+  });
+
+  test('reopening legacy store repairs former parent index without wiping sync data',
+      () async {
+    final repo = MemorySyncRepository();
+    final clock = HLC.now('client1');
+    final adopt = DeltaOp(
+      id: 'adopt',
+      hlcTimestamp: clock.pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: AddParentLogEntry(
+          id: 'adopt-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'source',
+        ),
+      ),
+    );
+    final move = DeltaOp(
+      id: 'move',
+      hlcTimestamp: clock.increment().pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: SetParentLogEntry(
+          id: 'move-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'destination',
+        ),
+      ),
+    );
+
+    final undoMove = DisableOp(
+      id: 'undo-move',
+      hlcTimestamp: clock.increment().increment().pack(),
+      opId: move.id,
+    );
+
+    // Legacy store state:
+    await repo.storeSyncedOps([adopt, move, undoMove]);
+    await repo.storeGoalIndexEntry('source', {'opIds': ['adopt']});
+    await repo.storeGoalIndexEntry('destination', {'opIds': ['move', 'undo-move']});
+    await repo.storeGoalIndexEntry('footnote', {'opIds': ['adopt', 'move', 'undo-move']});
+    await repo.setUnsyncedOps([adopt]);
+    await repo.setAckedOpIds(['adopt']);
+
+    final newStore = CachingLocalStore(repo: repo);
+    await newStore.init();
+
+    final sourceOps = await newStore.loadOpsForGoal('source');
+    expect(
+      sourceOps.map((op) => op.id),
+      containsAll(['move', 'undo-move']),
+      reason: 'reopened legacy store must index move and undo for source',
+    );
+    // Unsynced and acked ops must be preserved
+    expect(newStore.getUnsyncedOps().map((o) => o.id), contains('adopt'));
+    expect(newStore.getAckedOpIds(), contains('adopt'));
+  });
 }
