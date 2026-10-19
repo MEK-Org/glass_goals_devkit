@@ -69,6 +69,11 @@ class SyncClient {
 
   int? _lastEmittedStateOpCount;
 
+  /// The [_baseState] instances behind the last [stateSubject] emission, so
+  /// [_emitState] can tell a newly loaded or reloaded base goal from a goal
+  /// merely re-cloned for working ops.
+  Map<String, Goal> _emittedBaseState = {};
+
   final Set<String> _emittedBaseStateOpIds = {};
 
   final Set<String> _emittedWorkingStateOpIds = {};
@@ -740,21 +745,20 @@ class SyncClient {
     final opsAdvanced = _lastEmittedStateOpCount != emittedStateOpCount;
     // Loading a goal can add no new op ids (a parent's load already applied
     // its child's AddParent op) yet still change the resident set. Emit when
-    // an affected goal is new to the emitted state or its base instance was
-    // replaced, so loadGoal cache hits and GoalRef.goal read the same goal
+    // an affected goal's base instance differs from the one behind the last
+    // emission, so loadGoal cache hits and GoalRef.goal read the same goal
     // the per-goal subjects receive below. Goals cloned for working ops are
-    // fresh instances on every recompute and only emit when ops advance.
-    final emitted = stateSubject.value;
+    // fresh instances on every recompute, so compare base instances rather
+    // than emitted ones; working ops only emit when ops advance.
     final stateAdvanced = opsAdvanced ||
         (affectedGoalIds ?? newState.keys).any((id) {
-          final goal = newState[id];
-          return goal != null &&
-              !identical(emitted[id], goal) &&
-              (!emitted.containsKey(id) || identical(goal, _baseState[id]));
+          final base = _baseState[id];
+          return base != null && !identical(_emittedBaseState[id], base);
         });
 
     if (stateAdvanced) {
       _lastEmittedStateOpCount = emittedStateOpCount;
+      _emittedBaseState = Map.of(_baseState);
       stateSubject.add(newState);
     }
 
@@ -1469,6 +1473,7 @@ class SyncClient {
     undoStack.clear();
     redoStack.clear();
     _baseState = {};
+    _emittedBaseState = {};
     _pinCount.clear();
     _lastAccessed.clear();
     _goalSubjects.closeAll();

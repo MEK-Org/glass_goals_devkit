@@ -161,6 +161,106 @@ void main() {
       client.dispose();
     });
 
+    test('a watched child with an unsynced op reads its loaded base', () async {
+      final store = MemoryLocalStore();
+      final t0 = HLC.now('producer');
+      final t1 = t0.increment();
+      await store.storeSyncedOps([
+        DeltaOp(
+          id: 'op-parent',
+          hlcTimestamp: t0.pack(),
+          delta: GoalDelta(id: 'parent', text: 'Parent'),
+        ),
+        DeltaOp(
+          id: 'op-child',
+          hlcTimestamp: t1.pack(),
+          delta: GoalDelta(
+            id: 'child',
+            text: 'Base child',
+            logEntry: AddParentLogEntry(
+              id: 'add-parent',
+              creationTime: DateTime(2026, 10, 19),
+              parentId: 'parent',
+            ),
+          ),
+        ),
+      ]);
+      store.cursor = t1.pack();
+      // init emits the unsynced op as a working-only child before the
+      // child's base ops are loaded.
+      await store.setUnsyncedOps([
+        DeltaOp(
+          id: 'op-unsynced',
+          hlcTimestamp: t1.increment().pack(),
+          delta: GoalDelta(
+            id: 'child',
+            logEntry: AddParentLogEntry(
+              id: 'add-other-parent',
+              creationTime: DateTime(2026, 10, 19),
+              parentId: 'other-parent',
+            ),
+          ),
+        ),
+      ]);
+      final client = SyncClient(localStore: store);
+      await client.init();
+      await client.loadGoal('parent');
+      expect(client.stateSubject.value, contains('child'),
+          reason: 'precondition: the working-only child was emitted');
+
+      final watch = client.watchGoals(['parent', 'child']);
+      await watch.stream
+          .firstWhere((goals) => goals['child']?.text == 'Base child')
+          .timeout(const Duration(seconds: 1));
+      final watched = watch.currentValue['child'];
+
+      expect(client.stateSubject.value['child'], same(watched));
+      final cached = await client.loadGoal('child');
+      expect(cached?.text, equals('Base child'));
+      expect(cached, same(watched));
+
+      await watch.dispose();
+      client.dispose();
+    });
+
+    test(
+        'loadGoal cache hit returns a reloaded evicted goal with an '
+        'unsynced child', () async {
+      // Loading g2 evicts g0 after emitting, so stateSubject still holds the
+      // pre-eviction g0, cloned for its unsynced child.
+      final ids = ['g0', 'g1', 'g2'];
+      final client = await _coldClientWithNonRootGoals(ids, residentSoftCap: 2);
+      await client.modifyGoal(GoalDelta(
+        id: 'unsynced-child',
+        text: 'Unsynced child',
+        logEntry: AddParentLogEntry(
+          id: 'add-unsynced-parent',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'g0',
+        ),
+      ));
+      for (final id in ids) {
+        // Stagger so g0 is the LRU-oldest goal.
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        await client.loadGoal(id);
+      }
+      expect(client.numResidentGoals, lessThanOrEqualTo(2),
+          reason: 'precondition: g0 was evicted');
+      final beforeReload = client.stateSubject.value['g0'];
+      expect(beforeReload, isNotNull,
+          reason: 'precondition: g0 was emitted before eviction');
+
+      // A cache hit would return the pre-eviction instance.
+      final reloaded = await client.loadGoal('g0');
+      expect(reloaded?.text, equals('g0 text'));
+      expect(reloaded?.subGoalIds, contains('unsynced-child'));
+      expect(reloaded, isNot(same(beforeReload)));
+      expect(client.stateSubject.value['g0'], same(reloaded));
+      expect(await client.loadGoal('g0'), same(reloaded));
+
+      client.dispose();
+    });
+
     test('concurrent loads of one goal emit state once', () async {
       final client = await _coldClientWithNonRootGoals(['g0', 'g1']);
 
