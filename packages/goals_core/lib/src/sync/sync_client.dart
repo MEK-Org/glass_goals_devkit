@@ -69,10 +69,11 @@ class SyncClient {
 
   int? _lastEmittedStateOpCount;
 
-  /// The [_baseState] instances behind the last [stateSubject] emission, so
-  /// [_emitState] can tell a newly loaded or reloaded base goal from a goal
-  /// merely re-cloned for working ops.
-  Map<String, Goal> _emittedBaseState = {};
+  /// Goals whose [_baseState] entry [loadGoal] has set since the last
+  /// [stateSubject] emission, so [_emitState] can tell a newly loaded or
+  /// reloaded goal from one merely re-cloned for working ops or recomputed
+  /// by a pull.
+  final Set<String> _loadedSinceEmit = {};
 
   final Set<String> _emittedBaseStateOpIds = {};
 
@@ -745,20 +746,16 @@ class SyncClient {
     final opsAdvanced = _lastEmittedStateOpCount != emittedStateOpCount;
     // Loading a goal can add no new op ids (a parent's load already applied
     // its child's AddParent op) yet still change the resident set. Emit when
-    // an affected goal's base instance differs from the one behind the last
-    // emission, so loadGoal cache hits and GoalRef.goal read the same goal
-    // the per-goal subjects receive below. Goals cloned for working ops are
-    // fresh instances on every recompute, so compare base instances rather
-    // than emitted ones; working ops only emit when ops advance.
+    // an affected goal was loaded since the last emission, so loadGoal cache
+    // hits and GoalRef.goal read the same goal the per-goal subjects receive
+    // below. Other base instance changes don't count: working-op clones and
+    // a pull's recompute of _baseState make fresh instances with no new ops.
     final stateAdvanced = opsAdvanced ||
-        (affectedGoalIds ?? newState.keys).any((id) {
-          final base = _baseState[id];
-          return base != null && !identical(_emittedBaseState[id], base);
-        });
+        (affectedGoalIds ?? newState.keys).any(_loadedSinceEmit.contains);
 
     if (stateAdvanced) {
       _lastEmittedStateOpCount = emittedStateOpCount;
-      _emittedBaseState = Map.of(_baseState);
+      _loadedSinceEmit.clear();
       stateSubject.add(newState);
     }
 
@@ -1181,6 +1178,7 @@ class SyncClient {
       final loadedGoal = newGoalBase[goalId];
       if (loadedGoal != null) {
         _baseState[goalId] = loadedGoal;
+        _loadedSinceEmit.add(goalId);
         _emittedBaseStateOpIds.addAll(baseOps.map((op) => op.id));
       }
     }
@@ -1473,7 +1471,7 @@ class SyncClient {
     undoStack.clear();
     redoStack.clear();
     _baseState = {};
-    _emittedBaseState = {};
+    _loadedSinceEmit.clear();
     _pinCount.clear();
     _lastAccessed.clear();
     _goalSubjects.closeAll();

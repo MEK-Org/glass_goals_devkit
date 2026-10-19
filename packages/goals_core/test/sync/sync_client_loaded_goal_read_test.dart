@@ -4,6 +4,8 @@ import 'package:goals_core/sync.dart';
 import 'package:hlc/hlc.dart';
 import 'package:test/test.dart';
 
+import 'sync_client_server_receipt_test.dart' show DelayedEchoServer;
+
 /// A child's AddParent op also belongs to its parent, so loading the parent
 /// first records every op the child needs. Loading the child afterwards adds
 /// no new op ids, but it still puts the child in the resident set. These
@@ -87,6 +89,12 @@ Future<({int states, int cursors})> _countEmissions(
   await stateSub.cancel();
   await cursorSub.cancel();
   return (states: states, cursors: cursors);
+}
+
+Future<void> _drain() async {
+  for (var i = 0; i < 8; i++) {
+    await Future<void>.delayed(Duration.zero);
+  }
 }
 
 void main() {
@@ -293,6 +301,38 @@ void main() {
       expect(emissions.cursors, equals(1));
       expect(client.stateSubject.value['g0']?.text, equals('edited'));
       await watch.dispose();
+      client.dispose();
+    });
+
+    // Ops received through the listener stay in _workingOps, and each pull
+    // recomputes _baseState from them, so the base instances change even
+    // when the pull brings nothing new. That alone must not emit state.
+    test('empty pulls with cached working ops emit neither state nor cursor',
+        () async {
+      final server = DelayedEchoServer();
+      final client = SyncClient(
+        persistenceService: server,
+        localStore: MemoryLocalStore(),
+      );
+      await client.init();
+      await client.modifyGoal(GoalDelta(id: 'g', text: 'persisted'));
+      await _drain();
+      await server.releaseEchoes(duplicate: true);
+      await _drain();
+      expect(client.numUnsyncedOps, 0);
+      expect(client.stateSubject.value['g']?.text, 'persisted');
+
+      final emissions = await _countEmissions(client, () async {
+        for (var i = 0; i < 3; i++) {
+          await client.sync();
+          await _drain();
+          expect(client.stateSubject.value['g']?.text, 'persisted');
+          expect(await client.loadGoal('g'), isNotNull);
+        }
+      });
+
+      expect(emissions.states, equals(0));
+      expect(emissions.cursors, equals(0));
       client.dispose();
     });
   });
