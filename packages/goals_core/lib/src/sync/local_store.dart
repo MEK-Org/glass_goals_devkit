@@ -313,8 +313,11 @@ class CachingLocalStore implements LocalStore {
       }
     }
 
-    if (setParentOps.isEmpty) {
-      await repo.storeString(repairKey, '1');
+    // A pending-only SetParent still needs the cleanup below: repair v1 may
+    // have written its id into a durable index.
+    if (!allOps.any((op) =>
+        op is DeltaOp && op.delta.logEntry is SetParentLogEntry)) {
+      await repo.storeString(repairKey, '2');
       return;
     }
 

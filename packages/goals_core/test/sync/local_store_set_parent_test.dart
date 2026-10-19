@@ -367,4 +367,65 @@ void main() {
     expect(store.getAckedOpIds(), {'undo'});
     expect(store.cursor, undo.hlcTimestamp);
   });
+
+  test('legacy repair cleans a v1-polluted index with only a pending SetParent',
+      () async {
+    final repo = MemorySyncRepository();
+    final clock = HLC.now('client1');
+    final adopt = DeltaOp(
+      id: 'adopt',
+      hlcTimestamp: clock.pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: AddParentLogEntry(
+          id: 'adopt-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'source',
+        ),
+      ),
+    );
+    final move = DeltaOp(
+      id: 'move',
+      hlcTimestamp: clock.increment().pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: SetParentLogEntry(
+          id: 'move-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'destination',
+        ),
+      ),
+    );
+
+    // No synced SetParent exists, but repair v1 already wrote the pending
+    // move into the source index.
+    await repo.storeSyncedOps([adopt]);
+    await repo.storeGoalIndexEntry('source', {
+      'opIds': ['adopt', 'move']
+    });
+    await repo.storeGoalIndexEntry('footnote', {
+      'opIds': ['adopt', 'move']
+    });
+    await repo.storeGoalIndexEntry('destination', {
+      'opIds': ['move']
+    });
+    await repo.setUnsyncedOps([move]);
+    await repo.setAckedOpIds(['move']);
+    repo.cursor = move.hlcTimestamp;
+    await repo.storeString('setParentIndexRepairVersion', '1');
+
+    final store = CachingLocalStore(repo: repo);
+    await store.init();
+
+    expect(
+      (await store.loadOpsForGoal('source')).map((op) => op.id),
+      ['adopt'],
+      reason: 'the polluted durable index may not keep the pending move',
+    );
+    expect(await repo.loadString('setParentIndexRepairVersion'), '2',
+        reason: 'the repair completes instead of rescanning every init');
+    expect(store.getUnsyncedOps().map((op) => op.id), ['move']);
+    expect(store.getAckedOpIds(), {'move'});
+    expect(store.cursor, move.hlcTimestamp);
+  });
 }

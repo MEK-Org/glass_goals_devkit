@@ -1,16 +1,27 @@
 import 'dart:async';
 
+import 'package:fade_shimmer/fade_shimmer.dart' show FadeShimmer, FadeTheme;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:goals_core/model.dart' show Goal;
+import 'package:goals_core/model.dart' show Goal, GoalPath, WorldContext;
 import 'package:goals_core/sync.dart'
     show
         SyncClient,
+        CachingLocalStore,
         MemoryLocalStore,
         MemoryPersistenceService,
         WatchedGoalSet,
         AddParentLogEntry,
         GoalDelta;
+import 'package:goals_ui_core/core.dart'
+    show
+        GoalActionsContext,
+        GoalWidgetsContext,
+        expandedGoalsProvider,
+        textFocusProvider,
+        worldContextProvider;
+import 'package:goals_widgets/goals_widgets.dart'
+    show FlattenedGoalTree, GoalItemWidget;
 import 'package:rxdart/rxdart.dart';
 
 /// A stripped-down stand-in for `FlattenedGoalTree`, distilled to the
@@ -130,5 +141,114 @@ void main() {
     // Drain the throttle + persistence timers so teardown doesn't trip the
     // "Timer still pending" invariant.
     await tester.pump(const Duration(milliseconds: 50));
+  });
+
+  group('cold per-goal reload', () {
+    late SyncClient producer;
+    late SyncClient cold;
+    late WatchedGoalSet allWatch;
+    const ids = ['sec', 'destination', 'footnotes', 'fn1'];
+
+    setUp(() async {
+      final persistence = MemoryPersistenceService();
+      final producerStore = MemoryLocalStore();
+      producer = SyncClient(
+        persistenceService: persistence,
+        localStore: producerStore,
+      );
+      await producer.init();
+      GoalDelta child(String id, String text, String parentId) => GoalDelta(
+            id: id,
+            text: text,
+            logEntry: AddParentLogEntry(
+              id: '$id-parent',
+              parentId: parentId,
+              creationTime: DateTime(2026, 10, 19),
+            ),
+          );
+      await producer.modifyGoals([
+        GoalDelta(id: 'sec', text: 'Section'),
+        child('destination', 'Destination', 'sec'),
+        child('footnotes', 'Footnotes', 'destination'),
+        child('fn1', 'Footnote 1', 'footnotes'),
+      ]);
+      await producer.sync();
+      await persistence.settled;
+
+      // A cold client over the same durable store, as after a page reload.
+      cold = SyncClient(
+        persistenceService: persistence,
+        localStore: CachingLocalStore(repo: producerStore.repo),
+      );
+      await cold.init();
+      // Loading destination and fn1 already emits both of the Footnotes
+      // group's ops, so the group's own load (kicked off by the external
+      // per-goal watch, e.g. the Shunt destination's) adds no new op ids:
+      // stateSubject is not re-emitted, only the group's per-goal subject is.
+      for (final id in ['sec', 'destination', 'fn1']) {
+        await cold.loadGoal(id);
+      }
+      allWatch = cold.watchGoals(ids);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      textFocusProvider.add(null);
+      worldContextProvider.add(WorldContext(time: DateTime(2026, 10, 19)));
+      expandedGoalsProvider.add([
+        GoalPath(const ['sec', 'destination']),
+        GoalPath(const ['sec', 'destination', 'footnotes']),
+      ]);
+    });
+
+    tearDown(() async {
+      expandedGoalsProvider.add([]);
+      await allWatch.dispose();
+      cold.dispose();
+      producer.dispose();
+    });
+
+    testWidgets('watched descendants missing from stateSubject still render',
+        (tester) async {
+      expect(allWatch.currentValue.keys, containsAll(ids));
+      expect(cold.stateSubject.value.containsKey('footnotes'), isFalse);
+
+      // FadeShimmer (loading rows) lazily starts a process-wide periodic
+      // timer that is never cancelled; start it on the real clock so it is
+      // not reported as pending by this test's fake clock.
+      await tester.runAsync(() => tester.pumpWidget(const FadeShimmer(
+          width: 1, height: 1, fadeTheme: FadeTheme.light)));
+
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: GoalWidgetsContext(
+            syncClient: cold,
+            child: GoalActionsContext.empty(
+              child: FlattenedGoalTree(
+                rootGoalPaths: [GoalPath(const ['destination'])],
+                path: GoalPath(const ['sec']),
+                showAddGoal: false,
+                hoverActionsBuilder: (_) => const SizedBox(),
+              ),
+            ),
+          ),
+        ),
+      ));
+      // Bounded pumps: loading rows animate indefinitely, so pumpAndSettle
+      // would never return while a row is stuck unloaded.
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      Finder row(List<String> path) => find.byWidgetPredicate(
+          (w) => w is GoalItemWidget && w.path == GoalPath(path));
+      expect(row(const ['sec', 'destination']), findsOneWidget);
+      expect(row(const ['sec', 'destination', 'footnotes']), findsOneWidget,
+          reason: 'the mounted tree must traverse the watched, cold-loaded '
+              'Footnotes group');
+      expect(row(const ['sec', 'destination', 'footnotes', 'fn1']),
+          findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    });
   });
 }
