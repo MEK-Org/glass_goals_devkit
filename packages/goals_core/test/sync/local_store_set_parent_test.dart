@@ -182,7 +182,8 @@ void main() {
     );
   });
 
-  test('reopening legacy store repairs former parent index without wiping sync data',
+  test(
+      'reopening legacy store repairs former parent index without wiping sync data',
       () async {
     final repo = MemorySyncRepository();
     final clock = HLC.now('client1');
@@ -219,9 +220,17 @@ void main() {
 
     // Legacy store state:
     await repo.storeSyncedOps([adopt, move, undoMove]);
-    await repo.storeGoalIndexEntry('source', {'opIds': ['adopt']});
-    await repo.storeGoalIndexEntry('destination', {'opIds': ['move', 'undo-move']});
-    await repo.storeGoalIndexEntry('footnote', {'opIds': ['adopt', 'move', 'undo-move']});
+    // Simulate a store that already ran the original repair, which wrote the
+    // pending move into the durable former-parent index and marked itself v1.
+    await repo.storeGoalIndexEntry('source', {
+      'opIds': ['adopt', 'move']
+    });
+    await repo.storeGoalIndexEntry('destination', {
+      'opIds': ['move', 'undo-move']
+    });
+    await repo.storeGoalIndexEntry('footnote', {
+      'opIds': ['adopt', 'move', 'undo-move']
+    });
     await repo.setUnsyncedOps([adopt]);
     await repo.setAckedOpIds(['adopt']);
 
@@ -237,5 +246,125 @@ void main() {
     // Unsynced and acked ops must be preserved
     expect(newStore.getUnsyncedOps().map((o) => o.id), contains('adopt'));
     expect(newStore.getAckedOpIds(), contains('adopt'));
+  });
+
+  test('legacy repair keeps a pending SetParent out of durable indexes',
+      () async {
+    final repo = MemorySyncRepository();
+    final clock = HLC.now('client1');
+    final adopt = DeltaOp(
+      id: 'adopt',
+      hlcTimestamp: clock.pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: AddParentLogEntry(
+          id: 'adopt-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'source',
+        ),
+      ),
+    );
+    final move = DeltaOp(
+      id: 'move',
+      hlcTimestamp: clock.increment().pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: SetParentLogEntry(
+          id: 'move-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'destination',
+        ),
+      ),
+    );
+
+    await repo.storeSyncedOps([adopt]);
+    await repo.storeGoalIndexEntry('source', {
+      'opIds': ['adopt']
+    });
+    await repo.storeGoalIndexEntry('footnote', {
+      'opIds': ['adopt']
+    });
+    await repo.storeGoalIndexEntry('destination', {
+      'opIds': ['move']
+    });
+    await repo.setUnsyncedOps([move]);
+    await repo.setAckedOpIds(['move']);
+    repo.cursor = move.hlcTimestamp;
+    await repo.storeString('setParentIndexRepairVersion', '1');
+
+    final store = CachingLocalStore(repo: repo);
+    await store.init();
+
+    expect(
+      (await store.loadOpsForGoal('source')).map((op) => op.id),
+      ['adopt'],
+      reason: 'the durable index may not reference the pending move',
+    );
+    expect(store.getUnsyncedOps().map((op) => op.id), ['move']);
+    expect(store.getAckedOpIds(), {'move'});
+    expect(store.cursor, move.hlcTimestamp);
+  });
+
+  test('legacy repair keeps a pending Undo out of durable indexes', () async {
+    final repo = MemorySyncRepository();
+    final clock = HLC.now('client1');
+    final adopt = DeltaOp(
+      id: 'adopt',
+      hlcTimestamp: clock.pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: AddParentLogEntry(
+          id: 'adopt-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'source',
+        ),
+      ),
+    );
+    final move = DeltaOp(
+      id: 'move',
+      hlcTimestamp: clock.increment().pack(),
+      delta: GoalDelta(
+        id: 'footnote',
+        logEntry: SetParentLogEntry(
+          id: 'move-entry',
+          creationTime: DateTime(2026, 10, 19),
+          parentId: 'destination',
+        ),
+      ),
+    );
+    final undo = DisableOp(
+      id: 'undo',
+      hlcTimestamp: clock.increment().increment().pack(),
+      opId: 'move',
+    );
+
+    await repo.storeSyncedOps([adopt, move]);
+    // Simulate the v1 repair having also written an accepted-but-not-echoed
+    // undo into durable indexes.
+    await repo.storeGoalIndexEntry('source', {
+      'opIds': ['adopt', 'move', 'undo']
+    });
+    await repo.storeGoalIndexEntry('footnote', {
+      'opIds': ['adopt', 'move', 'undo']
+    });
+    await repo.storeGoalIndexEntry('destination', {
+      'opIds': ['move', 'undo']
+    });
+    await repo.setUnsyncedOps([undo]);
+    await repo.setAckedOpIds(['undo']);
+    repo.cursor = undo.hlcTimestamp;
+    await repo.storeString('setParentIndexRepairVersion', '1');
+
+    final store = CachingLocalStore(repo: repo);
+    await store.init();
+
+    final sourceOpIds =
+        (await store.loadOpsForGoal('source')).map((op) => op.id).toSet();
+    expect(sourceOpIds, containsAll(['adopt', 'move']));
+    expect(sourceOpIds, isNot(contains('undo')),
+        reason: 'the pending Undo remains on the pending overlay');
+    expect(store.getUnsyncedOps().map((op) => op.id), ['undo']);
+    expect(store.getAckedOpIds(), {'undo'});
+    expect(store.cursor, undo.hlcTimestamp);
   });
 }
