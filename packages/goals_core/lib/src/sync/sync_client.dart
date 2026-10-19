@@ -274,11 +274,11 @@ class SyncClient {
   /// evicted id at the time of eviction. (If one is later re-created by a new
   /// `watchGoals` call, the cold-load path will re-populate `_baseState`.)
   ///
-  /// `_emittedBaseStateOpIds` is NOT pruned here. Op-id-count-based dedup in
-  /// `_emitState` is conservative: re-adding the same ids on reload is a
-  /// no-op for the set, and any subsequent op-driven emit re-broadcasts the
-  /// reloaded goal in the full `stateSubject` payload. The per-goal subject
-  /// path is unaffected. See design doc 2026-05-25 §"Behavior of eviction".
+  /// `_emittedBaseStateOpIds` is NOT pruned here. Re-adding the same ids on
+  /// reload is a no-op for the set; `_emitState` still re-broadcasts the
+  /// reloaded goal in the full `stateSubject` payload because its new base
+  /// instance differs from the last emitted one. The per-goal subject path
+  /// is unaffected. See design doc 2026-05-25 §"Behavior of eviction".
   void _evict(String goalId) {
     _baseState.remove(goalId);
     _goalLoadState.remove(goalId);
@@ -737,7 +737,21 @@ class SyncClient {
   }) {
     final emittedStateOpCount =
         _emittedBaseStateOpIds.length + _emittedWorkingStateOpIds.length;
-    final stateAdvanced = _lastEmittedStateOpCount != emittedStateOpCount;
+    final opsAdvanced = _lastEmittedStateOpCount != emittedStateOpCount;
+    // Loading a goal can add no new op ids (a parent's load already applied
+    // its child's AddParent op) yet still change the resident set. Emit when
+    // an affected goal is new to the emitted state or its base instance was
+    // replaced, so loadGoal cache hits and GoalRef.goal read the same goal
+    // the per-goal subjects receive below. Goals cloned for working ops are
+    // fresh instances on every recompute and only emit when ops advance.
+    final emitted = stateSubject.value;
+    final stateAdvanced = opsAdvanced ||
+        (affectedGoalIds ?? newState.keys).any((id) {
+          final goal = newState[id];
+          return goal != null &&
+              !identical(emitted[id], goal) &&
+              (!emitted.containsKey(id) || identical(goal, _baseState[id]));
+        });
 
     if (stateAdvanced) {
       _lastEmittedStateOpCount = emittedStateOpCount;
