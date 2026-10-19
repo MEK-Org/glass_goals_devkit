@@ -9,7 +9,13 @@ import 'package:goals_core/src/util/random_utils.dart'
 import 'package:goals_core/src/util/string_utils.dart';
 import 'package:goals_core/sync.dart'
     show DisableOp, EnableOp, Op, getAffectedGoalIdsFromDeltaOp;
-import 'package:goals_types/goals_types.dart' show DeltaOp, TextGoalLogEntry;
+import 'package:goals_types/goals_types.dart'
+    show
+        AddParentLogEntry,
+        DeltaOp,
+        RemoveParentLogEntry,
+        SetParentLogEntry,
+        TextGoalLogEntry;
 import 'package:goals_core/src/util/lru_cache.dart' show LruCache;
 import 'package:logging/logging.dart' show Logger;
 import 'package:queue/queue.dart';
@@ -272,6 +278,29 @@ class CachingLocalStore implements LocalStore {
     return newEntry;
   }
 
+  /// Returns every goal whose cold load needs [op]. A SetParent records the
+  /// replacement parent but detaches all earlier parents. Keep it indexed for
+  /// each historical parent of its child so loading one of those old parents
+  /// can replay the detach instead of resurrecting a stale child row.
+  Future<Set<String>> _indexGoalIdsForSetParent(DeltaOp op) async {
+    final goalIds = {...getAffectedGoalIdsFromDeltaOp(op)};
+    final childOps = await loadOpsForGoal(op.delta.id);
+    for (final childOp in childOps.whereType<DeltaOp>()) {
+      switch (childOp.delta.logEntry) {
+        case AddParentLogEntry(parentId: final parentId) ||
+              RemoveParentLogEntry(parentId: final parentId):
+          goalIds.add(parentId);
+        case SetParentLogEntry(parentId: final parentId):
+          if (parentId != null) {
+            goalIds.add(parentId);
+          }
+        default:
+          break;
+      }
+    }
+    return goalIds;
+  }
+
   @override
   Future<Iterable<Op>> loadOpsForGoal(String goalId) async {
     Map<String, dynamic>? cachedEntry = await _getGoalIndexEntry(goalId);
@@ -472,7 +501,9 @@ class CachingLocalStore implements LocalStore {
       opLogger.fine("indexing op for goal");
       switch (op) {
         case DeltaOp op:
-          final affectedGoalIds = getAffectedGoalIdsFromDeltaOp(op);
+          final affectedGoalIds = op.delta.logEntry is SetParentLogEntry
+              ? await _indexGoalIdsForSetParent(op)
+              : getAffectedGoalIdsFromDeltaOp(op);
           for (final goalId in affectedGoalIds) {
             opLogger.fine("goalId: $goalId");
             final newEntry = await _computeNewGoalIndexEntry(goalId, op);
@@ -494,7 +525,9 @@ class CachingLocalStore implements LocalStore {
             throw Exception(
                 "Expected Enable/Disable Op to be a DeltaOp, but got: $affectedOp");
           }
-          final affectedGoalIds = getAffectedGoalIdsFromDeltaOp(affectedOp);
+          final affectedGoalIds = affectedOp.delta.logEntry is SetParentLogEntry
+              ? await _indexGoalIdsForSetParent(affectedOp)
+              : getAffectedGoalIdsFromDeltaOp(affectedOp);
           for (final goalId in affectedGoalIds) {
             opLogger.fine("goalId: $goalId");
             final newEntry = await _computeNewGoalIndexEntry(goalId, op);
