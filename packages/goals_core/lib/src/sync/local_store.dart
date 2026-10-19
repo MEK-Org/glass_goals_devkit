@@ -34,6 +34,11 @@ abstract class LocalStore {
   /// These ops are guaranteed to be deduped and sorted by their HLC timestamp.
   Iterable<Op> getUnsyncedOps();
 
+  /// Ids of unsynced ops whose push the server accepted. They remain unsynced
+  /// until the server sends them back, and are not pushed again.
+  Set<String> getAckedOpIds();
+  Future<void> setAckedOpIds(Iterable<String> opIds);
+
   Future<void> storeSyncedOps(Iterable<Op> ops);
 
   Set<String> getIndexGoalIds(String key);
@@ -151,6 +156,13 @@ class CachingLocalStore implements LocalStore {
   Iterable<Op> getUnsyncedOps() {
     return repo.getUnsyncedOps();
   }
+
+  @override
+  Set<String> getAckedOpIds() => repo.getAckedOpIds();
+
+  @override
+  Future<void> setAckedOpIds(Iterable<String> opIds) =>
+      repo.setAckedOpIds(opIds);
 
   @override
   Future<void> init() async {
