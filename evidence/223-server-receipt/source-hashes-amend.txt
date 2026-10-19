@@ -1,0 +1,18 @@
+# generated_utc: 2026-10-19T11:09:47Z by dense-ram (seat 0e21b069)
+# cmd: per-file: git show <commit>:<path> | sha256sum ; sha256sum <worktree path> ; stat -c %y <worktree path>
+# app checkout: /home/siliconfamiliar_ismattkelleraliv/.rusa/workers/0e21b069-8234-4534-ba54-f201fff22d55/gg-223 HEAD=0cb5f66d17db1c0a7cf02d4c141076ea39b5f237 status_porcelain_lines=0
+# columns: path committed_blob_sha256 worktree_sha256_now worktree_mtime_utc
+goals_web/lib/common/hive_local_store.dart 4354e666e546555e1b7d0e26f3e4bb53361fe03d192f369f767c00bda65ba9cf 4354e666e546555e1b7d0e26f3e4bb53361fe03d192f369f767c00bda65ba9cf 2026-10-19 10:56:47.177052 +0000
+web_tests/browser/README.md 97324d99b819ec82cbcd3918941e19880173873c37bedb44ebf3bbc1e395c8bf 97324d99b819ec82cbcd3918941e19880173873c37bedb44ebf3bbc1e395c8bf 2026-10-18 13:26:13.267687 +0000
+web_tests/browser/firebase_acknowledgement.dart 0c47ab81409220c4b48c17b784ccc21d1a8235f20b39b9e6339892946426ce32 0c47ab81409220c4b48c17b784ccc21d1a8235f20b39b9e6339892946426ce32 2026-10-18 13:26:00.687709 +0000
+web_tests/browser/run_server_receipt.mjs 93ced292e4b6df1cfb24f4a3e13da820e38e5fd90b853f0772f573058b63ea4b 93ced292e4b6df1cfb24f4a3e13da820e38e5fd90b853f0772f573058b63ea4b 2026-10-18 13:25:38.707748 +0000
+web_tests/browser/server_receipt.dart 2d0351c67bd36789285cf102e6e6d75dfa4658ea6a38b88374023f7c56268708 2d0351c67bd36789285cf102e6e6d75dfa4658ea6a38b88374023f7c56268708 2026-10-18 13:34:50.818658 +0000
+web_tests/test/firebase_acknowledgement_test.dart a78cea99eaefe5b1ec628fad62e1302df8da2ab594dad33159cc454e51650832 a78cea99eaefe5b1ec628fad62e1302df8da2ab594dad33159cc454e51650832 2026-10-19 10:56:51.885044 +0000
+web_tests/test/goal_title_submission_test.dart 0a0c877cd0ffe688a22e4a2f0c582f7a83d54b2add4c4c59b9c9ef097580025e 0a0c877cd0ffe688a22e4a2f0c582f7a83d54b2add4c4c59b9c9ef097580025e 2026-10-18 13:53:48.060537 +0000
+third_party/glass_goals_devkit gitlink@0cb5f66d=1877e9b5d8b8cb773b15f0fbe83d41a8746d060f
+# devkit checkout: /home/siliconfamiliar_ismattkelleraliv/.rusa/workers/0e21b069-8234-4534-ba54-f201fff22d55/gg-223/third_party/glass_goals_devkit HEAD=1877e9b5d8b8cb773b15f0fbe83d41a8746d060f status_porcelain_lines=0
+packages/goals_core/lib/src/sync/local_store.dart d617a8fe379263c63916907b2072163da31c6bd4f6d24ceb8fb246082527789d d617a8fe379263c63916907b2072163da31c6bd4f6d24ceb8fb246082527789d 2026-10-19 10:55:41.697171 +0000
+packages/goals_core/lib/src/sync/sync_client.dart 560148e36cc2283f039dfadd9f680178d6d4e141f2536d611eb191e17a8c2511 560148e36cc2283f039dfadd9f680178d6d4e141f2536d611eb191e17a8c2511 2026-10-19 10:56:11.881116 +0000
+packages/goals_core/lib/src/sync/sync_repository.dart 48b4952eb49d8bc327b0c4403292227babf1a634675b85ff8a86700a3ceb745e 48b4952eb49d8bc327b0c4403292227babf1a634675b85ff8a86700a3ceb745e 2026-10-19 10:55:54.145148 +0000
+packages/goals_core/test/sync/sync_client_server_receipt_test.dart afe950181fa1b0719b796f341617fc18eea938491e3988f3fc27f9ceaf6c273f afe950181fa1b0719b796f341617fc18eea938491e3988f3fc27f9ceaf6c273f 2026-10-19 10:56:26.245090 +0000
+# tool versions now: node=v24.13.1 firebase-tools=13.31.0 puppeteer-core=24.17.1 flutter=Flutter 3.38.4 • channel stable • https://github.com/flutter/flutter.git dart=3.10.3

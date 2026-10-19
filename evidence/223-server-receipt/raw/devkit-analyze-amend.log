@@ -1,0 +1,30 @@
+# cmd: dart analyze
+# cwd: gg-223/third_party/glass_goals_devkit/packages/goals_core
+# started_utc: 2026-10-19T10:59:50.149Z
+# git_head: 1877e9b5d8b8cb773b15f0fbe83d41a8746d060f dirty_lines=0
+# dart: Dart SDK version: 3.10.3 (stable) (Tue Dec 2 01:04:53 2025 -0800) on "linux_x64"
+# ---
+Analyzing goals_core...
+
+warning - lib/src/sync/persistence_service.dart:2:8 - Unused import: 'dart:math'. Try removing the import directive. - unused_import
+warning - lib/src/sync/persistence_service.dart:105:24 - The method doesn't override an inherited method. Try updating this class to match the superclass, or removing the override annotation. - override_on_non_overriding_member
+warning - test/sync/sync_client_eviction_test.dart:14:9 - The name isFalse is shown, but isn't used. Try removing the name from the list of shown members. - unused_shown_name
+warning - test/sync/sync_client_eviction_test.dart:35:11 - A value for optional parameter 'prefix' isn't ever given. Try removing the unused parameter. - unused_element_parameter
+warning - test/sync/sync_client_test.dart:1:8 - Unused import: 'dart:math'. Try removing the import directive. - unused_import
+warning - test/sync/sync_client_test.dart:14:9 - The name Op is shown, but isn't used. Try removing the name from the list of shown members. - unused_shown_name
+   info - lib/src/queries.dart:359:7 - The type name '_qia' isn't an UpperCamelCase identifier. Try changing the name to follow the UpperCamelCase style. - camel_case_types
+   info - lib/src/queries.dart:367:7 - The type name '_qi' isn't an UpperCamelCase identifier. Try changing the name to follow the UpperCamelCase style. - camel_case_types
+   info - lib/src/queries.dart:1362:7 - The variable name 'GOAL_PATH_REFERENCE_REGEX' isn't a lowerCamelCase identifier. Try changing the name to follow the lowerCamelCase style. - non_constant_identifier_names
+   info - lib/src/util/compressed_uuid.dart:7:14 - The variable name '_UUID_MASK' isn't a lowerCamelCase identifier. Try changing the name to follow the lowerCamelCase style. - non_constant_identifier_names
+   info - lib/src/util/compressed_uuid.dart:9:14 - The variable name '_UUID_V4_VALUE' isn't a lowerCamelCase identifier. Try changing the name to follow the lowerCamelCase style. - non_constant_identifier_names
+   info - lib/src/util/compressed_uuid.dart:11:14 - The variable name '_UUID_V5_VALUE' isn't a lowerCamelCase identifier. Try changing the name to follow the lowerCamelCase style. - non_constant_identifier_names
+   info - lib/src/util/lru_cache.dart:23:5 - Unnecessary 'this.' qualifier. Try removing 'this.'. - unnecessary_this
+   info - lib/src/util/lru_cache.dart:27:12 - Missing type annotation. Try adding a type annotation. - strict_top_level_inference
+   info - lib/src/util/lru_cache.dart:39:5 - Unnecessary 'this.' qualifier. Try removing 'this.'. - unnecessary_this
+   info - test/goal_names_index_test.dart:3:8 - The import of 'package:goals_types/goals_types.dart' is unnecessary because all of the used elements are also provided by the import of 'package:goals_core/sync.dart'. Try removing the import directive. - unnecessary_import
+   info - test/sync/sync_client_perf_test.dart:1:1 - Dangling library doc comment. Add a 'library' directive after the library comment. - dangling_library_doc_comments
+
+17 issues found.
+# ---
+# ended_utc: 2026-10-19T10:59:53.392Z
+# exit: 2
