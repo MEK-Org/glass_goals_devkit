@@ -135,14 +135,14 @@ void main() {
         reason: 'push success is not server receipt');
     _expectRepresented(client, 'g', 'Local edit', phase: 'after REST success');
 
-    // Another edit pushes again; pushed ops awaiting receipt are not resent.
+    // Another edit pushes again; pushed ops acked by the server are not resent.
     await client.modifyGoal(GoalDelta(
         id: 'g',
         logEntry: NoteLogEntry(
             id: 'note-1', creationTime: DateTime.now(), text: 'a note')));
     await _drain();
     expect(server.saveCounts.values, everyElement(equals(1)),
-        reason: 'no resend while awaiting receipt');
+        reason: 'no resend while acked');
     expect(server.saveCounts.length, equals(3));
     expect(client.numUnsyncedOps, equals(3));
     _expectRepresented(client, 'g', 'Local edit', phase: 'awaiting echo');
@@ -251,7 +251,7 @@ void main() {
     await restarted.init();
     await _drain();
     expect(restarted.numUnsyncedOps, equals(0),
-        reason: 'the pull resumes before the oldest op awaiting receipt');
+        reason: 'the pull resumes before the oldest acked op');
     expect(server.saveCounts[mine.id], equals(1));
     expect(restarted.stateSubject.value['mine']?.text, equals('Pushed'));
     expect(restarted.getRootGoalIds(), containsAll(['mine', 'theirs']));

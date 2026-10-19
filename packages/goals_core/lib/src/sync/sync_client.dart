@@ -1312,17 +1312,17 @@ class SyncClient {
     }
   }
 
-  /// Where to resume pulling. Starts before the oldest op awaiting receipt so
+  /// Where to resume pulling. Starts before the oldest acked op so
   /// a pull after a restart or a missed echo still receives it.
   String? _pullStartCursor() {
     final cursor = localStore.cursor;
-    final awaitingReceipt = localStore.getAwaitingReceiptOpIds();
-    if (cursor == null || awaitingReceipt.isEmpty) {
+    final ackedOpIds = localStore.getAckedOpIds();
+    if (cursor == null || ackedOpIds.isEmpty) {
       return cursor;
     }
     final oldest = localStore
         .getUnsyncedOps()
-        .where((op) => awaitingReceipt.contains(op.id))
+        .where((op) => ackedOpIds.contains(op.id))
         .map((op) => op.hlcTimestamp)
         .minOrNull;
     if (oldest == null || oldest.compareTo(cursor) > 0) {
@@ -1348,10 +1348,10 @@ class SyncClient {
       localStore.setUnsyncedOps(
           unsyncedOps.where((op) => !receivedIds.contains(op.id)));
     }
-    final awaitingReceipt = localStore.getAwaitingReceiptOpIds();
-    if (awaitingReceipt.any(receivedIds.contains)) {
-      localStore.setAwaitingReceiptOpIds(
-          awaitingReceipt.difference(receivedIds));
+    final ackedOpIds = localStore.getAckedOpIds();
+    if (ackedOpIds.any(receivedIds.contains)) {
+      localStore.setAckedOpIds(
+          ackedOpIds.difference(receivedIds));
     }
   }
 
@@ -1364,17 +1364,17 @@ class SyncClient {
 
     // Ops the server accepted stay unsynced until they are received, but are
     // not pushed again.
-    final awaitingReceipt = localStore.getAwaitingReceiptOpIds();
+    final ackedOpIds = localStore.getAckedOpIds();
     Iterable<Op> sortedUnsyncedOps = localStore
         .getUnsyncedOps()
         .where((op) =>
-            !awaitingReceipt.contains(op.id) && !_pushingOpIds.contains(op.id))
+            !ackedOpIds.contains(op.id) && !_pushingOpIds.contains(op.id))
         .sorted(
           (a, b) => a.hlcTimestamp.compareTo(b.hlcTimestamp),
         );
 
     print(
-        '[SYNC-DIAG] _push: start unsyncedCount=${sortedUnsyncedOps.length} awaitingReceipt=${awaitingReceipt.length}');
+        '[SYNC-DIAG] _push: start unsyncedCount=${sortedUnsyncedOps.length} ackedOpIds=${ackedOpIds.length}');
 
     if (sortedUnsyncedOps.isNotEmpty) {
       final unsyncedOpsBatches = <List<Op>>[];
@@ -1399,20 +1399,20 @@ class SyncClient {
           final pushedOps = {for (final op in mappedOps) op.id: op};
           final unsyncedOps = localStore.getUnsyncedOps().toList();
           final unsyncedIds = unsyncedOps.map((op) => op.id).toSet();
-          final awaitingIds = pushedOps.keys.where(unsyncedIds.contains);
-          for (final opId in awaitingIds) {
-            _logger?.log('Op pushed to remote, awaiting receipt', opId: opId);
+          final ackedIds = pushedOps.keys.where(unsyncedIds.contains);
+          for (final opId in ackedIds) {
+            _logger?.log('Op pushed to remote, acked', opId: opId);
           }
           // Both writes start from this snapshot before yielding, so no op
           // added or received meanwhile is clobbered. Mark first: if we stop
           // before replacing the ops, the marked originals are still not
           // resent, and the pushed copies sort after them for the pull.
           await Future.wait([
-            localStore.setAwaitingReceiptOpIds({
+            localStore.setAckedOpIds({
               ...localStore
-                  .getAwaitingReceiptOpIds()
+                  .getAckedOpIds()
                   .where(unsyncedIds.contains),
-              ...awaitingIds,
+              ...ackedIds,
             }),
             localStore.setUnsyncedOps(
                 unsyncedOps.map((op) => pushedOps[op.id] ?? op)),

@@ -19,8 +19,8 @@ abstract class SyncRepository {
   Future<void> setUnsyncedOps(Iterable<Op> ops);
 
   /// Ids of unsynced ops the server accepted but has not yet sent back.
-  Set<String> getAwaitingReceiptOpIds();
-  Future<void> setAwaitingReceiptOpIds(Iterable<String> opIds);
+  Set<String> getAckedOpIds();
+  Future<void> setAckedOpIds(Iterable<String> opIds);
 
   Future<String?> loadString(String key);
   Future<void> storeString(String key, String value);
@@ -55,7 +55,7 @@ class MemorySyncRepository implements SyncRepository {
   int _fullSyncCount = 0;
   int _version = 0;
   final List<Op> _unsyncedOps = [];
-  final Set<String> _awaitingReceiptOpIds = {};
+  final Set<String> _ackedOpIds = {};
   final Map<String, String> _strings = {};
   final Map<String, Map<String, dynamic>> _goalIndex = {};
   final Map<String, Op> _syncedOps = {};
@@ -95,11 +95,11 @@ class MemorySyncRepository implements SyncRepository {
   }
 
   @override
-  Set<String> getAwaitingReceiptOpIds() =>
-      Set.unmodifiable(_awaitingReceiptOpIds);
+  Set<String> getAckedOpIds() =>
+      Set.unmodifiable(_ackedOpIds);
   @override
-  Future<void> setAwaitingReceiptOpIds(Iterable<String> opIds) async {
-    _awaitingReceiptOpIds
+  Future<void> setAckedOpIds(Iterable<String> opIds) async {
+    _ackedOpIds
       ..clear()
       ..addAll(opIds);
   }
@@ -193,7 +193,7 @@ class MemorySyncRepository implements SyncRepository {
     _fullSyncCount = 0;
     _version = 0;
     _unsyncedOps.clear();
-    _awaitingReceiptOpIds.clear();
+    _ackedOpIds.clear();
     _strings.clear();
     _goalIndex.clear();
     _syncedOps.clear();

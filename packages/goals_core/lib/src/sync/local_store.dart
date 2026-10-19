@@ -36,8 +36,8 @@ abstract class LocalStore {
 
   /// Ids of unsynced ops whose push the server accepted. They remain unsynced
   /// until the server sends them back, and are not pushed again.
-  Set<String> getAwaitingReceiptOpIds();
-  Future<void> setAwaitingReceiptOpIds(Iterable<String> opIds);
+  Set<String> getAckedOpIds();
+  Future<void> setAckedOpIds(Iterable<String> opIds);
 
   Future<void> storeSyncedOps(Iterable<Op> ops);
 
@@ -158,11 +158,11 @@ class CachingLocalStore implements LocalStore {
   }
 
   @override
-  Set<String> getAwaitingReceiptOpIds() => repo.getAwaitingReceiptOpIds();
+  Set<String> getAckedOpIds() => repo.getAckedOpIds();
 
   @override
-  Future<void> setAwaitingReceiptOpIds(Iterable<String> opIds) =>
-      repo.setAwaitingReceiptOpIds(opIds);
+  Future<void> setAckedOpIds(Iterable<String> opIds) =>
+      repo.setAckedOpIds(opIds);
 
   @override
   Future<void> init() async {
