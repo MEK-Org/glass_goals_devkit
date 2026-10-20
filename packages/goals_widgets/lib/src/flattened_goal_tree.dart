@@ -559,7 +559,12 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
       (goalId) async {
         traversedIds.add(goalId);
         watch?.add(goalId);
-        return await syncClient.loadGoal(goalId);
+        // A lazily loaded goal can reach its per-goal subject (and so the
+        // watch) without a stateSubject re-emit when its load adds no new op
+        // ids, in which case loadGoal's cache hit returns null. The watch is
+        // this tree's authoritative source, so fall back to it.
+        return await syncClient.loadGoal(goalId) ??
+            watch?.currentValue[goalId];
       },
       onVisit: (path, {required isLeaf}) {
         final fullGoalPath = GoalPath([
