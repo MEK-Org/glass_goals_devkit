@@ -104,6 +104,13 @@ void main() {
         reason: 'A narrow panel must disclose omitted older ancestors.');
     expect(find.text('Oldest parent'), findsNothing);
     expect(find.text('Nearest parent'), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.close))
+          .color,
+      isNot(Colors.transparent),
+      reason: 'The remove control must remain visibly available without hover.',
+    );
     expect(tester.takeException(), isNull,
         reason: 'The bounded row must not overflow the narrow panel.');
 

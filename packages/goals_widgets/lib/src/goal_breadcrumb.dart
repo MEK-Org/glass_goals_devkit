@@ -232,6 +232,7 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
         (goalsTheme?.uiUnit ?? 4.0) * numUnits;
     final palePinkColor = Colors.pink.shade50;
     final deepRedColor = Colors.red.shade900;
+    final visibleRemoveColor = theme.iconTheme.color ?? Colors.black54;
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: _maxBreadcrumbWidth),
@@ -308,7 +309,7 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                     width: _removeButtonWidth,
                     height: _removeButtonWidth,
                     child: IconButton(
-                      color: _hovered ? deepRedColor : Colors.transparent,
+                      color: _hovered ? deepRedColor : visibleRemoveColor,
                       padding: EdgeInsets.zero,
                       icon: const Icon(Icons.close, size: 16.0),
                       onPressed: widget.onRemove,
