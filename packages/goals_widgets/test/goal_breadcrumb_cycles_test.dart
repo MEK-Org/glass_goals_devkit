@@ -49,4 +49,83 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     client.dispose();
   });
+
+  testWidgets(
+      'narrow parent paths omit oldest crumbs while keeping paths, removal, and resize behavior',
+      (tester) async {
+    tester.view.physicalSize = const Size(280, 160);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final client = SyncClient(
+        localStore: MemoryLocalStore(),
+        persistenceService: MemoryPersistenceService());
+    await client.init();
+    for (final (id, text) in [
+      ('oldest', 'Oldest parent'),
+      ('older', 'Older parent'),
+      ('parent', 'Direct parent'),
+      ('child', 'Nearest parent'),
+    ]) {
+      await client.modifyGoal(GoalDelta(id: id, text: text));
+    }
+
+    final focused = <GoalPath>[];
+    var removals = 0;
+    Widget breadcrumb() => MaterialApp(
+          home: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(8),
+              child: GoalWidgetsContext(
+                syncClient: client,
+                child: GoalActionsContext.empty(
+                  child: Builder(
+                    builder: (context) => GoalActionsContext.overrideWith(
+                      context,
+                      onFocused: (path, {inPlace}) => focused.add(path),
+                      child: PathBreadcrumb(
+                        renderedPath: GoalPath(
+                            const ['oldest', 'older', 'parent', 'child']),
+                        onRemove: () => removals++,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+    await tester.pumpWidget(breadcrumb());
+    await tester.pump();
+
+    expect(find.text('…'), findsOneWidget,
+        reason: 'A narrow panel must disclose omitted older ancestors.');
+    expect(find.text('Oldest parent'), findsNothing);
+    expect(find.text('Nearest parent'), findsOneWidget);
+    expect(tester.takeException(), isNull,
+        reason: 'The bounded row must not overflow the narrow panel.');
+
+    await tester.tap(find.text('Nearest parent'));
+    expect(focused, [
+      GoalPath(const ['oldest', 'older', 'parent', 'child']),
+    ]);
+    await tester.tap(find.byIcon(Icons.close));
+    expect(removals, 1);
+
+    tester.view.physicalSize = const Size(1000, 160);
+    await tester.pumpWidget(breadcrumb());
+    await tester.pump();
+    expect(find.text('Older parent'), findsOneWidget,
+        reason: 'A wider panel restores as many recent ancestors as fit.');
+    expect(find.text('Direct parent'), findsOneWidget);
+    expect(find.text('Nearest parent'), findsOneWidget);
+    expect(find.text('Oldest parent'), findsNothing,
+        reason:
+            'When truncation is still needed, the oldest ancestor goes first.');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+    client.dispose();
+  });
 }

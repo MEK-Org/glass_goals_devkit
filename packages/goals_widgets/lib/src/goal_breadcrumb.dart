@@ -10,16 +10,21 @@ import 'package:flutter/painting.dart'
         EdgeInsets,
         ShapeDecoration,
         TextDecoration,
+        TextOverflow,
         TextStyle,
         VoidCallback;
 import 'package:flutter/services.dart' show SystemMouseCursors;
 import 'package:flutter/widgets.dart'
     show
+        BoxConstraints,
         BuildContext,
+        ConstrainedBox,
         GestureDetector,
         Icon,
+        LayoutBuilder,
         MainAxisSize,
         MouseRegion,
+        Padding,
         Row,
         SizedBox,
         State,
@@ -82,12 +87,14 @@ class Breadcrumb extends StatefulWidget {
   final GoalPath path;
   final bool allowTapping;
   final bool abbreviateGoalName;
+  final double? maxWidth;
   const Breadcrumb({
     super.key,
     this.style,
     required this.path,
     this.allowTapping = true,
     this.abbreviateGoalName = false,
+    this.maxWidth,
   });
 
   @override
@@ -105,8 +112,10 @@ class _BreadcrumbState extends State<Breadcrumb> {
   /// stream's value in a field. The watch still pins the goal and triggers
   /// rebuilds; this getter eliminates the window where the field lags fresh
   /// state and we'd otherwise render a shimmer for a resident goal.
-  Goal? get _goal =>
-      GoalWidgetsContext.of(context).syncClient.stateSubject.value[widget.path.goalId];
+  Goal? get _goal => GoalWidgetsContext.of(context)
+      .syncClient
+      .stateSubject
+      .value[widget.path.goalId];
 
   @override
   void didChangeDependencies() {
@@ -146,30 +155,40 @@ class _BreadcrumbState extends State<Breadcrumb> {
     var crumbText =
         widget.abbreviateGoalName ? _doAbbreviation(_goal?.text) : _goal?.text;
 
+    final Widget child;
     if (crumbText == null) {
-      return FadeShimmer(
+      child = FadeShimmer(
         width: 50,
         height: widget.style?.fontSize ?? 14,
         baseColor: emphasizedLightBackground,
         highlightColor: Color.lerp(lightBackground, Colors.white, 0.5)!,
       );
+    } else {
+      child = MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          child: Text(
+            crumbText,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            style: widget.style != null
+                ? widget.style!.copyWith(decoration: TextDecoration.underline)
+                : TextStyle(decoration: TextDecoration.underline),
+          ),
+          onTap: widget.allowTapping
+              ? () {
+                  GoalActionsContext.of(context).onFocused(widget.path);
+                }
+              : null,
+        ),
+      );
     }
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        child: Text(
-          crumbText,
-          style: widget.style != null
-              ? widget.style!.copyWith(decoration: TextDecoration.underline)
-              : TextStyle(decoration: TextDecoration.underline),
-        ),
-        onTap: widget.allowTapping
-            ? () {
-                GoalActionsContext.of(context).onFocused(widget.path);
-              }
-            : null,
-      ),
+    if (widget.maxWidth == null) return child;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: widget.maxWidth!),
+      child: child,
     );
   }
 }
@@ -196,6 +215,13 @@ class PathBreadcrumb extends StatefulWidget {
 }
 
 class _PathBreadcrumbState extends State<PathBreadcrumb> {
+  static const _maxBreadcrumbWidth = 560.0;
+  static const _rightEdgePadding = 8.0;
+  static const _nominalCrumbWidth = 150.0;
+  static const _chevronWidth = 24.0;
+  static const _omissionWidth = 20.0;
+  static const _removeButtonWidth = 18.0;
+
   bool _hovered = false;
 
   @override
@@ -207,52 +233,95 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
     final palePinkColor = Colors.pink.shade50;
     final deepRedColor = Colors.red.shade900;
 
-    final widgets = <Widget>[];
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: _maxBreadcrumbWidth),
+      child: Padding(
+        padding: const EdgeInsets.only(right: _rightEdgePadding),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final availableWidth = constraints.hasBoundedWidth
+                  ? constraints.maxWidth
+                  : _maxBreadcrumbWidth;
+              final removeWidth = widget.onRemove == null
+                  ? 0.0
+                  : uiUnit(2) + _removeButtonWidth;
+              final pathLength = widget.renderedPath.length;
+              final targetVisible = pathLength <= 3
+                  ? pathLength
+                  : ((availableWidth - removeWidth) / _nominalCrumbWidth)
+                      .floor()
+                      .clamp(1, pathLength);
+              final firstVisible = pathLength - targetVisible;
+              final hasOmission = firstVisible > 0;
+              final separatorCount =
+                  (targetVisible - 1) + (hasOmission ? 1 : 0);
+              final crumbWidth = targetVisible == 0
+                  ? 0.0
+                  : ((availableWidth -
+                              removeWidth -
+                              (separatorCount * _chevronWidth) -
+                              (hasOmission ? _omissionWidth : 0.0)) /
+                          targetVisible)
+                      .clamp(0.0, _nominalCrumbWidth);
+              final widgets = <Widget>[];
 
-    for (final (i, _) in this.widget.renderedPath.indexed) {
-      final shouldAbbreviate = switch (this.widget.abbreviationStrategy) {
-        CrumbAbbreviationStrategy.none => false,
-        CrumbAbbreviationStrategy.show_last =>
-          i != this.widget.renderedPath.length - 1,
-        CrumbAbbreviationStrategy.all => true,
-      };
-      widgets.add(Breadcrumb(
-        style: this.widget.style,
-        path: GoalPath([
-          ...this.widget.contextPath,
-          ...this.widget.renderedPath.sublist(0, i + 1)
-        ]),
-        allowTapping: this.widget.allowTappingCrumbs,
-        abbreviateGoalName: shouldAbbreviate,
-      ));
-      widgets.add(const Icon(Icons.chevron_right));
-    }
-    if (widgets.isNotEmpty) widgets.removeLast();
+              if (hasOmission) {
+                widgets.add(const SizedBox(
+                  width: _omissionWidth,
+                  child: Text('…', maxLines: 1),
+                ));
+                widgets.add(const Icon(Icons.chevron_right));
+              }
 
-    if (this.widget.onRemove != null) {
-      widgets.add(SizedBox(width: uiUnit(2)));
-      widgets.add(Ink(
-        decoration: ShapeDecoration(
-          color: this._hovered ? palePinkColor : Colors.transparent,
-          shape: CircleBorder(),
-        ),
-        child: SizedBox(
-          width: 18.0,
-          height: 18.0,
-          child: IconButton(
-            color: this._hovered ? deepRedColor : Colors.transparent,
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.close, size: 16.0),
-            onPressed: this.widget.onRemove,
+              for (var i = firstVisible; i < pathLength; i++) {
+                final shouldAbbreviate = switch (widget.abbreviationStrategy) {
+                  CrumbAbbreviationStrategy.none => false,
+                  CrumbAbbreviationStrategy.show_last => i != pathLength - 1,
+                  CrumbAbbreviationStrategy.all => true,
+                };
+                widgets.add(Breadcrumb(
+                  style: widget.style,
+                  maxWidth: crumbWidth,
+                  path: GoalPath([
+                    ...widget.contextPath,
+                    ...widget.renderedPath.sublist(0, i + 1)
+                  ]),
+                  allowTapping: widget.allowTappingCrumbs,
+                  abbreviateGoalName: shouldAbbreviate,
+                ));
+                if (i != pathLength - 1) {
+                  widgets.add(const Icon(Icons.chevron_right));
+                }
+              }
+
+              if (widget.onRemove != null) {
+                widgets.add(SizedBox(width: uiUnit(2)));
+                widgets.add(Ink(
+                  decoration: ShapeDecoration(
+                    color: _hovered ? palePinkColor : Colors.transparent,
+                    shape: CircleBorder(),
+                  ),
+                  child: SizedBox(
+                    width: _removeButtonWidth,
+                    height: _removeButtonWidth,
+                    child: IconButton(
+                      color: _hovered ? deepRedColor : Colors.transparent,
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(Icons.close, size: 16.0),
+                      onPressed: widget.onRemove,
+                    ),
+                  ),
+                ));
+              }
+
+              return Row(mainAxisSize: MainAxisSize.min, children: widgets);
+            },
           ),
         ),
-      ));
-    }
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: Row(mainAxisSize: MainAxisSize.min, children: widgets),
+      ),
     );
   }
 }
