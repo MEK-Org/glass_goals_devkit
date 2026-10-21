@@ -182,9 +182,8 @@ void main() {
       );
       await cold.init();
       // Loading destination and fn1 already emits both of the Footnotes
-      // group's ops, so the group's own load (kicked off by the external
-      // per-goal watch, e.g. the Shunt destination's) adds no new op ids:
-      // stateSubject is not re-emitted, only the group's per-goal subject is.
+      // group's ops. The group load that follows adds no op ids, but it must
+      // still publish its newly resident goal to the full-state map.
       for (final id in ['sec', 'destination', 'fn1']) {
         await cold.loadGoal(id);
       }
@@ -206,10 +205,11 @@ void main() {
       producer.dispose();
     });
 
-    testWidgets('watched descendants missing from stateSubject still render',
+    testWidgets('watched descendants join stateSubject and still render',
         (tester) async {
       expect(allWatch.currentValue.keys, containsAll(ids));
-      expect(cold.stateSubject.value.containsKey('footnotes'), isFalse);
+      expect(cold.stateSubject.value.containsKey('footnotes'), isTrue,
+          reason: 'a loaded watched group must be present in full state');
 
       // FadeShimmer (loading rows) lazily starts a process-wide periodic
       // timer that is never cancelled; start it on the real clock so it is
