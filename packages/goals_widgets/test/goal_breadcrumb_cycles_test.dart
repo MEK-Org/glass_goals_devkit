@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:goals_core/model.dart';
 import 'package:goals_core/sync.dart';
@@ -128,9 +129,66 @@ void main() {
         reason: 'A wider panel restores as many recent ancestors as fit.');
     expect(find.text('Direct parent'), findsOneWidget);
     expect(find.text('Nearest parent'), findsOneWidget);
-    expect(find.text('Oldest parent'), findsNothing,
-        reason:
-            'When truncation is still needed, the oldest ancestor goes first.');
+    expect(find.text('Oldest parent'), findsOneWidget,
+        reason: 'All four compact crumbs fit at the 560px cap.');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+    client.dispose();
+  });
+
+  testWidgets(
+      'wide compact parent paths retain every fitting crumb without truncation',
+      (tester) async {
+    tester.view.physicalSize = const Size(560, 160);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final client = SyncClient(
+        localStore: MemoryLocalStore(),
+        persistenceService: MemoryPersistenceService());
+    await client.init();
+    for (final (id, text) in [
+      ('a', 'A'),
+      ('b', 'B'),
+      ('c', 'C'),
+      ('d', 'D'),
+    ]) {
+      await client.modifyGoal(GoalDelta(id: id, text: text));
+    }
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: GoalWidgetsContext(
+          syncClient: client,
+          child: GoalActionsContext.empty(
+            child: const SizedBox(
+              width: 560,
+              child: PathBreadcrumb(
+                renderedPath: GoalPath(['a', 'b', 'c', 'd']),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    expect(find.text('…'), findsNothing,
+        reason: 'Four compact crumbs fit in the 560px breadcrumb cap.');
+    for (final label in ['A', 'B', 'C', 'D']) {
+      expect(find.text(label), findsOneWidget,
+          reason: 'A fitting compact crumb must remain visible: $label');
+      expect(
+        tester
+            .renderObject<RenderParagraph>(find.text(label))
+            .didExceedMaxLines,
+        isFalse,
+        reason: 'A fitting compact crumb must not receive an ellipsis.',
+      );
+    }
+    expect(tester.takeException(), isNull);
+
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
     client.dispose();

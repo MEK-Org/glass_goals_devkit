@@ -217,7 +217,12 @@ class PathBreadcrumb extends StatefulWidget {
 class _PathBreadcrumbState extends State<PathBreadcrumb> {
   static const _maxBreadcrumbWidth = 560.0;
   static const _rightEdgePadding = 8.0;
-  static const _nominalCrumbWidth = 150.0;
+  // Four short crumbs comfortably fit inside the 560px cap. This is the
+  // width at which a crumb starts yielding its title, not a fixed allocation:
+  // short labels retain the remaining space rather than causing an ancestor
+  // to disappear solely because a nominal 150px slot was reserved for it.
+  static const _minimumCrumbWidth = 110.0;
+  static const _maxVisibleCrumbs = 4;
   static const _chevronWidth = 24.0;
   static const _omissionWidth = 20.0;
   static const _removeButtonWidth = 18.0;
@@ -250,11 +255,11 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                   ? 0.0
                   : uiUnit(2) + _removeButtonWidth;
               final pathLength = widget.renderedPath.length;
-              final targetVisible = pathLength <= 3
-                  ? pathLength
-                  : ((availableWidth - removeWidth) / _nominalCrumbWidth)
+              final fittingCrumbs =
+                  ((availableWidth - removeWidth) / _minimumCrumbWidth)
                       .floor()
-                      .clamp(1, pathLength);
+                      .clamp(1, _maxVisibleCrumbs);
+              final targetVisible = pathLength.clamp(1, fittingCrumbs);
               final firstVisible = pathLength - targetVisible;
               final hasOmission = firstVisible > 0;
               final separatorCount =
@@ -266,7 +271,7 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                               (separatorCount * _chevronWidth) -
                               (hasOmission ? _omissionWidth : 0.0)) /
                           targetVisible)
-                      .clamp(0.0, _nominalCrumbWidth);
+                      .clamp(0.0, availableWidth);
               final widgets = <Widget>[];
 
               if (hasOmission) {
