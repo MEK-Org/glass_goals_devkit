@@ -125,12 +125,17 @@ void main() {
     tester.view.physicalSize = const Size(1000, 160);
     await tester.pumpWidget(breadcrumb());
     await tester.pump();
-    expect(find.text('Older parent'), findsOneWidget,
-        reason: 'A wider panel restores as many recent ancestors as fit.');
+    expect(find.text('Older parent'), findsNothing,
+        reason: 'Only recent ancestors whose full labels fit remain visible.');
     expect(find.text('Direct parent'), findsOneWidget);
     expect(find.text('Nearest parent'), findsOneWidget);
-    expect(find.text('Oldest parent'), findsOneWidget,
-        reason: 'All four compact crumbs fit at the 560px cap.');
+    expect(
+      tester
+          .renderObject<RenderParagraph>(find.text('Nearest parent'))
+          .didExceedMaxLines,
+      isFalse,
+      reason: 'The nearest parent gets the remaining room rather than a slot.',
+    );
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
     client.dispose();
@@ -187,6 +192,121 @@ void main() {
         reason: 'A fitting compact crumb must not receive an ellipsis.',
       );
     }
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+    client.dispose();
+  });
+
+  testWidgets(
+      'narrow compact parent paths retain every fitting crumb without truncation',
+      (tester) async {
+    tester.view.physicalSize = const Size(280, 160);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final client = SyncClient(
+        localStore: MemoryLocalStore(),
+        persistenceService: MemoryPersistenceService());
+    await client.init();
+    for (final (id, text) in [
+      ('a', 'A'),
+      ('b', 'B'),
+      ('c', 'C'),
+      ('d', 'D'),
+    ]) {
+      await client.modifyGoal(GoalDelta(id: id, text: text));
+    }
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: GoalWidgetsContext(
+          syncClient: client,
+          child: GoalActionsContext.empty(
+            child: const SizedBox(
+              width: 280,
+              child: PathBreadcrumb(
+                renderedPath: GoalPath(['a', 'b', 'c', 'd']),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    expect(find.text('…'), findsNothing,
+        reason: 'Four fitting compact crumbs must survive a narrow panel.');
+    for (final label in ['A', 'B', 'C', 'D']) {
+      expect(find.text(label), findsOneWidget);
+      expect(
+        tester
+            .renderObject<RenderParagraph>(find.text(label))
+            .didExceedMaxLines,
+        isFalse,
+        reason: 'A fitting compact crumb must not receive an ellipsis.',
+      );
+    }
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+    client.dispose();
+  });
+
+  testWidgets('late breadcrumb titles recompute the omitted ancestors',
+      (tester) async {
+    tester.view.physicalSize = const Size(280, 160);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final client = SyncClient(
+        localStore: MemoryLocalStore(),
+        persistenceService: MemoryPersistenceService());
+    await client.init();
+    await client.modifyGoal(GoalDelta(id: 'oldest', text: 'Oldest'));
+    await client.modifyGoal(GoalDelta(id: 'nearest', text: 'Near'));
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: GoalWidgetsContext(
+          syncClient: client,
+          child: GoalActionsContext.empty(
+            child: const SizedBox(
+              width: 280,
+              child: PathBreadcrumb(
+                renderedPath: GoalPath(['oldest', 'nearest']),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+    expect(find.text('…'), findsNothing);
+
+    await client.modifyGoal(GoalDelta(
+      id: 'nearest',
+      text: 'A deliberately long nearest parent title that needs the free room',
+    ));
+    await tester.pump(const Duration(milliseconds: 32));
+
+    expect(find.text('…'), findsOneWidget,
+        reason:
+            'A delayed long title must re-evaluate the retained ancestors.');
+    expect(find.text('Oldest'), findsNothing);
+    expect(
+      tester
+          .renderObject<RenderParagraph>(find.text(
+              'A deliberately long nearest parent title that needs the free room'))
+          .didExceedMaxLines,
+      isTrue,
+      reason:
+          'The nearest title receives the remaining room rather than overflow.',
+    );
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

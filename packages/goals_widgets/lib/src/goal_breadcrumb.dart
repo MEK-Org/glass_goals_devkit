@@ -11,6 +11,8 @@ import 'package:flutter/painting.dart'
         ShapeDecoration,
         TextDecoration,
         TextOverflow,
+        TextPainter,
+        TextSpan,
         TextStyle,
         VoidCallback;
 import 'package:flutter/services.dart' show SystemMouseCursors;
@@ -19,10 +21,13 @@ import 'package:flutter/widgets.dart'
         BoxConstraints,
         BuildContext,
         ConstrainedBox,
+        DefaultTextStyle,
+        Directionality,
         GestureDetector,
         Icon,
         LayoutBuilder,
         MainAxisSize,
+        MediaQuery,
         MouseRegion,
         Padding,
         Row,
@@ -217,17 +222,69 @@ class PathBreadcrumb extends StatefulWidget {
 class _PathBreadcrumbState extends State<PathBreadcrumb> {
   static const _maxBreadcrumbWidth = 560.0;
   static const _rightEdgePadding = 8.0;
-  // Four short crumbs comfortably fit inside the 560px cap. This is the
-  // width at which a crumb starts yielding its title, not a fixed allocation:
-  // short labels retain the remaining space rather than causing an ancestor
-  // to disappear solely because a nominal 150px slot was reserved for it.
-  static const _minimumCrumbWidth = 110.0;
-  static const _maxVisibleCrumbs = 4;
   static const _chevronWidth = 24.0;
   static const _omissionWidth = 20.0;
   static const _removeButtonWidth = 18.0;
 
   bool _hovered = false;
+  WatchedGoalSet? _watch;
+  StreamSubscription? _watchSub;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_watch != null) return;
+    final syncClient = GoalWidgetsContext.of(context).syncClient;
+    _watch = syncClient.watchGoals(widget.renderedPath);
+    _watchSub = _watch!.stream
+        .throttleTime(const Duration(milliseconds: 16), trailing: true)
+        .listen((_) {
+      if (!mounted) return;
+      setState(() {});
+    });
+  }
+
+  @override
+  void didUpdateWidget(PathBreadcrumb oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.renderedPath != widget.renderedPath) {
+      _watch?.setIds(widget.renderedPath);
+    }
+  }
+
+  @override
+  void dispose() {
+    _watchSub?.cancel();
+    _watch?.dispose();
+    super.dispose();
+  }
+
+  List<double> _naturalCrumbWidths(BuildContext context) {
+    final goalMap =
+        GoalWidgetsContext.of(context).syncClient.stateSubject.value;
+    final defaultStyle = DefaultTextStyle.of(context).style;
+    final crumbStyle = defaultStyle.merge((widget.style ?? const TextStyle())
+        .copyWith(decoration: TextDecoration.underline));
+    return List.generate(widget.renderedPath.length, (index) {
+      final shouldAbbreviate = switch (widget.abbreviationStrategy) {
+        CrumbAbbreviationStrategy.none => false,
+        CrumbAbbreviationStrategy.show_last =>
+          index != widget.renderedPath.length - 1,
+        CrumbAbbreviationStrategy.all => true,
+      };
+      final text = shouldAbbreviate
+          ? _doAbbreviation(goalMap[widget.renderedPath[index]]?.text)
+          : goalMap[widget.renderedPath[index]]?.text;
+      if (text == null) return 50.0;
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: crumbStyle),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      return painter.width;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -255,23 +312,35 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                   ? 0.0
                   : uiUnit(2) + _removeButtonWidth;
               final pathLength = widget.renderedPath.length;
-              final fittingCrumbs =
-                  ((availableWidth - removeWidth) / _minimumCrumbWidth)
-                      .floor()
-                      .clamp(1, _maxVisibleCrumbs);
-              final targetVisible = pathLength.clamp(1, fittingCrumbs);
-              final firstVisible = pathLength - targetVisible;
+              final availableCrumbWidth =
+                  (availableWidth - removeWidth).clamp(0.0, availableWidth);
+              final naturalWidths = _naturalCrumbWidths(context);
+              final allCrumbsWidth = naturalWidths.fold<double>(
+                    0.0,
+                    (sum, width) => sum + width,
+                  ) +
+                  (pathLength - 1) * _chevronWidth;
+              var firstVisible = 0;
+              if (pathLength > 1 && allCrumbsWidth > availableCrumbWidth) {
+                firstVisible = pathLength - 1;
+                var visibleWidth =
+                    _omissionWidth + _chevronWidth + naturalWidths.last;
+                for (var index = pathLength - 2; index >= 0; index--) {
+                  final candidateWidth =
+                      visibleWidth + _chevronWidth + naturalWidths[index];
+                  if (candidateWidth > availableCrumbWidth) break;
+                  firstVisible = index;
+                  visibleWidth = candidateWidth;
+                }
+              }
+              final targetVisible = pathLength - firstVisible;
               final hasOmission = firstVisible > 0;
               final separatorCount =
                   (targetVisible - 1) + (hasOmission ? 1 : 0);
-              final crumbWidth = targetVisible == 0
-                  ? 0.0
-                  : ((availableWidth -
-                              removeWidth -
-                              (separatorCount * _chevronWidth) -
-                              (hasOmission ? _omissionWidth : 0.0)) /
-                          targetVisible)
-                      .clamp(0.0, availableWidth);
+              final displayedCrumbWidth = (availableCrumbWidth -
+                      (separatorCount * _chevronWidth) -
+                      (hasOmission ? _omissionWidth : 0.0))
+                  .clamp(0.0, availableCrumbWidth);
               final widgets = <Widget>[];
 
               if (hasOmission) {
@@ -288,6 +357,14 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                   CrumbAbbreviationStrategy.show_last => i != pathLength - 1,
                   CrumbAbbreviationStrategy.all => true,
                 };
+                final isNearestVisibleCrumb = i == pathLength - 1;
+                final earlierVisibleWidths = naturalWidths
+                    .sublist(firstVisible, i)
+                    .fold<double>(0.0, (sum, width) => sum + width);
+                final crumbWidth = isNearestVisibleCrumb
+                    ? (displayedCrumbWidth - earlierVisibleWidths)
+                        .clamp(0.0, displayedCrumbWidth)
+                    : naturalWidths[i];
                 widgets.add(Breadcrumb(
                   style: widget.style,
                   maxWidth: crumbWidth,
