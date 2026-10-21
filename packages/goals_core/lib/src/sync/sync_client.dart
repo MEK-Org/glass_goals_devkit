@@ -69,6 +69,12 @@ class SyncClient {
 
   int? _lastEmittedStateOpCount;
 
+  /// Goals whose [_baseState] entry [loadGoal] has set since the last
+  /// [stateSubject] emission, so [_emitState] can tell a newly loaded or
+  /// reloaded goal from one merely re-cloned for working ops or recomputed
+  /// by a pull.
+  final Set<String> _loadedSinceEmit = {};
+
   final Set<String> _emittedBaseStateOpIds = {};
 
   final Set<String> _emittedWorkingStateOpIds = {};
@@ -274,11 +280,11 @@ class SyncClient {
   /// evicted id at the time of eviction. (If one is later re-created by a new
   /// `watchGoals` call, the cold-load path will re-populate `_baseState`.)
   ///
-  /// `_emittedBaseStateOpIds` is NOT pruned here. Op-id-count-based dedup in
-  /// `_emitState` is conservative: re-adding the same ids on reload is a
-  /// no-op for the set, and any subsequent op-driven emit re-broadcasts the
-  /// reloaded goal in the full `stateSubject` payload. The per-goal subject
-  /// path is unaffected. See design doc 2026-05-25 §"Behavior of eviction".
+  /// `_emittedBaseStateOpIds` is NOT pruned here. Re-adding the same ids on
+  /// reload is a no-op for the set; `_emitState` still re-broadcasts the
+  /// reloaded goal in the full `stateSubject` payload because its new base
+  /// instance differs from the last emitted one. The per-goal subject path
+  /// is unaffected. See design doc 2026-05-25 §"Behavior of eviction".
   void _evict(String goalId) {
     _baseState.remove(goalId);
     _goalLoadState.remove(goalId);
@@ -737,10 +743,19 @@ class SyncClient {
   }) {
     final emittedStateOpCount =
         _emittedBaseStateOpIds.length + _emittedWorkingStateOpIds.length;
-    final stateAdvanced = _lastEmittedStateOpCount != emittedStateOpCount;
+    final opsAdvanced = _lastEmittedStateOpCount != emittedStateOpCount;
+    // Loading a goal can add no new op ids (a parent's load already applied
+    // its child's AddParent op) yet still change the resident set. Emit when
+    // an affected goal was loaded since the last emission, so loadGoal cache
+    // hits and GoalRef.goal read the same goal the per-goal subjects receive
+    // below. Other base instance changes don't count: working-op clones and
+    // a pull's recompute of _baseState make fresh instances with no new ops.
+    final stateAdvanced = opsAdvanced ||
+        (affectedGoalIds ?? newState.keys).any(_loadedSinceEmit.contains);
 
     if (stateAdvanced) {
       _lastEmittedStateOpCount = emittedStateOpCount;
+      _loadedSinceEmit.clear();
       stateSubject.add(newState);
     }
 
@@ -1163,6 +1178,7 @@ class SyncClient {
       final loadedGoal = newGoalBase[goalId];
       if (loadedGoal != null) {
         _baseState[goalId] = loadedGoal;
+        _loadedSinceEmit.add(goalId);
         _emittedBaseStateOpIds.addAll(baseOps.map((op) => op.id));
       }
     }
@@ -1455,6 +1471,7 @@ class SyncClient {
     undoStack.clear();
     redoStack.clear();
     _baseState = {};
+    _loadedSinceEmit.clear();
     _pinCount.clear();
     _lastAccessed.clear();
     _goalSubjects.closeAll();
