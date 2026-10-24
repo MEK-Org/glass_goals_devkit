@@ -5,6 +5,7 @@ export "src/goal_actions_context.dart";
 export "src/goal_widgets_context.dart";
 export "src/intents.dart";
 export "src/keyboard_utils.dart";
+export "src/native_clipboard.dart";
 export "src/os_utils.dart";
 export "src/pdf_variant.dart";
 export "src/providers.dart";
