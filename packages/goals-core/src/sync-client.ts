@@ -3,6 +3,8 @@ import {
   expandOp,
   AnyOp,
   DeltaOp,
+  DisableOp,
+  EnableOp,
   LogEntry,
   GoalDelta,
 } from "@thkp-eng/goals-types";
@@ -82,6 +84,11 @@ export class SyncClient {
   private hlc: HLC;
   private baseState: Map<string, Goal> = new Map();
   private callbacks: Set<SyncStateCallback> = new Set();
+  // The folded state is a function of the complete operation history. Keeping
+  // that history is necessary because an old op can arrive after a newer one,
+  // and Enable/Disable operations can change whether a previously folded op is
+  // effective.
+  private opHistory: Map<string, AnyOp> = new Map();
 
   constructor(
     private persistenceService: PersistenceService | null,
@@ -157,64 +164,86 @@ export class SyncClient {
   }
 
   private applyOpsToState(ops: AnyOp[]): void {
-    // Sort ops by HLC in code-unit order, matching the Dart's
-    // `hlcTimestamp.compareTo(...)` (see compareHlc).
-    const sortedOps = [...ops].sort((a, b) =>
-      compareHlc(a.hlcTimestamp, b.hlcTimestamp),
-    );
-
-    for (const op of sortedOps) {
+    for (const op of ops) {
       const opHlc = HLC.unpack(op.hlcTimestamp);
       this.hlc = this.hlc.receive(opHlc);
 
-      if (op.type === "delta") {
-        const deltaOp = op as DeltaOp;
-        let goal = this.baseState.get(deltaOp.delta.id);
-        if (!goal) {
-          goal = new Goal(
-            deltaOp.delta.id,
-            // Pass the raw text (undefined when the delta carries none) so the
-            // Dart's `_text ?? 'Untitled'` default in Goal.text manifests,
-            // rather than coercing an absent title to "". Refs
-            // MEK-Org/meta-coder#1174.
-            deltaOp.delta.text ?? undefined,
-            new Date(opHlc.timestamp),
-          );
-          this.baseState.set(deltaOp.delta.id, goal);
-        }
+      // Op ids are immutable identities. A redelivery must not create a
+      // second logical operation, but it is still safe to advance the HLC
+      // above before returning to the state fold.
+      if (!this.opHistory.has(op.id)) {
+        this.opHistory.set(op.id, op);
+      }
+    }
 
-        if (deltaOp.delta.text !== undefined && deltaOp.delta.text !== null) {
-          goal.text = deltaOp.delta.text;
-        }
+    // Sort ops by HLC in code-unit order, matching the Dart's
+    // `hlcTimestamp.compareTo(...)` (see compareHlc). Rebuild rather than
+    // applying only the newly arrived operations: a late older operation must
+    // fall below later writes, and a disable or enable changes the result of a
+    // prior operation.
+    const sortedOps = [...this.opHistory.values()].sort((a, b) =>
+      compareHlc(a.hlcTimestamp, b.hlcTimestamp),
+    );
+    const disabledOpIds = new Set<string>();
+    for (const op of sortedOps) {
+      if (op.type === "disable") {
+        disabledOpIds.add((op as DisableOp).opId);
+      } else if (op.type === "enable") {
+        disabledOpIds.delete((op as EnableOp).opId);
+      }
+    }
 
-        const entry = deltaOp.delta.logEntry;
-        if (entry) {
-          // Dedup on (id, type), matching the Dart's
-          // `e.id == entry.id && e.runtimeType == entry.runtimeType` — an id
-          // collision across two different entry types must NOT swallow the
-          // second entry.
-          if (
-            !goal.log.some((e) => e.id === entry.id && e.type === entry.type)
-          ) {
-            goal.prependEntry(entry as any);
+    this.baseState = new Map();
+    for (const op of sortedOps) {
+      if (op.type !== "delta" || disabledOpIds.has(op.id)) {
+        continue;
+      }
 
-            // Handle special entry types
-            if (entry.type === "createInstance") {
-              this.baseState.set(
-                entry.id,
-                new GoalInstance(goal, entry.id, new Date(entry.creationTime)),
-              );
-            } else if (entry.type === "documentContents") {
-              // Content derived from log, no field to set
-            } else if (entry.type === "clearDocumentContents") {
-              // Content derived from log, no field to set
-            }
+      const deltaOp = op as DeltaOp;
+      const opHlc = HLC.unpack(op.hlcTimestamp);
+      let goal = this.baseState.get(deltaOp.delta.id);
+      if (!goal) {
+        goal = new Goal(
+          deltaOp.delta.id,
+          // Pass the raw text (undefined when the delta carries none) so the
+          // Dart's `_text ?? 'Untitled'` default in Goal.text manifests,
+          // rather than coercing an absent title to "". Refs
+          // MEK-Org/meta-coder#1174.
+          deltaOp.delta.text ?? undefined,
+          new Date(opHlc.timestamp),
+        );
+        this.baseState.set(deltaOp.delta.id, goal);
+      }
+
+      if (deltaOp.delta.text !== undefined && deltaOp.delta.text !== null) {
+        goal.text = deltaOp.delta.text;
+      }
+
+      const entry = deltaOp.delta.logEntry;
+      if (entry) {
+        // Dedup on (id, type), matching the Dart's
+        // `e.id == entry.id && e.runtimeType == entry.runtimeType` — an id
+        // collision across two different entry types must NOT swallow the
+        // second entry.
+        if (!goal.log.some((e) => e.id === entry.id && e.type === entry.type)) {
+          goal.prependEntry(entry as any);
+
+          // Handle special entry types
+          if (entry.type === "createInstance") {
+            this.baseState.set(
+              entry.id,
+              new GoalInstance(goal, entry.id, new Date(entry.creationTime)),
+            );
+          } else if (entry.type === "documentContents") {
+            // Content derived from log, no field to set
+          } else if (entry.type === "clearDocumentContents") {
+            // Content derived from log, no field to set
           }
-
-          // We evaluate super goals even if the entry is already in the log
-          // because it's possible that we need to update the super goal.
-          this.evaluateSuperGoals(this.baseState, goal, entry);
         }
+
+        // We evaluate super goals even if the entry is already in the log
+        // because it's possible that we need to update the super goal.
+        this.evaluateSuperGoals(this.baseState, goal, entry);
       }
     }
   }

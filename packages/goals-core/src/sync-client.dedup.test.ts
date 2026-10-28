@@ -121,3 +121,51 @@ describe("applyOpsToState — evaluateSuperGoals runs for already-logged entries
     expect([...goals.get("p")!.subGoalIds]).toEqual(["c"]);
   });
 });
+
+describe("applyOpsToState — effective operation history", () => {
+  it("rebuilds when a late older op arrives and when disable/enable changes a prior op", async () => {
+    const at = (timestamp: number) =>
+      new HLC(timestamp, 0, "history-client").pack();
+    const text = (id: string, value: string, timestamp: number): DeltaOp => ({
+      hlcTimestamp: at(timestamp),
+      id,
+      version: 6,
+      type: "delta",
+      delta: { id: "g", text: value },
+    });
+
+    const client = new SyncClient(null);
+    await client.init();
+
+    const original = text("original", "original", 1);
+    const older = text("older", "older", 2);
+    const latest = text("latest", "latest", 3);
+    const disableLatest = {
+      hlcTimestamp: at(4),
+      id: "disable-latest",
+      version: 6,
+      type: "disable",
+      opId: latest.id,
+    } as AnyOp;
+    const enableLatest = {
+      hlcTimestamp: at(5),
+      id: "enable-latest",
+      version: 6,
+      type: "enable",
+      opId: latest.id,
+    } as AnyOp;
+
+    // A later revision arrives before an older remote op. Applying the late
+    // older op incrementally would incorrectly overwrite the visible title.
+    await client.applyOps([original, latest]);
+    await client.applyOps([older]);
+    expect(client.getGoals().get("g")!.text).toBe("latest");
+
+    // Undo/redo operations alter the effective historical log, so both need a
+    // full fold instead of being silently ignored after their target applied.
+    await client.applyOps([disableLatest]);
+    expect(client.getGoals().get("g")!.text).toBe("older");
+    await client.applyOps([enableLatest]);
+    expect(client.getGoals().get("g")!.text).toBe("latest");
+  });
+});
