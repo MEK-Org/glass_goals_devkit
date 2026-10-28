@@ -4,8 +4,8 @@ import { HLC } from "./hlc";
 import { MemoryLocalStore, SyncClient } from "./sync-client";
 
 /**
- * Characterization test for the op-log sort order in `applyOpsToState` and
- * `MemoryLocalStore.getAllOps`.
+ * Characterization test for the op-log sort order in `SyncClient` projections
+ * and in `CachingLocalStore` op storage.
  *
  * The reference Dart `SyncClient` sorts its op log with
  * `a.hlcTimestamp.compareTo(b.hlcTimestamp)`, and Dart's `String.compareTo`
@@ -14,8 +14,8 @@ import { MemoryLocalStore, SyncClient } from "./sync-client";
  * share a timestamp and counter and differ only in `clientId`, ICU and
  * code-unit order can disagree — and when they do, Dart and TS clients fold the
  * same log in different orders. That breaks the convergence argument the cycle
- * guard depends on: the guard skips the edge whose op is applied *later* in log
- * order, so if the two populations disagree on "later" they skip different
+ * guard depends on: the guard rejects the edge whose op is applied *later* in log
+ * order, so if the two populations disagree on "later" they reject different
  * edges and diverge. This pins the code to the Dart's code-unit order.
  *
  * Refs MEK-Org/meta-coder#1174.
@@ -96,9 +96,10 @@ describe("op-log sort — code-unit order, not ICU collation", () => {
     expect([...goals.get("c")!.superGoalIds]).toEqual(["p-late"]);
   });
 
-  it("MemoryLocalStore.getAllOps returns code-unit order for same-key ops", async () => {
-    // The second sort site, in isolation. Store the two same-key ops in the
-    // order that would be wrong if unsorted, then assert getAllOps hands them
+  it("MemoryLocalStore stores a batch in code-unit order", async () => {
+    // The second sort site, in isolation. Like the Dart, getAllOps does not
+    // sort; storeSyncedOps writes each batch sorted. Store the two same-key ops
+    // in the order that would be wrong if unsorted, then assert they are read
     // back in code-unit order ("Zebra" op before "apple" op).
     const opEarly = setParentOp(
       "c",

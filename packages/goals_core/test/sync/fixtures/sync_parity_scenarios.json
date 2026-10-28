@@ -1,0 +1,1605 @@
+{
+  "scenarios": [
+    {
+      "name": "parent_first_cold_load",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "p1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "p",
+            "t": "Parent"
+          }
+        },
+        {
+          "h": "000000000001100:00000:srv",
+          "i": "c1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "t": "Child"
+          }
+        },
+        {
+          "h": "000000000001200:00000:srv",
+          "i": "c2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "lE": {
+              "t": "aP",
+              "i": "e-c2",
+              "cT": 1200,
+              "pI": "p"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "snapshot",
+          "label": "first session",
+          "cursor": true
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "snapshot",
+          "label": "restart: roots only"
+        },
+        {
+          "op": "load",
+          "id": "p"
+        },
+        {
+          "op": "snapshot",
+          "label": "after load p"
+        },
+        {
+          "op": "load",
+          "id": "c"
+        },
+        {
+          "op": "snapshot",
+          "label": "after load c"
+        }
+      ]
+    },
+    {
+      "name": "child_first_cold_load",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "g1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "gp",
+            "t": "Grand"
+          }
+        },
+        {
+          "h": "000000000001100:00000:srv",
+          "i": "p1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "p",
+            "t": "Parent"
+          }
+        },
+        {
+          "h": "000000000001200:00000:srv",
+          "i": "c1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "t": "Child"
+          }
+        },
+        {
+          "h": "000000000001300:00000:srv",
+          "i": "p2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "p",
+            "lE": {
+              "t": "aP",
+              "i": "e-p2",
+              "cT": 1300,
+              "pI": "gp"
+            }
+          }
+        },
+        {
+          "h": "000000000001400:00000:srv",
+          "i": "c2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "lE": {
+              "t": "aP",
+              "i": "e-c2",
+              "cT": 1400,
+              "pI": "p"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "snapshot",
+          "label": "restart: roots only"
+        },
+        {
+          "op": "load",
+          "id": "c"
+        },
+        {
+          "op": "snapshot",
+          "label": "after load c"
+        },
+        {
+          "op": "load",
+          "id": "p"
+        },
+        {
+          "op": "snapshot",
+          "label": "after load p"
+        }
+      ]
+    },
+    {
+      "name": "late_older_hlc_batch",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "o1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "g",
+            "t": "old"
+          }
+        },
+        {
+          "h": "000000000003000:00000:srv",
+          "i": "o2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "g",
+            "t": "new"
+          }
+        },
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "q1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "q",
+            "t": "Q"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "snapshot",
+          "label": "before late batch",
+          "cursor": true
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000002000:00000:srv",
+              "i": "o3",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "g",
+                "t": "late"
+              }
+            },
+            {
+              "h": "000000000002500:00000:srv",
+              "i": "o4",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "q",
+                "lE": {
+                  "t": "aP",
+                  "i": "e-o4",
+                  "cT": 2500,
+                  "pI": "g"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "in-session after late batch",
+          "cursor": true
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "load",
+          "id": "g"
+        },
+        {
+          "op": "load",
+          "id": "q"
+        },
+        {
+          "op": "snapshot",
+          "label": "after restart",
+          "cursor": true
+        }
+      ]
+    },
+    {
+      "name": "exact_op_redelivery",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "a1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "a",
+            "t": "A"
+          }
+        },
+        {
+          "h": "000000000001100:00000:srv",
+          "i": "a2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "a",
+            "lE": {
+              "t": "n",
+              "i": "e-a2",
+              "cT": 1100,
+              "te": "first note"
+            }
+          }
+        },
+        {
+          "h": "000000000001200:00000:srv",
+          "i": "b1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "t": "B"
+          }
+        },
+        {
+          "h": "000000000001300:00000:srv",
+          "i": "b2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "lE": {
+              "t": "aP",
+              "i": "e-b2",
+              "cT": 1300,
+              "pI": "a"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000001100:00000:srv",
+              "i": "a2",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "a",
+                "lE": {
+                  "t": "n",
+                  "i": "e-a2",
+                  "cT": 1100,
+                  "te": "first note"
+                }
+              }
+            },
+            {
+              "h": "000000000001300:00000:srv",
+              "i": "b2",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "b",
+                "lE": {
+                  "t": "aP",
+                  "i": "e-b2",
+                  "cT": 1300,
+                  "pI": "a"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "after redelivery"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000001100:00000:srv",
+              "i": "a2",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "a",
+                "lE": {
+                  "t": "n",
+                  "i": "e-a2",
+                  "cT": 1100,
+                  "te": "first note"
+                }
+              }
+            },
+            {
+              "h": "000000000001400:00000:srv",
+              "i": "a3",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "a",
+                "lE": {
+                  "t": "n",
+                  "i": "e-a3",
+                  "cT": 1400,
+                  "te": "second note"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "after redelivery plus new op"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "load",
+          "id": "a"
+        },
+        {
+          "op": "load",
+          "id": "b"
+        },
+        {
+          "op": "snapshot",
+          "label": "after restart"
+        }
+      ]
+    },
+    {
+      "name": "disable_enable_across_cursor",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "o1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "g",
+            "t": "a"
+          }
+        },
+        {
+          "h": "000000000002000:00000:srv",
+          "i": "o2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "g",
+            "t": "b"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000004000:00000:srv",
+              "i": "x1",
+              "v": 6,
+              "t": "dO",
+              "oI": "o2"
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "disable pre-cursor target, in session"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000005000:00000:srv",
+              "i": "o3",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "g",
+                "t": "c"
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "working text op"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000006000:00000:srv",
+              "i": "x2",
+              "v": 6,
+              "t": "dO",
+              "oI": "o3"
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "disable working target"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000007000:00000:srv",
+              "i": "x3",
+              "v": 6,
+              "t": "eO",
+              "oI": "o3"
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "enable working target"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "load",
+          "id": "g"
+        },
+        {
+          "op": "snapshot",
+          "label": "after restart"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000008000:00000:srv",
+              "i": "x4",
+              "v": 6,
+              "t": "eO",
+              "oI": "o2"
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "enable pre-cursor target after restart"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "load",
+          "id": "g"
+        },
+        {
+          "op": "snapshot",
+          "label": "after second restart"
+        }
+      ]
+    },
+    {
+      "name": "mutate_echo_undo_redo_restart",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "p1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "p",
+            "t": "Parent"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "modify",
+          "deltas": [
+            {
+              "i": "c",
+              "t": "Child"
+            },
+            {
+              "i": "c",
+              "lE": {
+                "t": "aP",
+                "i": "m-ap",
+                "cT": 2000,
+                "pI": "p"
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "after modify and echo"
+        },
+        {
+          "op": "modify",
+          "deltas": [
+            {
+              "i": "c",
+              "t": "Renamed"
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "after rename"
+        },
+        {
+          "op": "undo"
+        },
+        {
+          "op": "snapshot",
+          "label": "after undo rename"
+        },
+        {
+          "op": "redo"
+        },
+        {
+          "op": "snapshot",
+          "label": "after redo rename"
+        },
+        {
+          "op": "undo"
+        },
+        {
+          "op": "undo"
+        },
+        {
+          "op": "snapshot",
+          "label": "after undoing both actions"
+        },
+        {
+          "op": "redo"
+        },
+        {
+          "op": "snapshot",
+          "label": "after redo create"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "load",
+          "id": "p"
+        },
+        {
+          "op": "load",
+          "id": "c"
+        },
+        {
+          "op": "snapshot",
+          "label": "after restart"
+        }
+      ]
+    },
+    {
+      "name": "root_index",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "a1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "a",
+            "t": "A"
+          }
+        },
+        {
+          "h": "000000000001100:00000:srv",
+          "i": "b1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "t": "B"
+          }
+        },
+        {
+          "h": "000000000001200:00000:srv",
+          "i": "b2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "lE": {
+              "t": "aP",
+              "i": "e-b2",
+              "cT": 1200,
+              "pI": "a"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "snapshot",
+          "label": "initial roots"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000003000:00000:srv",
+              "i": "b3",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "b",
+                "lE": {
+                  "t": "sP",
+                  "i": "e-b3",
+                  "cT": 3000,
+                  "pI": null
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "after detach"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "snapshot",
+          "label": "restart roots"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000004000:00000:srv",
+              "i": "b4",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "b",
+                "lE": {
+                  "t": "sP",
+                  "i": "e-b4",
+                  "cT": 4000,
+                  "pI": "a"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "after reattach"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "snapshot",
+          "label": "restart roots again"
+        }
+      ]
+    },
+    {
+      "name": "lru_touch_eviction",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "r1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "r",
+            "t": "Root"
+          }
+        },
+        {
+          "h": "000000000001100:00000:srv",
+          "i": "a1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "a",
+            "t": "A"
+          }
+        },
+        {
+          "h": "000000000001500:00000:srv",
+          "i": "a2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "a",
+            "lE": {
+              "t": "aP",
+              "i": "e-a2",
+              "cT": 1500,
+              "pI": "r"
+            }
+          }
+        },
+        {
+          "h": "000000000001110:00000:srv",
+          "i": "b1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "t": "B"
+          }
+        },
+        {
+          "h": "000000000001510:00000:srv",
+          "i": "b2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "lE": {
+              "t": "aP",
+              "i": "e-b2",
+              "cT": 1510,
+              "pI": "r"
+            }
+          }
+        },
+        {
+          "h": "000000000001120:00000:srv",
+          "i": "c1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "t": "C"
+          }
+        },
+        {
+          "h": "000000000001520:00000:srv",
+          "i": "c2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "lE": {
+              "t": "aP",
+              "i": "e-c2",
+              "cT": 1520,
+              "pI": "r"
+            }
+          }
+        },
+        {
+          "h": "000000000001130:00000:srv",
+          "i": "d1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "d",
+            "t": "D"
+          }
+        },
+        {
+          "h": "000000000001530:00000:srv",
+          "i": "d2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "d",
+            "lE": {
+              "t": "aP",
+              "i": "e-d2",
+              "cT": 1530,
+              "pI": "r"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "restart",
+          "cap": 3
+        },
+        {
+          "op": "snapshot",
+          "label": "restart cap 3"
+        },
+        {
+          "op": "load",
+          "id": "a"
+        },
+        {
+          "op": "load",
+          "id": "b"
+        },
+        {
+          "op": "snapshot",
+          "label": "a b loaded"
+        },
+        {
+          "op": "load",
+          "id": "c"
+        },
+        {
+          "op": "snapshot",
+          "label": "c loaded, root evicted"
+        },
+        {
+          "op": "load",
+          "id": "a"
+        },
+        {
+          "op": "snapshot",
+          "label": "touch a"
+        },
+        {
+          "op": "load",
+          "id": "d"
+        },
+        {
+          "op": "snapshot",
+          "label": "d loaded, b evicted"
+        },
+        {
+          "op": "load",
+          "id": "a"
+        },
+        {
+          "op": "load",
+          "id": "b"
+        },
+        {
+          "op": "snapshot",
+          "label": "a hit, b reloaded"
+        }
+      ]
+    },
+    {
+      "name": "pin_release_watch",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "r1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "r",
+            "t": "Root"
+          }
+        },
+        {
+          "h": "000000000001100:00000:srv",
+          "i": "a1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "a",
+            "t": "A"
+          }
+        },
+        {
+          "h": "000000000001500:00000:srv",
+          "i": "a2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "a",
+            "lE": {
+              "t": "aP",
+              "i": "e-a2",
+              "cT": 1500,
+              "pI": "r"
+            }
+          }
+        },
+        {
+          "h": "000000000001110:00000:srv",
+          "i": "b1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "t": "B"
+          }
+        },
+        {
+          "h": "000000000001510:00000:srv",
+          "i": "b2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "lE": {
+              "t": "aP",
+              "i": "e-b2",
+              "cT": 1510,
+              "pI": "r"
+            }
+          }
+        },
+        {
+          "h": "000000000001120:00000:srv",
+          "i": "c1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "t": "C"
+          }
+        },
+        {
+          "h": "000000000001520:00000:srv",
+          "i": "c2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "lE": {
+              "t": "aP",
+              "i": "e-c2",
+              "cT": 1520,
+              "pI": "r"
+            }
+          }
+        },
+        {
+          "h": "000000000001130:00000:srv",
+          "i": "d1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "d",
+            "t": "D"
+          }
+        },
+        {
+          "h": "000000000001530:00000:srv",
+          "i": "d2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "d",
+            "lE": {
+              "t": "aP",
+              "i": "e-d2",
+              "cT": 1530,
+              "pI": "r"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "restart",
+          "cap": 1
+        },
+        {
+          "op": "ref",
+          "id": "a",
+          "as": "ra"
+        },
+        {
+          "op": "snapshot",
+          "label": "ref a"
+        },
+        {
+          "op": "load",
+          "id": "b"
+        },
+        {
+          "op": "load",
+          "id": "c"
+        },
+        {
+          "op": "snapshot",
+          "label": "a pinned through loads"
+        },
+        {
+          "op": "release",
+          "as": "ra"
+        },
+        {
+          "op": "release",
+          "as": "ra"
+        },
+        {
+          "op": "load",
+          "id": "d"
+        },
+        {
+          "op": "snapshot",
+          "label": "a released and evicted"
+        },
+        {
+          "op": "load",
+          "id": "a"
+        },
+        {
+          "op": "snapshot",
+          "label": "a reloaded"
+        },
+        {
+          "op": "watch",
+          "ids": [
+            "b"
+          ],
+          "as": "wb"
+        },
+        {
+          "op": "snapshot",
+          "label": "watch b"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000009000:00000:srv",
+              "i": "x1",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "x",
+                "t": "X"
+              }
+            },
+            {
+              "h": "000000000009100:00000:srv",
+              "i": "x2",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "x",
+                "lE": {
+                  "t": "aP",
+                  "i": "e-x2",
+                  "cT": 9100,
+                  "pI": "b"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "child adopted by watch"
+        },
+        {
+          "op": "watchRemove",
+          "as": "wb",
+          "id": "x"
+        },
+        {
+          "op": "snapshot",
+          "label": "x removed from watch"
+        },
+        {
+          "op": "unwatch",
+          "as": "wb"
+        },
+        {
+          "op": "snapshot",
+          "label": "watch disposed"
+        }
+      ]
+    },
+    {
+      "name": "reload_content_conservation",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "g1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "g",
+            "t": "Doc"
+          }
+        },
+        {
+          "h": "000000000001100:00000:srv",
+          "i": "g2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "g",
+            "lE": {
+              "t": "n",
+              "i": "e-g2",
+              "cT": 1100,
+              "te": "a note"
+            }
+          }
+        },
+        {
+          "h": "000000000001200:00000:srv",
+          "i": "g3",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "g",
+            "lE": {
+              "t": "d",
+              "i": "e-g3",
+              "cT": 1200,
+              "te": "# body"
+            }
+          }
+        },
+        {
+          "h": "000000000001300:00000:srv",
+          "i": "h1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "h",
+            "t": "Other"
+          }
+        },
+        {
+          "h": "000000000001400:00000:srv",
+          "i": "h2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "h",
+            "lE": {
+              "t": "aP",
+              "i": "e-h2",
+              "cT": 1400,
+              "pI": "g"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "snapshot",
+          "label": "first session",
+          "strings": [
+            "e-g2",
+            "e-g3"
+          ]
+        },
+        {
+          "op": "restart",
+          "cap": 1
+        },
+        {
+          "op": "load",
+          "id": "g"
+        },
+        {
+          "op": "snapshot",
+          "label": "cold load",
+          "strings": [
+            "e-g2",
+            "e-g3"
+          ]
+        },
+        {
+          "op": "load",
+          "id": "h"
+        },
+        {
+          "op": "load",
+          "id": "g"
+        },
+        {
+          "op": "snapshot",
+          "label": "evicted and reloaded",
+          "strings": [
+            "e-g2",
+            "e-g3"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cycle_guard",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "a1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "a",
+            "t": "A"
+          }
+        },
+        {
+          "h": "000000000001100:00000:srv",
+          "i": "b1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "t": "B"
+          }
+        },
+        {
+          "h": "000000000001150:00000:srv",
+          "i": "c1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "t": "C"
+          }
+        },
+        {
+          "h": "000000000001200:00000:srv",
+          "i": "b2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "lE": {
+              "t": "aP",
+              "i": "e-b2",
+              "cT": 1200,
+              "pI": "a"
+            }
+          }
+        },
+        {
+          "h": "000000000001250:00000:srv",
+          "i": "c2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "lE": {
+              "t": "aP",
+              "i": "e-c2",
+              "cT": 1250,
+              "pI": "b"
+            }
+          }
+        },
+        {
+          "h": "000000000001300:00000:srv",
+          "i": "a2",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "a",
+            "lE": {
+              "t": "aP",
+              "i": "e-a2",
+              "cT": 1300,
+              "pI": "c"
+            }
+          }
+        },
+        {
+          "h": "000000000001400:00000:srv",
+          "i": "b3",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "b",
+            "lE": {
+              "t": "sP",
+              "i": "e-b3",
+              "cT": 1400,
+              "pI": "c"
+            }
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "snapshot",
+          "label": "first session"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "load",
+          "id": "a"
+        },
+        {
+          "op": "load",
+          "id": "b"
+        },
+        {
+          "op": "load",
+          "id": "c"
+        },
+        {
+          "op": "snapshot",
+          "label": "after restart"
+        }
+      ]
+    },
+    {
+      "name": "remote_edges_in_session",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "c1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "c",
+            "t": "Child"
+          }
+        },
+        {
+          "h": "000000000001010:00000:srv",
+          "i": "x1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "x",
+            "t": "X"
+          }
+        },
+        {
+          "h": "000000000001020:00000:srv",
+          "i": "y1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "y",
+            "t": "Y"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000001100:00000:srv",
+              "i": "sp",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "c",
+                "lE": {
+                  "t": "sP",
+                  "i": "e-sp",
+                  "cT": 1100,
+                  "pI": "p"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "edge before its parent exists"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000001200:00000:srv",
+              "i": "p1",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "p",
+                "t": "Parent"
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "parent created later"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000001100:00000:srv",
+              "i": "sp",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "c",
+                "lE": {
+                  "t": "sP",
+                  "i": "e-sp",
+                  "cT": 1100,
+                  "pI": "p"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "edge redelivered"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000001300:00000:srv",
+              "i": "xy",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "x",
+                "lE": {
+                  "t": "aP",
+                  "i": "e-xy",
+                  "cT": 1300,
+                  "pI": "y"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000001400:00000:srv",
+              "i": "yx",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "y",
+                "lE": {
+                  "t": "aP",
+                  "i": "e-yx",
+                  "cT": 1400,
+                  "pI": "x"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000001500:00000:srv",
+              "i": "xx",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "x",
+                "lE": {
+                  "t": "aP",
+                  "i": "e-xx",
+                  "cT": 1500,
+                  "pI": "x"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "cycle-closing edges"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "load",
+          "id": "c"
+        },
+        {
+          "op": "load",
+          "id": "p"
+        },
+        {
+          "op": "load",
+          "id": "x"
+        },
+        {
+          "op": "load",
+          "id": "y"
+        },
+        {
+          "op": "snapshot",
+          "label": "after restart"
+        }
+      ]
+    }
+  ]
+}

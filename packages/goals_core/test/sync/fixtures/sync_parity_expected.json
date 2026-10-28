@@ -1,0 +1,2259 @@
+{
+  "parent_first_cold_load": [
+    {
+      "label": "first session",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "p": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {},
+      "cursor": "000000000001200:00000:srv"
+    },
+    {
+      "label": "restart: roots only",
+      "state": {
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "p": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after load p",
+      "state": {
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "p": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after load c",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 2,
+        "p": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ],
+  "child_first_cold_load": [
+    {
+      "label": "restart: roots only",
+      "state": {
+        "gp": {
+          "text": "Grand",
+          "parents": [],
+          "children": [
+            "p"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "gp"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "gp": 2,
+        "p": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after load c",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        },
+        "gp": {
+          "text": "Grand",
+          "parents": [],
+          "children": [
+            "p"
+          ],
+          "log": []
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "gp"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 2,
+        "gp": 2,
+        "p": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after load p",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        },
+        "gp": {
+          "text": "Grand",
+          "parents": [],
+          "children": [
+            "p"
+          ],
+          "log": []
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [
+            "gp"
+          ],
+          "children": [
+            "c"
+          ],
+          "log": [
+            "aP:e-p2"
+          ]
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "gp"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 2,
+        "gp": 2,
+        "p": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ],
+  "late_older_hlc_batch": [
+    {
+      "label": "before late batch",
+      "state": {
+        "g": {
+          "text": "new",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "q": {
+          "text": "Q",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "g",
+        "q"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1,
+        "q": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {},
+      "cursor": "000000000003000:00000:srv"
+    },
+    {
+      "label": "in-session after late batch",
+      "state": {
+        "g": {
+          "text": "late",
+          "parents": [],
+          "children": [
+            "q"
+          ],
+          "log": []
+        },
+        "q": {
+          "text": "Q",
+          "parents": [
+            "g"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-o4"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1,
+        "q": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {},
+      "cursor": "000000000002500:00000:srv"
+    },
+    {
+      "label": "after restart",
+      "state": {
+        "g": {
+          "text": "new",
+          "parents": [],
+          "children": [
+            "q"
+          ],
+          "log": []
+        },
+        "q": {
+          "text": "Q",
+          "parents": [
+            "g"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-o4"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 2,
+        "q": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {},
+      "cursor": "000000000002500:00000:srv"
+    }
+  ],
+  "exact_op_redelivery": [
+    {
+      "label": "after redelivery",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [],
+          "children": [
+            "b"
+          ],
+          "log": [
+            "n:e-a2:first note"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "a"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "a"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 1,
+        "b": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after redelivery plus new op",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [],
+          "children": [
+            "b"
+          ],
+          "log": [
+            "n:e-a3:second note",
+            "n:e-a2:first note"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "a"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "a"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 1,
+        "b": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after restart",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [],
+          "children": [
+            "b"
+          ],
+          "log": [
+            "n:e-a3:second note",
+            "n:e-a2:first note"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "a"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "a"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ],
+  "disable_enable_across_cursor": [
+    {
+      "label": "disable pre-cursor target, in session",
+      "state": {
+        "g": {
+          "text": "b",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "working text op",
+      "state": {
+        "g": {
+          "text": "c",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "disable working target",
+      "state": {
+        "g": {
+          "text": "b",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "enable working target",
+      "state": {
+        "g": {
+          "text": "c",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after restart",
+      "state": {
+        "g": {
+          "text": "c",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "enable pre-cursor target after restart",
+      "state": {
+        "g": {
+          "text": "c",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after second restart",
+      "state": {
+        "g": {
+          "text": "c",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 3
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ],
+  "mutate_echo_undo_redo_restart": [
+    {
+      "label": "after modify and echo",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:m-ap"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "p": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after rename",
+      "state": {
+        "c": {
+          "text": "Renamed",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:m-ap"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "p": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after undo rename",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:m-ap"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "p": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after redo rename",
+      "state": {
+        "c": {
+          "text": "Renamed",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:m-ap"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "p": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after undoing both actions",
+      "state": {
+        "c": {
+          "text": "Renamed",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "c",
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "p": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after redo create",
+      "state": {
+        "c": {
+          "text": "Renamed",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:m-ap"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 1,
+        "p": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after restart",
+      "state": {
+        "c": {
+          "text": "Renamed",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "aP:m-ap"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": []
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "p"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 2,
+        "p": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ],
+  "root_index": [
+    {
+      "label": "initial roots",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [],
+          "children": [
+            "b"
+          ],
+          "log": []
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "a"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "a"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 1,
+        "b": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after detach",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "b": {
+          "text": "B",
+          "parents": [],
+          "children": [],
+          "log": [
+            "sP:e-b3",
+            "aP:e-b2"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "a",
+        "b"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 1,
+        "b": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "restart roots",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "b": {
+          "text": "B",
+          "parents": [],
+          "children": [],
+          "log": [
+            "sP:e-b3",
+            "aP:e-b2"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "a",
+        "b"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 3
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after reattach",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [],
+          "children": [
+            "b"
+          ],
+          "log": []
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "a"
+          ],
+          "children": [],
+          "log": [
+            "sP:e-b4",
+            "sP:e-b3",
+            "aP:e-b2"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "a"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 5
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "restart roots again",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [],
+          "children": [
+            "b"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "a"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 3,
+        "b": 5
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ],
+  "lru_touch_eviction": [
+    {
+      "label": "restart cap 3",
+      "state": {
+        "r": {
+          "text": "Root",
+          "parents": [],
+          "children": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 1,
+        "b": 1,
+        "c": 1,
+        "d": 1,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "a b loaded",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        },
+        "r": {
+          "text": "Root",
+          "parents": [],
+          "children": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "log": []
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 2,
+        "c": 1,
+        "d": 1,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "c loaded, root evicted",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        },
+        "c": {
+          "text": "C",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        },
+        "r": {
+          "text": "Root",
+          "parents": [],
+          "children": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "log": []
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 2,
+        "c": 2,
+        "d": 1,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "touch a",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        },
+        "c": {
+          "text": "C",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        },
+        "r": {
+          "text": "Root",
+          "parents": [],
+          "children": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "log": []
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 2,
+        "c": 2,
+        "d": 1,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "d loaded, b evicted",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        },
+        "c": {
+          "text": "C",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        },
+        "d": {
+          "text": "D",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-d2"
+          ]
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 2,
+        "c": 2,
+        "d": 2,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "a hit, b reloaded",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        },
+        "c": {
+          "text": "C",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        },
+        "d": {
+          "text": "D",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-d2"
+          ]
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 3,
+        "c": 2,
+        "d": 2,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ],
+  "pin_release_watch": [
+    {
+      "label": "ref a",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "r": {
+          "text": "Root",
+          "parents": [],
+          "children": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 1,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 1,
+        "c": 1,
+        "d": 1,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {
+        "ra": "A"
+      },
+      "watches": {}
+    },
+    {
+      "label": "a pinned through loads",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "c": {
+          "text": "C",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 1,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 2,
+        "c": 2,
+        "d": 1,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {
+        "ra": "A"
+      },
+      "watches": {}
+    },
+    {
+      "label": "a released and evicted",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "d": {
+          "text": "D",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-d2"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 2,
+        "c": 2,
+        "d": 2,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {
+        "ra": "A"
+      },
+      "watches": {}
+    },
+    {
+      "label": "a reloaded",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "d": {
+          "text": "D",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-d2"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 3,
+        "b": 2,
+        "c": 2,
+        "d": 2,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {
+        "ra": "A"
+      },
+      "watches": {}
+    },
+    {
+      "label": "watch b",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "r"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-b2"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 1,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 3,
+        "b": 3,
+        "c": 2,
+        "d": 2,
+        "r": 2
+      },
+      "getAllOps": 0,
+      "refs": {
+        "ra": "A"
+      },
+      "watches": {
+        "wb": {
+          "watched": [
+            "b"
+          ],
+          "current": [
+            "b"
+          ]
+        }
+      }
+    },
+    {
+      "label": "child adopted by watch",
+      "state": {
+        "b": {
+          "text": "B",
+          "parents": [
+            "r"
+          ],
+          "children": [
+            "x"
+          ],
+          "log": [
+            "aP:e-b2"
+          ]
+        },
+        "x": {
+          "text": "X",
+          "parents": [
+            "b"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-x2"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 2,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 3,
+        "b": 3,
+        "c": 2,
+        "d": 2,
+        "r": 2,
+        "x": 1
+      },
+      "getAllOps": 0,
+      "refs": {
+        "ra": null
+      },
+      "watches": {
+        "wb": {
+          "watched": [
+            "b",
+            "x"
+          ],
+          "current": [
+            "b",
+            "x"
+          ]
+        }
+      }
+    },
+    {
+      "label": "x removed from watch",
+      "state": {
+        "b": {
+          "text": "B",
+          "parents": [
+            "r"
+          ],
+          "children": [
+            "x"
+          ],
+          "log": [
+            "aP:e-b2"
+          ]
+        },
+        "x": {
+          "text": "X",
+          "parents": [
+            "b"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-x2"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 1,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 3,
+        "b": 3,
+        "c": 2,
+        "d": 2,
+        "r": 2,
+        "x": 1
+      },
+      "getAllOps": 0,
+      "refs": {
+        "ra": null
+      },
+      "watches": {
+        "wb": {
+          "watched": [
+            "b"
+          ],
+          "current": [
+            "b"
+          ]
+        }
+      }
+    },
+    {
+      "label": "watch disposed",
+      "state": {
+        "b": {
+          "text": "B",
+          "parents": [
+            "r"
+          ],
+          "children": [
+            "x"
+          ],
+          "log": [
+            "aP:e-b2"
+          ]
+        },
+        "x": {
+          "text": "X",
+          "parents": [
+            "b"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-x2"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "r"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 3,
+        "b": 3,
+        "c": 2,
+        "d": 2,
+        "r": 2,
+        "x": 1
+      },
+      "getAllOps": 0,
+      "refs": {
+        "ra": null
+      },
+      "watches": {
+        "wb": {
+          "watched": [],
+          "current": []
+        }
+      }
+    }
+  ],
+  "reload_content_conservation": [
+    {
+      "label": "first session",
+      "state": {
+        "g": {
+          "text": "Doc",
+          "parents": [],
+          "children": [
+            "h"
+          ],
+          "log": [
+            "d:e-g3:# body",
+            "n:e-g2:a note"
+          ]
+        },
+        "h": {
+          "text": "Other",
+          "parents": [
+            "g"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-h2"
+          ]
+        }
+      },
+      "resident": 2,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1,
+        "h": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {},
+      "strings": {
+        "e-g2": "a note",
+        "e-g3": "# body"
+      }
+    },
+    {
+      "label": "cold load",
+      "state": {
+        "g": {
+          "text": "Doc",
+          "parents": [],
+          "children": [
+            "h"
+          ],
+          "log": [
+            "d:e-g3:# body",
+            "n:e-g2:a note"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 2,
+        "h": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {},
+      "strings": {
+        "e-g2": "a note",
+        "e-g3": "# body"
+      }
+    },
+    {
+      "label": "evicted and reloaded",
+      "state": {
+        "g": {
+          "text": "Doc",
+          "parents": [],
+          "children": [
+            "h"
+          ],
+          "log": [
+            "d:e-g3",
+            "n:e-g2"
+          ]
+        },
+        "h": {
+          "text": "Other",
+          "parents": [
+            "g"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-h2"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 3,
+        "h": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {},
+      "strings": {
+        "e-g2": "a note",
+        "e-g3": "# body"
+      }
+    }
+  ],
+  "cycle_guard": [
+    {
+      "label": "first session",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [],
+          "children": [
+            "c"
+          ],
+          "log": [
+            "sP:e-b3",
+            "aP:e-b2"
+          ]
+        },
+        "c": {
+          "text": "C",
+          "parents": [
+            "b"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-c2"
+          ]
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "a",
+        "b"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 1,
+        "b": 3,
+        "c": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after restart",
+      "state": {
+        "a": {
+          "text": "A",
+          "parents": [
+            "c"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-a2"
+          ]
+        },
+        "b": {
+          "text": "B",
+          "parents": [
+            "c"
+          ],
+          "children": [],
+          "log": [
+            "sP:e-b3",
+            "aP:e-b2"
+          ]
+        },
+        "c": {
+          "text": "C",
+          "parents": [],
+          "children": [
+            "a",
+            "b"
+          ],
+          "log": [
+            "aP:e-c2"
+          ]
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "a",
+        "b"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "a": 2,
+        "b": 4,
+        "c": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ],
+  "remote_edges_in_session": [
+    {
+      "label": "edge before its parent exists",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "sP:e-sp"
+          ]
+        },
+        "x": {
+          "text": "X",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "y": {
+          "text": "Y",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "x",
+        "y"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 3,
+        "p": 1,
+        "x": 1,
+        "y": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "parent created later",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "sP:e-sp"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "x": {
+          "text": "X",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "y": {
+          "text": "Y",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "p",
+        "x",
+        "y"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 3,
+        "p": 1,
+        "x": 1,
+        "y": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "edge redelivered",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "sP:e-sp"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "x": {
+          "text": "X",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "y": {
+          "text": "Y",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "p",
+        "x",
+        "y"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 5,
+        "p": 1,
+        "x": 1,
+        "y": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "cycle-closing edges",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "sP:e-sp"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "x": {
+          "text": "X",
+          "parents": [
+            "y"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-xx",
+            "aP:e-xy"
+          ]
+        },
+        "y": {
+          "text": "Y",
+          "parents": [],
+          "children": [
+            "x"
+          ],
+          "log": [
+            "aP:e-yx"
+          ]
+        }
+      },
+      "resident": 3,
+      "pinned": 0,
+      "roots": [
+        "p",
+        "y"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 5,
+        "p": 1,
+        "x": 1,
+        "y": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after restart",
+      "state": {
+        "c": {
+          "text": "Child",
+          "parents": [
+            "p"
+          ],
+          "children": [],
+          "log": [
+            "sP:e-sp"
+          ]
+        },
+        "p": {
+          "text": "Parent",
+          "parents": [],
+          "children": [],
+          "log": []
+        },
+        "x": {
+          "text": "X",
+          "parents": [
+            "y"
+          ],
+          "children": [],
+          "log": [
+            "aP:e-xx",
+            "aP:e-xy"
+          ]
+        },
+        "y": {
+          "text": "Y",
+          "parents": [],
+          "children": [
+            "x"
+          ],
+          "log": [
+            "aP:e-yx"
+          ]
+        }
+      },
+      "resident": 4,
+      "pinned": 0,
+      "roots": [
+        "p",
+        "y"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "c": 6,
+        "p": 2,
+        "x": 2,
+        "y": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ]
+}
