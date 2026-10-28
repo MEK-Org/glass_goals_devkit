@@ -169,3 +169,107 @@ describe("applyOpsToState — effective operation history", () => {
     expect(client.getGoals().get("g")!.text).toBe("latest");
   });
 });
+
+describe("applyOpsToState — relationship reconciliation across a rebuild", () => {
+  const at = (timestamp: number) =>
+    new HLC(timestamp, 0, "edge-client").pack();
+  const create = (goalId: string, timestamp: number): DeltaOp => ({
+    hlcTimestamp: at(timestamp),
+    id: `create-${goalId}`,
+    version: 6,
+    type: "delta",
+    delta: { id: goalId, text: goalId },
+  });
+  const setParent = {
+    hlcTimestamp: at(2),
+    id: "set-parent-op",
+    version: 6,
+    type: "delta",
+    delta: {
+      id: "c",
+      logEntry: {
+        id: "set-parent-entry",
+        creationTime: 2,
+        type: "setParent",
+        parentId: "p",
+      } as unknown as LogEntry,
+    },
+  } as DeltaOp;
+
+  it("keeps both edges when the exact same setParent op is redelivered after its parent exists", async () => {
+    const client = new SyncClient(null);
+    await client.init();
+
+    await client.applyOps([create("c", 1)]);
+    await client.applyOps([setParent]);
+    await client.applyOps([create("p", 3)]);
+    await client.applyOps([setParent]);
+
+    const goals = client.getGoals();
+    expect([...goals.get("c")!.superGoalIds]).toEqual(["p"]);
+    expect([...goals.get("p")!.subGoalIds]).toEqual(["c"]);
+  });
+
+  it("does not depend on whether the parent edge arrived before the parent", async () => {
+    const incremental = new SyncClient(null);
+    await incremental.init();
+    await incremental.applyOps([create("c", 1)]);
+    await incremental.applyOps([setParent]);
+    await incremental.applyOps([create("p", 3)]);
+
+    const batch = await applied([create("c", 1), setParent, create("p", 3)]);
+
+    for (const goals of [incremental.getGoals(), batch]) {
+      expect([...goals.get("c")!.superGoalIds]).toEqual(["p"]);
+      expect([...goals.get("p")!.subGoalIds]).toEqual(["c"]);
+    }
+  });
+
+  it("still skips the down edge of a cycle-closing relationship once the parent appears", async () => {
+    // a is under b; then (with a absent at evaluation time of the op ordering)
+    // b is placed under a. Reconciliation must not resurrect a cycle edge.
+    const aUnderB = {
+      hlcTimestamp: at(4),
+      id: "a-under-b",
+      version: 6,
+      type: "delta",
+      delta: {
+        id: "a",
+        logEntry: {
+          id: "a-under-b-entry",
+          creationTime: 4,
+          type: "setParent",
+          parentId: "b",
+        } as unknown as LogEntry,
+      },
+    } as DeltaOp;
+    const bUnderA = {
+      hlcTimestamp: at(2),
+      id: "b-under-a",
+      version: 6,
+      type: "delta",
+      delta: {
+        id: "b",
+        logEntry: {
+          id: "b-under-a-entry",
+          creationTime: 2,
+          type: "setParent",
+          parentId: "a",
+        } as unknown as LogEntry,
+      },
+    } as DeltaOp;
+
+    const goals = await applied([
+      create("b", 1),
+      bUnderA,
+      create("a", 3),
+      aUnderB,
+    ]);
+
+    // b's edge to a was deferred (a absent), then reconciled when a appeared.
+    expect([...goals.get("a")!.subGoalIds]).toEqual(["b"]);
+    // a under b would now close a cycle: up edge kept, down edge skipped.
+    expect([...goals.get("a")!.superGoalIds]).toEqual(["b"]);
+    expect([...goals.get("b")!.subGoalIds]).toEqual([]);
+  });
+});

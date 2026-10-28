@@ -78,6 +78,12 @@ export class MemoryLocalStore implements LocalStore {
   }
 }
 
+interface DeferredDownEdge {
+  goalId: string;
+  cycleCheckId: string;
+  entry: LogEntry;
+}
+
 export type SyncStateCallback = (state: Map<string, Goal>) => void;
 
 export class SyncClient {
@@ -89,6 +95,11 @@ export class SyncClient {
   // and Enable/Disable operations can change whether a previously folded op is
   // effective.
   private opHistory: Map<string, AnyOp> = new Map();
+  // Down edges whose parent was absent when the edge was evaluated, keyed by
+  // parent id. Rebuilt with each fold and drained when the parent appears, so
+  // the result does not depend on whether a parent arrived before or after
+  // its child's relationship op.
+  private deferredDownEdges: Map<string, DeferredDownEdge[]> = new Map();
 
   constructor(
     private persistenceService: PersistenceService | null,
@@ -194,6 +205,7 @@ export class SyncClient {
     }
 
     this.baseState = new Map();
+    this.deferredDownEdges = new Map();
     for (const op of sortedOps) {
       if (op.type !== "delta" || disabledOpIds.has(op.id)) {
         continue;
@@ -213,6 +225,7 @@ export class SyncClient {
           new Date(opHlc.timestamp),
         );
         this.baseState.set(deltaOp.delta.id, goal);
+        this.attachDeferredDownEdges(goal);
       }
 
       if (deltaOp.delta.text !== undefined && deltaOp.delta.text !== null) {
@@ -230,10 +243,13 @@ export class SyncClient {
 
           // Handle special entry types
           if (entry.type === "createInstance") {
-            this.baseState.set(
+            const instance = new GoalInstance(
+              goal,
               entry.id,
-              new GoalInstance(goal, entry.id, new Date(entry.creationTime)),
+              new Date(entry.creationTime),
             );
+            this.baseState.set(entry.id, instance);
+            this.attachDeferredDownEdges(instance);
           } else if (entry.type === "documentContents") {
             // Content derived from log, no field to set
           } else if (entry.type === "clearDocumentContents") {
@@ -330,6 +346,8 @@ export class SyncClient {
           }
 
           parent.addSubGoal(goal.id, entry as any);
+        } else {
+          this.deferDownEdge(setParent.parentId, goal.id, goal.id, entry);
         }
       }
     } else if (entry.type === "addParent") {
@@ -351,12 +369,54 @@ export class SyncClient {
         }
 
         parent.addSubGoal(goal.id, entry as any);
+      } else {
+        this.deferDownEdge(addParent.parentId, goal.id, childId, entry);
       }
     } else if (entry.type === "removeParent") {
       const removeParent = entry as any;
       goal.removeSuperGoal(removeParent.parentId);
       const parent = goalMap.get(removeParent.parentId);
       if (parent) parent.removeSubGoal(goal.id);
+    }
+  }
+
+  private deferDownEdge(
+    parentId: string,
+    goalId: string,
+    cycleCheckId: string,
+    entry: LogEntry,
+  ): void {
+    const pending = this.deferredDownEdges.get(parentId) ?? [];
+    pending.push({ goalId, cycleCheckId, entry });
+    this.deferredDownEdges.set(parentId, pending);
+  }
+
+  /**
+   * Completes down edges recorded while `parent` was absent. An edge is only
+   * attached if its up edge is still the one that deferred it (a later
+   * setParent/removeParent may have replaced it), and the cycle guard is
+   * applied as if the edge were evaluated now.
+   */
+  private attachDeferredDownEdges(parent: Goal): void {
+    const pending = this.deferredDownEdges.get(parent.id);
+    if (!pending) return;
+    this.deferredDownEdges.delete(parent.id);
+    for (const { goalId, cycleCheckId, entry } of pending) {
+      const child = this.baseState.get(goalId);
+      if (!child || child.superGoalRelationships.get(parent.id) !== entry) {
+        continue;
+      }
+      if (
+        this.checkCycles(
+          this.baseState,
+          cycleCheckId,
+          new Set([parent.id]),
+          new Set([parent.id]),
+        )
+      ) {
+        continue;
+      }
+      parent.addSubGoal(goalId, entry as any);
     }
   }
 
