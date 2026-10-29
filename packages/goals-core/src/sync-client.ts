@@ -852,8 +852,7 @@ export class SyncClient {
 
   /**
    * Loads the goals [newSyncedOps] affect, applies the ops, updates the root,
-   * status and name indices, and queues the ops for local storage. Returns the
-   * state with the working ops and [newSyncedOps] applied.
+   * status and name indices, and queues the ops for local storage.
    *
    * With [asBase], the state also becomes the base as soon as it is built. A
    * caller that assigned it after the await would drop any goal a concurrent
@@ -863,11 +862,12 @@ export class SyncClient {
     newSyncedOps: AnyOp[],
     loadAffectedGoals = true,
     asBase = false,
-  ): Promise<Map<string, Goal>> {
+  ): Promise<void> {
     if (newSyncedOps.length === 0) {
-      const state = this.computeStateFromBase(this.workingOps.values());
-      if (asBase) this.baseState = state;
-      return state;
+      if (asBase) {
+        this.baseState = this.computeStateFromBase(this.workingOps.values());
+      }
+      return;
     }
 
     const affectedGoalIds = await this.computeAffectedGoalIds(newSyncedOps);
@@ -940,7 +940,6 @@ export class SyncClient {
     this.acknowledgeReceivedOps(newSyncedOps);
     this.localStore.storeSyncedOps(newSyncedOps).catch(this.onError);
     this.maybeEvict();
-    return state;
   }
 
   private removeGoalName(goalId: string): void {
