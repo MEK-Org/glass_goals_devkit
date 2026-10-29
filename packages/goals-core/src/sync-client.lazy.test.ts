@@ -328,3 +328,59 @@ describe("lazy SyncClient — loads in flight during eviction", () => {
     client.dispose();
   });
 });
+
+/**
+ * Holds one goal's `loadOpsForGoal` until the client next stores synced ops,
+ * which `persistOps` does after it has built the pulled state but before the
+ * pull installs it as the new base.
+ */
+class PullRacingLocalStore extends GatedLocalStore {
+  heldGoalId: string | null = null;
+  private release: (() => void) | null = null;
+  private armed!: () => void;
+  /** Resolves once the held goal's ops are read and waiting on the release. */
+  held = new Promise<void>((r) => (this.armed = r));
+
+  override loadOpsForGoal(goalId: string): Promise<AnyOp[]> {
+    const ops = super.loadOpsForGoal(goalId);
+    if (goalId !== this.heldGoalId) return ops;
+    this.heldGoalId = null;
+    // Resolved directly, so the load resumes one microtask after the release,
+    // ahead of the pull's continuation.
+    return new Promise<AnyOp[]>((resolve) => {
+      void ops.then((loaded) => {
+        this.release = () => resolve(loaded);
+        this.armed();
+      });
+    });
+  }
+
+  override storeSyncedOps(ops: Iterable<AnyOp>): Promise<void> {
+    this.release?.();
+    this.release = null;
+    return super.storeSyncedOps(ops);
+  }
+}
+
+describe("lazy SyncClient — a pull racing a goal load", () => {
+  it("a goal loaded while a pull installs its state stays loaded", async () => {
+    const store = new PullRacingLocalStore();
+    const { persistence } = await persistedStore(twoChildren(), store);
+    const client = new SyncClient(persistence, store);
+    await client.init();
+    await settle(persistence);
+
+    // A remote retitle of the root makes the next pull non-empty.
+    await persistence.save([text("r2", 2000, "root", "Root v2")]);
+    store.heldGoalId = "fast";
+    const fast = client.loadGoal("fast");
+    await store.held;
+    await client.sync();
+
+    expect((await fast)?.text).toBe("Fast");
+    expect((await client.loadGoal("root"))?.text).toBe("Root v2");
+    expect((await client.loadGoal("fast"))?.text).toBe("Fast");
+    expect(client.getGoals().get("fast")?.text).toBe("Fast");
+    client.dispose();
+  });
+});

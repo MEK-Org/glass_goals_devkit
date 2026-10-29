@@ -199,4 +199,67 @@ void main() {
       client.dispose();
     });
   });
+
+  group('SyncClient — a pull racing a goal load', () {
+    test('a goal loaded while a pull installs its state stays loaded',
+        () async {
+      final store = _PullRacingLocalStore();
+      final persistence = MemoryPersistenceService();
+      await persistence.save(_twoChildren());
+      await _pump(persistence);
+      final producer =
+          SyncClient(persistenceService: persistence, localStore: store);
+      await producer.init();
+      await _pump(persistence);
+      producer.dispose();
+
+      final client =
+          SyncClient(persistenceService: persistence, localStore: store);
+      await client.init();
+      await _pump(persistence);
+
+      // Hold `fast`'s load at `loadOpsForGoal`, then save a remote retitle of
+      // the root and pull before the stream's Duration.zero timer fires.
+      store.heldGoalId = 'fast';
+      final fast = client.loadGoal('fast');
+      await store.held.future;
+      await persistence.save([_text('r2', 2000, 'root', 'Root v2')]);
+      await client.sync();
+
+      expect((await fast)?.text, 'Fast');
+      expect((await client.loadGoal('root'))?.text, 'Root v2');
+      expect((await client.loadGoal('fast'))?.text, 'Fast');
+      expect(client.stateSubject.value['fast']?.text, 'Fast');
+      client.dispose();
+    });
+  });
+}
+
+/// Holds one goal's [loadOpsForGoal] until the client next stores synced ops,
+/// which `_persistOps` does after it has built the pulled state but before the
+/// pull installs it as the new base.
+class _PullRacingLocalStore extends _GatedLocalStore {
+  String? heldGoalId;
+  void Function()? _release;
+  final Completer<void> held = Completer<void>();
+
+  @override
+  Future<Iterable<Op>> loadOpsForGoal(String goalId) {
+    final ops = super.loadOpsForGoal(goalId);
+    if (goalId != heldGoalId) return ops;
+    heldGoalId = null;
+    final completer = Completer<Iterable<Op>>.sync();
+    ops.then((loaded) {
+      _release = () => completer.complete(loaded);
+      held.complete();
+    });
+    return completer.future;
+  }
+
+  @override
+  Future<void> storeSyncedOps(Iterable<Op> ops) {
+    _release?.call();
+    _release = null;
+    return super.storeSyncedOps(ops);
+  }
 }

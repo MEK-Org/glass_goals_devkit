@@ -852,15 +852,22 @@ export class SyncClient {
 
   /**
    * Loads the goals [newSyncedOps] affect, applies the ops, updates the root,
-   * status and name indices, and queues the ops for local storage. Returns the
-   * state with the working ops and [newSyncedOps] applied.
+   * status and name indices, and queues the ops for local storage.
+   *
+   * With [asBase], the state also becomes the base as soon as it is built. A
+   * caller that assigned it after the await would drop any goal a concurrent
+   * `loadGoal` installed into the old base in between.
    */
   private async persistOps(
     newSyncedOps: AnyOp[],
     loadAffectedGoals = true,
-  ): Promise<Map<string, Goal>> {
+    asBase = false,
+  ): Promise<void> {
     if (newSyncedOps.length === 0) {
-      return this.computeStateFromBase(this.workingOps.values());
+      if (asBase) {
+        this.baseState = this.computeStateFromBase(this.workingOps.values());
+      }
+      return;
     }
 
     const affectedGoalIds = await this.computeAffectedGoalIds(newSyncedOps);
@@ -889,6 +896,7 @@ export class SyncClient {
         ? newSyncedOps
         : [...this.workingOps.values(), ...newSyncedOps],
     );
+    if (asBase) this.baseState = state;
 
     const newIndexValues = new Map<string, Set<string>>();
     for (const indexKey of this.indexers.keys()) {
@@ -932,7 +940,6 @@ export class SyncClient {
     this.acknowledgeReceivedOps(newSyncedOps);
     this.localStore.storeSyncedOps(newSyncedOps).catch(this.onError);
     this.maybeEvict();
-    return state;
   }
 
   private removeGoalName(goalId: string): void {
@@ -1089,7 +1096,7 @@ export class SyncClient {
       for (const op of result.ops) {
         this.hlc = this.hlc.receive(HLC.unpack(op.hlcTimestamp));
       }
-      this.baseState = await this.persistOps(result.ops);
+      await this.persistOps(result.ops, true, true);
       if (
         result.cursor != null &&
         (latestCursor == null || compareHlc(result.cursor, latestCursor) > 0)
