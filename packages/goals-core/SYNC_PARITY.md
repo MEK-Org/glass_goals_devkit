@@ -115,17 +115,6 @@ Other modules:
   events after calling close" into the zone.
 - A failed push goes to `onError`; the Dart prints it.
 
-## Fixes not yet in the Dart
-
-- **A pull no longer drops a goal loaded during it.** The Dart pull assigns
-  `_baseState = await _persistOps(...)`. A `loadGoal` that finishes between
-  `_persistOps` building its state and that assignment installs its goal into
-  the old base. The assignment then drops the goal, which stays marked loaded,
-  so `loadGoal` returns null until it is evicted. The TS `persistOps` installs
-  the state as the base as soon as it builds it. The shared fixture does not
-  cover this race; see `a goal loaded while a pull installs its state stays
-  loaded` in `sync-client.lazy.test.ts`.
-
 ## Known Dart behaviors the port keeps
 
 These are observed in the shared fixture. The TS client reproduces each one,

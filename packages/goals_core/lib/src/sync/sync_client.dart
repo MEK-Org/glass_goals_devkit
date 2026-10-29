@@ -1044,10 +1044,16 @@ class SyncClient {
     return disabledOps;
   }
 
-  Future<Map<String, Goal>> _persistOps(Iterable<Op> newSyncedOps,
-      {bool loadAffectedGoals = true}) async {
+  Future<void> _persistOps(
+    Iterable<Op> newSyncedOps, {
+    bool loadAffectedGoals = true,
+    bool asBase = false,
+  }) async {
     if (newSyncedOps.isEmpty) {
-      return _computeStateFromBase(_workingOps.values);
+      if (asBase) {
+        _baseState = _computeStateFromBase(_workingOps.values);
+      }
+      return;
     }
 
     final affectedGoalIds = await _computeAffectedGoalIds(newSyncedOps);
@@ -1082,6 +1088,9 @@ class SyncClient {
           ? newSyncedOps
           : [..._workingOps.values, ...newSyncedOps],
     );
+    if (asBase) {
+      _baseState = state;
+    }
 
     final newIndexValues = <String, Set<String>>{};
 
@@ -1142,8 +1151,6 @@ class SyncClient {
     localStore.storeSyncedOps(newSyncedOps);
 
     _maybeEvict();
-
-    return state;
   }
 
   Future<Goal?> loadGoal(String goalId) async {
@@ -1341,7 +1348,7 @@ class SyncClient {
           hlc = hlc.receive(HLC.unpack(op.hlcTimestamp));
         }
 
-        _baseState = await _persistOps(result.ops);
+        await _persistOps(result.ops, asBase: true);
 
         if (result.cursor != null &&
             (latestCursor == null ||
