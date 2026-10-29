@@ -8,10 +8,10 @@ import { SyncClient } from "./sync-client";
  *
  * The reference implementation is the Dart original,
  * `goals_core/lib/src/sync/sync_client.dart`:
- *   - `_checkCycles` (:818), including its fail-open on an unloaded parent
- *     (:829-832)
- *   - the two guarded parent branches, `SetParentLogEntry` (:882) and
- *     `AddParentLogEntry` (:900)
+ *   - `_checkCycles`, including its fail-open on an unloaded parent
+ *   - the two guarded parent branches in `_evaluateSuperGoals`,
+ *     `SetParentLogEntry` and `AddParentLogEntry`, which reject both sides of
+ *     a cycle-closing edge
  *
  * These tests exist to pin the Dart's *behaviour*, tolerances included, so a
  * future port or refactor can't quietly tighten it.
@@ -77,7 +77,7 @@ async function applied(ops: AnyOp[]) {
 }
 
 describe("evaluateSuperGoals cycle guard — addParent", () => {
-  it("skips only the down edge of a cycle-closing op, leaving the up edge in place", async () => {
+  it("rejects both sides of a cycle-closing op", async () => {
     // a -> b (b is a's parent), then the loop-closing b -> a.
     const goals = await applied([
       createGoal("a"),
@@ -89,9 +89,8 @@ describe("evaluateSuperGoals cycle guard — addParent", () => {
     const a = goals.get("a")!;
     const b = goals.get("b")!;
 
-    // The up edge is added before the check and is deliberately NOT reverted.
-    expect([...b.superGoalIds]).toEqual(["a"]);
-    // The down edge is the one that gets skipped.
+    // The guard returns before either edge is added.
+    expect([...b.superGoalIds]).toEqual([]);
     expect([...a.subGoalIds]).toEqual([]);
     expect(a.subGoalRelationships.has("b")).toBe(false);
 
@@ -111,20 +110,20 @@ describe("evaluateSuperGoals cycle guard — addParent", () => {
       addParent("c", "a"),
     ]);
 
-    expect([...goals.get("c")!.superGoalIds]).toEqual(["a"]);
+    expect([...goals.get("c")!.superGoalIds]).toEqual([]);
     expect([...goals.get("a")!.subGoalIds]).toEqual([]);
   });
 
   it("treats self-parenting as a cycle", async () => {
     const goals = await applied([createGoal("a"), addParent("a", "a")]);
 
-    expect([...goals.get("a")!.superGoalIds]).toEqual(["a"]);
+    expect([...goals.get("a")!.superGoalIds]).toEqual([]);
     expect([...goals.get("a")!.subGoalIds]).toEqual([]);
   });
 
   it("is decided by log order — the op applied later loses", async () => {
     // Same pair of edges, opposite arrival order. Whichever arrives second is
-    // the one whose down edge is dropped. No content-derived tiebreak.
+    // the one that is dropped. No content-derived tiebreak.
     const goals = await applied([
       createGoal("a"),
       createGoal("b"),
@@ -170,7 +169,7 @@ describe("evaluateSuperGoals cycle guard — addParent", () => {
 });
 
 describe("evaluateSuperGoals cycle guard — setParent", () => {
-  it("skips only the down edge of a cycle-closing setParent", async () => {
+  it("rejects both sides of a cycle-closing setParent", async () => {
     const goals = await applied([
       createGoal("a"),
       createGoal("b"),
@@ -178,14 +177,14 @@ describe("evaluateSuperGoals cycle guard — setParent", () => {
       setParent("b", "a"),
     ]);
 
-    expect([...goals.get("b")!.superGoalIds]).toEqual(["a"]);
+    expect([...goals.get("b")!.superGoalIds]).toEqual([]);
     expect([...goals.get("a")!.subGoalIds]).toEqual([]);
   });
 
   it("still detaches the prior parents before the guard trips", async () => {
-    // b starts under p. Re-parenting b under a would close a cycle, so the down
-    // edge is skipped — but the detach from p already happened and is not
-    // rolled back.
+    // b starts under p. Re-parenting b under a would close a cycle, so the new
+    // edge is rejected — but the detach from p already happened and is not
+    // rolled back, leaving b a root.
     const goals = await applied([
       createGoal("a"),
       createGoal("b"),
@@ -196,7 +195,7 @@ describe("evaluateSuperGoals cycle guard — setParent", () => {
     ]);
 
     expect([...goals.get("p")!.subGoalIds]).toEqual([]);
-    expect([...goals.get("b")!.superGoalIds]).toEqual(["a"]);
+    expect([...goals.get("b")!.superGoalIds]).toEqual([]);
     expect([...goals.get("a")!.subGoalIds]).toEqual([]);
   });
 });
