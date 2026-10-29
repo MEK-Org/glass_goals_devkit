@@ -93,6 +93,8 @@ export class SyncClient {
   private readonly pushingOpIds = new Set<string>();
   private readonly goalLoadState = new Map<string, GoalLoadState>();
   private readonly pinCount = new Map<string, number>();
+  /** Loads in flight per goal; their base entries must not be evicted. */
+  private readonly loadingCount = new Map<string, number>();
   // The Dart records DateTime.now(); a monotonic counter gives the same order
   // without ties between touches in the same clock tick.
   private readonly lastAccessed = new Map<string, number>();
@@ -264,7 +266,10 @@ export class SyncClient {
     const overage = this.baseState.size - this.residentSoftCap;
     if (overage <= 0) return;
     const evictable = [...this.baseState.keys()]
-      .filter((id) => (this.pinCount.get(id) ?? 0) === 0)
+      .filter(
+        (id) =>
+          (this.pinCount.get(id) ?? 0) === 0 && !this.loadingCount.has(id),
+      )
       .sort((a, b) => {
         const aTime = this.lastAccessed.get(a);
         const bTime = this.lastAccessed.get(b);
@@ -941,12 +946,37 @@ export class SyncClient {
    * already loaded. Returns the goal, or null if the store has no ops for it.
    */
   async loadGoal(goalId: string): Promise<Goal | null> {
-    const baseStateCursor = this.baseStateCursor;
     if (this.goalLoadState.get(goalId) === GoalLoadState.fullyLoaded) {
       this.touch(goalId);
       return this.stateSubject.value.get(goalId) ?? null;
     }
 
+    // Another load's eviction must not drop this goal's base entry between
+    // installing it and marking the goal fully loaded.
+    this.loadingCount.set(goalId, (this.loadingCount.get(goalId) ?? 0) + 1);
+    let loading = true;
+    const unprotect = () => {
+      if (!loading) return;
+      loading = false;
+      const count = this.loadingCount.get(goalId)!;
+      if (count <= 1) {
+        this.loadingCount.delete(goalId);
+      } else {
+        this.loadingCount.set(goalId, count - 1);
+      }
+    };
+    try {
+      return await this.loadUnloadedGoal(goalId, unprotect);
+    } finally {
+      unprotect();
+    }
+  }
+
+  private async loadUnloadedGoal(
+    goalId: string,
+    unprotect: () => void,
+  ): Promise<Goal | null> {
+    const baseStateCursor = this.baseStateCursor;
     const opsToApply = await this.localStore.loadOpsForGoal(goalId);
     if (opsToApply.length === 0) {
       this.goalLoadState.set(goalId, GoalLoadState.fullyLoaded);
@@ -989,6 +1019,7 @@ export class SyncClient {
     const newState = this.computeAndEmitUnsyncedState("loadGoal", affectedIds);
     this.goalLoadState.set(goalId, GoalLoadState.fullyLoaded);
     this.touch(goalId);
+    unprotect();
     this.maybeEvict();
     return newState.get(goalId) ?? null;
   }

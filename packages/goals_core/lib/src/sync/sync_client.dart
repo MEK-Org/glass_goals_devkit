@@ -93,6 +93,10 @@ class SyncClient {
   /// 2026-05-25-goal-eviction-and-subscriptions.
   final Map<String, int> _pinCount = {};
 
+  /// Goal-id → number of [loadGoal] calls in flight for it. Their base
+  /// entries must not be evicted before the goal is marked fully loaded.
+  final Map<String, int> _loadingCount = {};
+
   /// Goal-id → last time the goal was loaded, mutated, or otherwise touched.
   /// Used as the LRU sort key when eviction runs.
   final Map<String, DateTime> _lastAccessed = {};
@@ -302,7 +306,8 @@ class SyncClient {
     final overage = _baseState.length - residentSoftCap;
     if (overage <= 0) return;
     final evictable = _baseState.keys
-        .where((id) => (_pinCount[id] ?? 0) == 0)
+        .where((id) =>
+            (_pinCount[id] ?? 0) == 0 && !_loadingCount.containsKey(id))
         .toList()
       ..sort((a, b) {
         final aTime = _lastAccessed[a];
@@ -1144,13 +1149,38 @@ class SyncClient {
   Future<Goal?> loadGoal(String goalId) async {
     _logger?.log('loadGoal', goalId: goalId);
     final totalSw = Stopwatch()..start();
-    final baseStateCursor = _baseStateCursor;
 
     if (_goalLoadState[goalId] == _GoalLoadState.fullyLoaded) {
       _touch(goalId);
       _perfLog('loadGoal($goalId) TOTAL ${_ms(totalSw)} (cache hit)');
       return stateSubject.value[goalId];
     }
+
+    // Another load's eviction must not drop this goal's base entry between
+    // installing it and marking the goal fully loaded.
+    _loadingCount[goalId] = (_loadingCount[goalId] ?? 0) + 1;
+    var loading = true;
+    void unprotect() {
+      if (!loading) return;
+      loading = false;
+      final count = _loadingCount[goalId]!;
+      if (count <= 1) {
+        _loadingCount.remove(goalId);
+      } else {
+        _loadingCount[goalId] = count - 1;
+      }
+    }
+
+    try {
+      return await _loadUnloadedGoal(goalId, totalSw, unprotect);
+    } finally {
+      unprotect();
+    }
+  }
+
+  Future<Goal?> _loadUnloadedGoal(
+      String goalId, Stopwatch totalSw, void Function() unprotect) async {
+    final baseStateCursor = _baseStateCursor;
 
     final loadOpsSw = Stopwatch()..start();
     var opsToApply = await localStore.loadOpsForGoal(goalId);
@@ -1200,6 +1230,7 @@ class SyncClient {
     );
     _goalLoadState[goalId] = _GoalLoadState.fullyLoaded;
     _touch(goalId);
+    unprotect();
 
     _maybeEvict();
 
