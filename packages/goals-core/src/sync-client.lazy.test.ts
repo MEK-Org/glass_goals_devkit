@@ -190,3 +190,141 @@ describe("lazy SyncClient — instrumented local store", () => {
     client.dispose();
   });
 });
+
+/**
+ * A store whose op lookups by id can be held open or failed on demand.
+ * `loadGoal` resolves Disable/Enable targets through `loadOpsById` after it
+ * installs the goal's base entry, so holding that lookup pauses a load in
+ * flight.
+ */
+class GatedLocalStore extends CountingLocalStore {
+  gate: Promise<unknown> | null = null;
+  failNext: Error | null = null;
+
+  override async loadOpsById(opIds: Iterable<string>): Promise<Array<AnyOp | null>> {
+    const ids = [...opIds];
+    if (this.gate) await this.gate;
+    if (this.failNext) {
+      const error = this.failNext;
+      this.failNext = null;
+      throw error;
+    }
+    return super.loadOpsById(ids);
+  }
+}
+
+/** Saves [ops] through a producer session, so they sit before the cursor. */
+async function persistedStore(ops: AnyOp[], store = new GatedLocalStore()) {
+  const persistence = new MemoryPersistenceService();
+  await persistence.save(ops);
+  await settle(persistence);
+  const producer = new SyncClient(persistence, store);
+  await producer.init();
+  await settle(persistence);
+  producer.dispose();
+  return { persistence, store };
+}
+
+/** `slow` resolves a Disable target from the store; `fast` does not. */
+const twoChildren = (): AnyOp[] => [
+  text("r", 1000, "root", "Root"),
+  text("s1", 1001, "slow", "Slow"),
+  text("s2", 1002, "slow", "Slow v2"),
+  addParent("sp", 1003, "slow", "root"),
+  disable("sd", 1004, "s2"),
+  text("f1", 1005, "fast", "Fast"),
+  addParent("fp", 1006, "fast", "root"),
+];
+
+describe("lazy SyncClient — loads in flight during eviction", () => {
+  it("roots above a tiny cap stay loadable after init and restart", async () => {
+    // rb's Disable target is read from the store, so its init load is still
+    // in flight when ra and rc finish and evict down to the cap. Loading kid
+    // afterwards emits a fresh state built from the base.
+    const { persistence, store } = await persistedStore([
+      text("ta", 1000, "ra", "Root ra"),
+      text("tb", 1001, "rb", "Root rb"),
+      text("tb2", 1002, "rb", "Root rb v2"),
+      disable("db", 1003, "tb2"),
+      text("tc", 1004, "rc", "Root rc"),
+      text("tk", 1005, "kid", "Kid"),
+      addParent("pk", 1006, "kid", "ra"),
+    ]);
+
+    for (let session = 0; session < 2; session++) {
+      const client = new SyncClient(persistence, store, { residentSoftCap: 2 });
+      store.gate = pause(5);
+      await client.init();
+      store.gate = null;
+      await settle(persistence);
+      expect((await client.loadGoal("kid"))?.text).toBe("Kid");
+      for (const id of ["ra", "rb", "rc"]) {
+        expect((await client.loadGoal(id))?.text).toBe(`Root ${id}`);
+      }
+      expect(client.numResidentGoals).toBeLessThanOrEqual(2);
+      client.dispose();
+    }
+  });
+
+  it("a goal evicted mid-load is not recorded as loaded", async () => {
+    const { persistence, store } = await persistedStore(twoChildren());
+    const client = new SyncClient(persistence, store, { residentSoftCap: 1 });
+    await client.init();
+    await settle(persistence);
+    const rootRef = await client.loadGoalRef("root");
+
+    let release!: () => void;
+    store.gate = new Promise<void>((r) => (release = r));
+    const slow = client.loadGoal("slow");
+    await pause(1);
+    expect((await client.loadGoal("fast"))?.text).toBe("Fast");
+    store.gate = null;
+    release();
+
+    expect((await slow)?.text).toBe("Slow");
+    expect((await client.loadGoal("slow"))?.text).toBe("Slow");
+    expect(rootRef.goal?.text).toBe("Root");
+    // Completed unpinned goals still evict and reload.
+    expect(client.numResidentGoals).toBeLessThanOrEqual(2);
+    const fastLoads = store.loads.get("fast")!;
+    expect((await client.loadGoal("fast"))?.text).toBe("Fast");
+    expect(store.loads.get("fast")).toBe(fastLoads + 1);
+    await rootRef.dispose();
+    client.dispose();
+  });
+
+  it("concurrent loads of every goal under a tiny cap all return the goal", async () => {
+    const { persistence, store } = await persistedStore(twoChildren());
+    const client = new SyncClient(persistence, store, { residentSoftCap: 1 });
+    await client.init();
+    await settle(persistence);
+
+    const ids = ["root", "slow", "fast"];
+    const goals = await Promise.all(ids.map((id) => client.loadGoal(id)));
+    expect(goals.map((goal) => goal?.text)).toEqual(["Root", "Slow", "Fast"]);
+    for (const [i, id] of ids.entries()) {
+      expect((await client.loadGoal(id))?.text).toBe(goals[i]?.text);
+    }
+    client.dispose();
+  });
+
+  it("a failed load releases its protection from eviction", async () => {
+    const { persistence, store } = await persistedStore(twoChildren());
+    const client = new SyncClient(persistence, store, { residentSoftCap: 1 });
+    await client.init();
+    await settle(persistence);
+
+    const rootRef = await client.loadGoalRef("root");
+
+    store.failNext = new Error("store unavailable");
+    await expect(client.loadGoal("slow")).rejects.toThrow("store unavailable");
+
+    // With root pinned, only slow and fast can go; a leaked protection on
+    // slow would leave two goals resident.
+    expect((await client.loadGoal("fast"))?.text).toBe("Fast");
+    expect(client.numResidentGoals).toBe(1);
+    expect((await client.loadGoal("slow"))?.text).toBe("Slow");
+    await rootRef.dispose();
+    client.dispose();
+  });
+});

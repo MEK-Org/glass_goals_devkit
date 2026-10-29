@@ -46,6 +46,8 @@ The scenarios cover:
 - `loadGoal` reads a goal's indexed ops once;
 - warm batches replay only the session's working ops;
 - eviction respects `residentSoftCap`;
+- a goal whose load is in flight is not evicted, even across init and
+  restart with more roots than the cap;
 - projections never mutate the base or an earlier emission.
 
 ## Port map
