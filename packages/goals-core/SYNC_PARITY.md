@@ -107,9 +107,17 @@ Other modules:
 ## Implementation differences that do not change observed behavior
 
 - LRU order uses a monotonic counter instead of `DateTime.now()`.
-- `CachingLocalStore` reads its repository directly. The Dart batches reads
-  on a 10 ms timer.
-- The string cache is a 1000-entry LRU without the Dart's 10-minute expiry.
+- `CachingLocalStore` batches op reads on the Dart's 10 ms timer (30 ms cap)
+  and goal index reads through one serial queue, as the Dart does. Its string
+  cache ports the Dart `LruCache`: a 10-minute expiry, culled past 1000
+  entries.
+- A goal index read never replaces a cache entry written while the read was
+  pending; the Dart writes the repository copy unconditionally. Because a
+  concurrent read of the same goal joins the pending request, no known
+  sequence reaches this, so the guard is defensive only.
+- `CachingLocalStore.settled()` is TS only. It resolves once queued op storage
+  has reached the repository, so scripts and tests can wait for it. The Dart
+  `SyncClient` does not await storage, and neither does the TS client.
 - `MemoryPersistenceService.settled()` is a method; the Dart's is a getter.
 - After `dispose`, a late emission is dropped. The Dart throws "Cannot add new
   events after calling close" into the zone.

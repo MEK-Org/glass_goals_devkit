@@ -72,7 +72,67 @@ export class CacheMissException extends Error {
   }
 }
 
-const STRING_CACHE_SIZE = 1000;
+/**
+ * Port of the Dart `LruCache` (`goals_core/lib/src/util/lru_cache.dart`).
+ * Reads and writes renew an entry's expiry. Once the cache holds more than
+ * [cullingThreshold] entries, entries whose expiry has passed are dropped,
+ * oldest first; unexpired entries are kept even past the threshold.
+ */
+class LruCache<V> {
+  // Insertion order is expiry order: every touch re-inserts with a later one.
+  private readonly entries = new Map<string, { value: V; expiry: number }>();
+
+  constructor(
+    private readonly cullingThreshold: number,
+    private readonly maxAgeMs: number,
+  ) {}
+
+  get(key: string): V | null {
+    const entry = this.entries.get(key);
+    if (entry != null) {
+      this.entries.delete(key);
+      entry.expiry = Date.now() + this.maxAgeMs;
+      this.entries.set(key, entry);
+      return entry.value;
+    }
+    this.cull();
+    return null;
+  }
+
+  put(key: string, value: V): void {
+    this.entries.delete(key);
+    this.entries.set(key, { value, expiry: Date.now() + this.maxAgeMs });
+    this.cull();
+  }
+
+  clear(): void {
+    this.entries.clear();
+  }
+
+  private cull(): void {
+    if (this.entries.size <= this.cullingThreshold) return;
+    for (const [key, entry] of this.entries) {
+      if (entry.expiry >= Date.now()) break;
+      this.entries.delete(key);
+    }
+  }
+}
+
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve(value: T): void;
+  reject(error: unknown): void;
+}
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 function randomString(length: number): string {
   const chars =
@@ -90,16 +150,29 @@ function randomString(length: number): string {
  * needs it: both ends of a relationship op, every historical parent of a
  * SetParent's child, and the goals of an Enable/Disable op's target.
  *
- * Differences from the Dart: repository reads are not batched on a timer, and
- * the string cache is a size-bounded LRU without the Dart's 10-minute expiry.
+ * Like the Dart, op reads are batched: requests arriving within 10 ms of each
+ * other (30 ms at most from the first) share one `repo.loadOps` call, and
+ * goal index reads pending together share one `repo.loadGoalIndexEntries`
+ * call. Concurrent requests for the same id share one read.
  */
 export class CachingLocalStore implements LocalStore {
   protected readonly goalOpsIndexCache = new Map<string, GoalIndexEntry>();
   protected readonly opCache = new Map<string, AnyOp>();
-  private readonly stringCache = new Map<string, string>();
+  private readonly stringCache = new LruCache<string>(1000, 10 * 60 * 1000);
   /** Serializes op storage, like the Dart's `_opStorageQueue`. */
   private opStorageQueue: Promise<void> = Promise.resolve();
   private pendingStorage = 0;
+  /** Serializes batched op reads, like the Dart's `_opReadQueue`. */
+  private opReadQueue: Promise<void> = Promise.resolve();
+  private readonly opLoadRequests = new Map<string, Deferred<AnyOp | null>>();
+  private batchTimer: ReturnType<typeof setTimeout> | null = null;
+  private batchStartTime: number | null = null;
+  /** Serializes goal index reads, like the Dart's `_goalIndexReadQueue`. */
+  private goalIndexReadQueue: Promise<void> = Promise.resolve();
+  private readonly goalIndexLoadRequests = new Map<
+    string,
+    Deferred<GoalIndexEntry | null>
+  >();
 
   constructor(readonly repo: SyncRepository) {}
 
@@ -177,24 +250,76 @@ export class CachingLocalStore implements LocalStore {
       // Eagerly store the text in the string box
       const text = extractEntryTextField(op);
       if (text) {
-        this.cacheString(text.entryId, text.text);
+        this.stringCache.put(text.entryId, text.text);
         void this.repo.storeString(text.entryId, text.text);
       }
     }
     await this.repo.setUnsyncedOps([...opMap.values()].sort(byHlc));
   }
 
+  private async getGoalIndexBatch(): Promise<void> {
+    // Answer requests whose entry was cached after they were made.
+    for (const [goalId, request] of [...this.goalIndexLoadRequests]) {
+      const cached = this.goalOpsIndexCache.get(goalId);
+      if (cached) {
+        this.goalIndexLoadRequests.delete(goalId);
+        request.resolve(cached);
+      }
+    }
+
+    const goalIdsToLoad = [...this.goalIndexLoadRequests.keys()];
+    if (goalIdsToLoad.length === 0) {
+      return;
+    }
+
+    let entries: Map<string, GoalIndexEntry | null>;
+    try {
+      entries = await this.repo.loadGoalIndexEntries(goalIdsToLoad);
+    } catch (error) {
+      for (const goalId of goalIdsToLoad) {
+        this.goalIndexLoadRequests.get(goalId)?.reject(error);
+        this.goalIndexLoadRequests.delete(goalId);
+      }
+      return;
+    }
+
+    for (const goalId of goalIdsToLoad) {
+      // Defensive, unlike the Dart: never replace an entry indexed while the
+      // read was pending, since the repository copy may predate it.
+      const entry =
+        this.goalOpsIndexCache.get(goalId) ?? entries.get(goalId) ?? null;
+      if (entry) {
+        this.goalOpsIndexCache.set(goalId, entry);
+      }
+      this.goalIndexLoadRequests.get(goalId)?.resolve(entry);
+      this.goalIndexLoadRequests.delete(goalId);
+    }
+  }
+
+  private queuedGoalIndexGet(goalId: string): Promise<GoalIndexEntry | null> {
+    const existing = this.goalIndexLoadRequests.get(goalId);
+    if (existing) {
+      return existing.promise;
+    }
+    const request = deferred<GoalIndexEntry | null>();
+    this.goalIndexLoadRequests.set(goalId, request);
+    this.goalIndexReadQueue = this.goalIndexReadQueue.then(() =>
+      this.getGoalIndexBatch(),
+    );
+    return request.promise;
+  }
+
   private async getGoalIndexEntry(goalId: string): Promise<GoalIndexEntry | null> {
     const cached = this.goalOpsIndexCache.get(goalId);
     if (cached) return cached;
-    const entry = (await this.repo.loadGoalIndexEntries([goalId])).get(goalId);
+    const entry = await this.queuedGoalIndexGet(goalId);
+    // Another load may have indexed this goal while the read was pending.
+    const current = this.goalOpsIndexCache.get(goalId);
+    if (current) return current;
     if (entry) {
-      // Another load may have indexed this goal while the read was pending.
-      const current = this.goalOpsIndexCache.get(goalId);
-      if (current) return current;
       this.goalOpsIndexCache.set(goalId, entry);
     }
-    return entry ?? null;
+    return entry;
   }
 
   private async computeNewGoalIndexEntry(
@@ -288,10 +413,67 @@ export class CachingLocalStore implements LocalStore {
     return ops as AnyOp[];
   }
 
+  private async getOpBatch(): Promise<void> {
+    // Answer requests whose op was cached after they were made.
+    for (const [opId, request] of [...this.opLoadRequests]) {
+      const cached = this.opCache.get(opId);
+      if (cached) {
+        this.opLoadRequests.delete(opId);
+        request.resolve(cached);
+      }
+    }
+
+    const opsToLoad = [...this.opLoadRequests.keys()];
+    if (opsToLoad.length === 0) {
+      return;
+    }
+
+    let ops: Array<AnyOp | null>;
+    try {
+      ops = await this.repo.loadOps(opsToLoad);
+    } catch (error) {
+      for (const opId of opsToLoad) {
+        this.opLoadRequests.get(opId)?.reject(error);
+        this.opLoadRequests.delete(opId);
+      }
+      return;
+    }
+
+    opsToLoad.forEach((opId, i) => {
+      this.opLoadRequests.get(opId)?.resolve(ops[i] ?? null);
+      this.opLoadRequests.delete(opId);
+    });
+  }
+
+  private executeBatch(): void {
+    this.batchTimer = null;
+    this.batchStartTime = null;
+    this.opReadQueue = this.opReadQueue.then(() => this.getOpBatch());
+  }
+
+  private scheduleBatch(): void {
+    this.batchStartTime ??= Date.now();
+    if (this.batchTimer != null) clearTimeout(this.batchTimer);
+    const elapsed = Date.now() - this.batchStartTime;
+    const delay = Math.max(0, Math.min(10, 30 - elapsed));
+    this.batchTimer = setTimeout(() => this.executeBatch(), delay);
+  }
+
+  private queuedOpGet(opId: string): Promise<AnyOp | null> {
+    const existing = this.opLoadRequests.get(opId);
+    if (existing) {
+      return existing.promise;
+    }
+    const request = deferred<AnyOp | null>();
+    this.opLoadRequests.set(opId, request);
+    this.scheduleBatch();
+    return request.promise;
+  }
+
   private async getOp(opId: string): Promise<AnyOp | null> {
     const cached = this.opCache.get(opId);
     if (cached) return cached;
-    const [op] = await this.repo.loadOps([opId]);
+    const op = await this.queuedOpGet(opId);
     if (op == null) return null;
     this.opCache.set(opId, op);
     return op;
@@ -303,7 +485,7 @@ export class CachingLocalStore implements LocalStore {
     for (const op of batch) {
       this.opCache.set(op.id, op);
       const text = extractEntryTextField(op);
-      if (text) this.cacheString(text.entryId, text.text);
+      if (text) this.stringCache.put(text.entryId, text.text);
     }
 
     // Queue storage behind any earlier batch.
@@ -330,26 +512,25 @@ export class CachingLocalStore implements LocalStore {
   }
 
   async loadString(key: string): Promise<string | null> {
-    const cached = this.stringCache.get(key);
-    if (cached != null) {
-      this.cacheString(key, cached);
-      return cached;
-    }
-    return this.repo.loadString(key);
+    return this.stringCache.get(key) ?? (await this.repo.loadString(key));
   }
 
   async setString(key: string, value: string): Promise<void> {
-    this.cacheString(key, value);
+    this.stringCache.put(key, value);
     await this.repo.storeString(key, value);
   }
 
-  private cacheString(key: string, value: string): void {
-    this.stringCache.delete(key);
-    this.stringCache.set(key, value);
-    if (this.stringCache.size > STRING_CACHE_SIZE) {
-      const oldest = this.stringCache.keys().next().value;
-      if (oldest !== undefined) this.stringCache.delete(oldest);
-    }
+  /**
+   * TS only: resolves once every op batch queued by [storeSyncedOps] so far
+   * has been written to the repository, including batches queued while
+   * waiting. The Dart has no equivalent; `SyncClient` does not await storage.
+   */
+  async settled(): Promise<void> {
+    let queue: Promise<void>;
+    do {
+      queue = this.opStorageQueue;
+      await queue;
+    } while (queue !== this.opStorageQueue);
   }
 
   private async doOpStorage(ops: AnyOp[]): Promise<void> {

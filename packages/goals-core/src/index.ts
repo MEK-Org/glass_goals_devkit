@@ -4,6 +4,7 @@ export * from "./model";
 export * from "./persistence";
 export * from "./sync-repository";
 export * from "./local-store";
+export * from "./op-utils";
 export * from "./subject";
 export * from "./goal-subject-registry";
 export * from "./sync-client";
