@@ -57,7 +57,7 @@ const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function settle(persistence: MemoryPersistenceService) {
   for (let i = 0; i < 3; i++) {
     await persistence.settled();
-    await pause(1);
+    await pause(40);
   }
 }
 
@@ -370,11 +370,14 @@ describe("lazy SyncClient — a pull racing a goal load", () => {
     await client.init();
     await settle(persistence);
 
-    // A remote retitle of the root makes the next pull non-empty.
-    await persistence.save([text("r2", 2000, "root", "Root v2")]);
     store.heldGoalId = "fast";
     const fast = client.loadGoal("fast");
+    // Op reads are batched on a timer, so hold the load before any remote op
+    // arrives; otherwise the subscription stores it first and nothing
+    // releases the load.
     await store.held;
+    // A remote retitle of the root makes the next pull non-empty.
+    await persistence.save([text("r2", 2000, "root", "Root v2")]);
     await client.sync();
 
     expect((await fast)?.text).toBe("Fast");
