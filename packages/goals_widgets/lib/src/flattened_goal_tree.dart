@@ -655,7 +655,11 @@ class _FlattenedGoalTreeState extends State<FlattenedGoalTree>
       _fetchGoals();
     }
 
-    if (pathsMatch(this.widget.path, hoverEventStream.value)) {
+    // Same guard as GoalItemWidget's hover focus: a rebuild while an editor
+    // owns text focus (or mid-drag) must not pull keyboard focus off it.
+    if (pathsMatch(this.widget.path, hoverEventStream.value) &&
+        textFocusProvider.value == null &&
+        dragEventProvider.value != DragEventType.start) {
       this._focusNode.requestFocus();
     }
   }
