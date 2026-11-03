@@ -377,25 +377,55 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                 }
               }
             } else if (widget.omissionStrategy == PathOmissionStrategy.middle) {
-              // Middle omission: keep index 0 and index pathLength - 1, place `…` in middle.
-              final middleOverhead =
-                  naturalWidths[0] + 2 * _chevronWidth + _omissionWidth;
-              if (availableCrumbWidth > middleOverhead) {
-                var prefixEnd = 0;
-                var suffixStart = pathLength - 1;
-                var visibleWidth = naturalWidths[0] +
-                    naturalWidths.last +
-                    2 * _chevronWidth +
-                    _omissionWidth;
+              if (pathLength == 2) {
+                // Two-crumb path: no inner crumbs exist between index 0 and 1.
+                final prefixOverhead = naturalWidths[0] + _chevronWidth;
+                if (availableCrumbWidth > prefixOverhead) {
+                  addBreadcrumb(0, naturalWidths[0]);
+                  addChevron();
+                  addBreadcrumb(1, availableCrumbWidth - prefixOverhead);
+                } else {
+                  final startOverhead = _omissionWidth + _chevronWidth;
+                  if (availableCrumbWidth > startOverhead) {
+                    addOmission();
+                    addChevron();
+                    addBreadcrumb(1, availableCrumbWidth - startOverhead);
+                  } else {
+                    addBreadcrumb(1, availableCrumbWidth);
+                  }
+                }
+              } else {
+                // Middle omission: keep index 0 and index pathLength - 1, place `…` in middle.
+                final middleOverhead =
+                    naturalWidths[0] + 2 * _chevronWidth + _omissionWidth;
+                if (availableCrumbWidth > middleOverhead) {
+                  var prefixEnd = 0;
+                  var suffixStart = pathLength - 1;
+                  var visibleWidth = naturalWidths[0] +
+                      naturalWidths.last +
+                      2 * _chevronWidth +
+                      _omissionWidth;
 
-                while (prefixEnd < suffixStart - 1) {
-                  final suffixCandidate = suffixStart - 1;
-                  final suffixCandidateWidth =
-                      visibleWidth + _chevronWidth + naturalWidths[suffixCandidate];
-                  if (suffixCandidateWidth <= availableCrumbWidth) {
-                    suffixStart = suffixCandidate;
-                    visibleWidth = suffixCandidateWidth;
-                    if (prefixEnd < suffixStart - 1) {
+                  while (prefixEnd < suffixStart - 1) {
+                    final suffixCandidate = suffixStart - 1;
+                    final suffixCandidateWidth = visibleWidth +
+                        _chevronWidth +
+                        naturalWidths[suffixCandidate];
+                    if (suffixCandidateWidth <= availableCrumbWidth) {
+                      suffixStart = suffixCandidate;
+                      visibleWidth = suffixCandidateWidth;
+                      if (prefixEnd < suffixStart - 1) {
+                        final prefixCandidate = prefixEnd + 1;
+                        final prefixCandidateWidth = visibleWidth +
+                            _chevronWidth +
+                            naturalWidths[prefixCandidate];
+                        if (prefixCandidateWidth <= availableCrumbWidth) {
+                          prefixEnd = prefixCandidate;
+                          visibleWidth = prefixCandidateWidth;
+                          continue;
+                        }
+                      }
+                    } else {
                       final prefixCandidate = prefixEnd + 1;
                       final prefixCandidateWidth = visibleWidth +
                           _chevronWidth +
@@ -405,63 +435,53 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                         visibleWidth = prefixCandidateWidth;
                         continue;
                       }
+                      break;
                     }
-                  } else {
-                    final prefixCandidate = prefixEnd + 1;
-                    final prefixCandidateWidth = visibleWidth +
-                        _chevronWidth +
-                        naturalWidths[prefixCandidate];
-                    if (prefixCandidateWidth <= availableCrumbWidth) {
-                      prefixEnd = prefixCandidate;
-                      visibleWidth = prefixCandidateWidth;
-                      continue;
-                    }
-                    break;
                   }
-                }
 
-                final separatorCount =
-                    (prefixEnd + 1) + (pathLength - suffixStart);
-                final displayedCrumbWidth = (availableCrumbWidth -
-                        (separatorCount * _chevronWidth) -
-                        _omissionWidth)
-                    .clamp(0.0, availableCrumbWidth);
+                  final separatorCount =
+                      (prefixEnd + 1) + (pathLength - suffixStart);
+                  final displayedCrumbWidth = (availableCrumbWidth -
+                          (separatorCount * _chevronWidth) -
+                          _omissionWidth)
+                      .clamp(0.0, availableCrumbWidth);
 
-                final earlierVisibleWidths = naturalWidths
-                        .sublist(0, prefixEnd + 1)
-                        .fold<double>(0.0, (s, w) => s + w) +
-                    naturalWidths
-                        .sublist(suffixStart, pathLength - 1)
-                        .fold<double>(0.0, (s, w) => s + w);
+                  final earlierVisibleWidths = naturalWidths
+                          .sublist(0, prefixEnd + 1)
+                          .fold<double>(0.0, (s, w) => s + w) +
+                      naturalWidths
+                          .sublist(suffixStart, pathLength - 1)
+                          .fold<double>(0.0, (s, w) => s + w);
 
-                final leafWidth = (displayedCrumbWidth - earlierVisibleWidths)
-                    .clamp(0.0, displayedCrumbWidth);
+                  final leafWidth = (displayedCrumbWidth - earlierVisibleWidths)
+                      .clamp(0.0, displayedCrumbWidth);
 
-                for (var i = 0; i <= prefixEnd; i++) {
-                  addBreadcrumb(i, naturalWidths[i]);
-                  addChevron();
-                }
-
-                addOmission();
-                addChevron();
-
-                for (var i = suffixStart; i < pathLength; i++) {
-                  final isLast = i == pathLength - 1;
-                  addBreadcrumb(i, isLast ? leafWidth : naturalWidths[i]);
-                  if (!isLast) {
+                  for (var i = 0; i <= prefixEnd; i++) {
+                    addBreadcrumb(i, naturalWidths[i]);
                     addChevron();
                   }
-                }
-              } else {
-                // Ultra-narrow fallback where index 0 + chevrons + omission leaves no room for leaf.
-                final startOverhead = _omissionWidth + _chevronWidth;
-                if (availableCrumbWidth > startOverhead) {
+
                   addOmission();
                   addChevron();
-                  addBreadcrumb(
-                      pathLength - 1, availableCrumbWidth - startOverhead);
+
+                  for (var i = suffixStart; i < pathLength; i++) {
+                    final isLast = i == pathLength - 1;
+                    addBreadcrumb(i, isLast ? leafWidth : naturalWidths[i]);
+                    if (!isLast) {
+                      addChevron();
+                    }
+                  }
                 } else {
-                  addBreadcrumb(pathLength - 1, availableCrumbWidth);
+                  // Ultra-narrow fallback where index 0 + chevrons + omission leaves no room for leaf.
+                  final startOverhead = _omissionWidth + _chevronWidth;
+                  if (availableCrumbWidth > startOverhead) {
+                    addOmission();
+                    addChevron();
+                    addBreadcrumb(
+                        pathLength - 1, availableCrumbWidth - startOverhead);
+                  } else {
+                    addBreadcrumb(pathLength - 1, availableCrumbWidth);
+                  }
                 }
               }
             } else {

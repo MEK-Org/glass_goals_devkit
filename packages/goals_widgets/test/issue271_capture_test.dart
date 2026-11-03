@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:golden_toolkit/golden_toolkit.dart' show loadAppFonts;
 import 'package:goals_core/model.dart' show GoalPath, WorldContext;
 import 'package:goals_core/sync.dart'
     show
@@ -27,6 +28,7 @@ import 'package:goals_ui_core/core.dart'
 import 'package:goals_widgets/goals_widgets.dart'
     show
         CrumbAbbreviationStrategy,
+        CurrentStatusChip,
         FlattenedGoalTree,
         PathBreadcrumb,
         PathOmissionStrategy;
@@ -52,10 +54,11 @@ void main() {
     await client.init();
 
     for (final (id, text) in [
-      ('folder', 'Project Folder'),
-      ('root', 'Top Level Project Scope'),
-      ('mid', 'Intermediate Milestone Area'),
-      ('leaf', 'Specific Focused Task Goal'),
+      ('folder', 'Constitutional Law Outline'),
+      ('root', 'Constitutional Law'),
+      ('part', 'Commerce Clause'),
+      ('sub', 'Market Participant'),
+      ('leaf', 'South-Central Timber Development v. Wunnicke'),
     ]) {
       await client.modifyGoal(GoalDelta(id: id, text: text));
     }
@@ -67,7 +70,7 @@ void main() {
         id: 'leaf-folder',
         parentId: 'folder',
         creationTime: time,
-        displayedChildPath: ['root', 'mid', 'leaf'],
+        displayedChildPath: ['root', 'part', 'sub', 'leaf'],
       ),
     ));
   });
@@ -86,16 +89,80 @@ void main() {
     file.writeAsBytesSync(byteData!.buffer.asUint8List());
   }
 
+  Widget buildBeforeTreeBox(double width) {
+    final leafGoal = client.stateSubject.value['leaf']!;
+    final folderGoal = client.stateSubject.value['folder']!;
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+            child: Row(
+              children: [
+                const Icon(Icons.circle, size: 7),
+                const SizedBox(width: 8),
+                const Text(
+                  'Constitutional Law Outline',
+                  style: TextStyle(decoration: TextDecoration.underline),
+                ),
+                CurrentStatusChip(
+                  goal: folderGoal,
+                  path: const GoalPath(['folder']),
+                  padding: const EdgeInsets.only(left: 8),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 24, top: 4, bottom: 4, right: 4),
+            child: Row(
+              children: [
+                const Icon(Icons.circle, size: 7),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: PathBreadcrumb(
+                    renderedPath:
+                        const GoalPath(['root', 'part', 'sub', 'leaf']),
+                    contextPath: const GoalPath(['folder', 'leaf']),
+                    maxWidth: 560.0,
+                    omissionStrategy: PathOmissionStrategy.start,
+                    abbreviationStrategy: CrumbAbbreviationStrategy.show_last,
+                  ),
+                ),
+                CurrentStatusChip(
+                  goal: leafGoal,
+                  path: const GoalPath(['folder', 'leaf']),
+                  padding: const EdgeInsets.only(left: 8),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   testWidgets('capture before and after issue 271 breadcrumb layouts',
       (tester) async {
+    await loadAppFonts();
     tester.view.physicalSize = const Size(1100, 700);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final appTheme = ThemeData(fontFamily: 'Roboto');
+
     // 1. Capture BEFORE layout (hard 560px cap and start omission)
     await tester.pumpWidget(MaterialApp(
-      theme: ThemeData.light(),
+      theme: appTheme,
       home: Scaffold(
         backgroundColor: Colors.white,
         body: Center(
@@ -112,69 +179,20 @@ void main() {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        'BEFORE: Displayed path in FlattenedGoalTree (Wide 920px container — clamped to 560px)',
+                        'BEFORE: Displayed path in FlattenedGoalTree (Wide 1000px row — capped at 560px with start omission)',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        width: 920,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 8),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.circle, size: 8),
-                            const SizedBox(width: 8),
-                            // Before: PathBreadcrumb capped at 560px with start omission
-                            PathBreadcrumb(
-                              renderedPath:
-                                  const GoalPath(['root', 'mid', 'leaf']),
-                              contextPath: const GoalPath(['folder', 'leaf']),
-                              maxWidth: 560.0,
-                              omissionStrategy: PathOmissionStrategy.start,
-                              abbreviationStrategy:
-                                  CrumbAbbreviationStrategy.show_last,
-                            ),
-                          ],
-                        ),
-                      ),
+                      buildBeforeTreeBox(1000),
                       const SizedBox(height: 24),
                       const Text(
-                        'BEFORE: Displayed path in FlattenedGoalTree (Constrained 340px container — start omission)',
+                        'BEFORE: Displayed path in FlattenedGoalTree (Constrained 520px row — start omission hides root)',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        width: 340,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 8),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.circle, size: 8),
-                            const SizedBox(width: 8),
-                            Flexible(
-                              child: PathBreadcrumb(
-                                renderedPath:
-                                    const GoalPath(['root', 'mid', 'leaf']),
-                                contextPath: const GoalPath(['folder', 'leaf']),
-                                maxWidth: 560.0,
-                                omissionStrategy: PathOmissionStrategy.start,
-                                abbreviationStrategy:
-                                    CrumbAbbreviationStrategy.show_last,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      buildBeforeTreeBox(520),
                     ],
                   ),
                 ),
@@ -192,7 +210,7 @@ void main() {
 
     // 2. Capture AFTER layout (production FlattenedGoalTree with uncapped full width and middle omission)
     await tester.pumpWidget(MaterialApp(
-      theme: ThemeData.light(),
+      theme: appTheme,
       home: Scaffold(
         backgroundColor: Colors.white,
         body: Center(
@@ -209,13 +227,13 @@ void main() {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        'AFTER: Displayed path in FlattenedGoalTree (Wide 920px container — uncapped full width)',
+                        'AFTER: Displayed path in FlattenedGoalTree (Wide 1000px row — expands across full available width)',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        width: 920,
+                        width: 1000,
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(4),
@@ -230,13 +248,13 @@ void main() {
                       ),
                       const SizedBox(height: 24),
                       const Text(
-                        'AFTER: Displayed path in FlattenedGoalTree (Constrained 340px container — middle omission)',
+                        'AFTER: Displayed path in FlattenedGoalTree (Constrained 520px row — middle omission preserves root and leaf)',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        width: 340,
+                        width: 520,
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(4),

@@ -123,12 +123,26 @@ void main() {
   testWidgets(
       '(b) displayed paths in FlattenedGoalTree expand beyond 560px when row width allows',
       (tester) async {
-    tester.view.physicalSize = const Size(1200, 400);
+    tester.view.physicalSize = const Size(2000, 400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     // Expand container so leaf's row is visible in FlattenedGoalTree
+    await client.modifyGoal(GoalDelta(
+      id: 'sub_wide',
+      text: 'Intermediate Milestone',
+    ));
+    await client.modifyGoal(GoalDelta(
+      id: 'leaf_wide',
+      text: 'Focused Destination Goal',
+      logEntry: AddParentLogEntry(
+        id: 'leaf-wide-container',
+        parentId: 'container',
+        creationTime: DateTime(2026, 11, 3),
+        displayedChildPath: ['root', 'mid', 'sub_wide', 'leaf_wide'],
+      ),
+    ));
     expandedGoalsProvider.add([const GoalPath(['container'])]);
 
     await tester.pumpWidget(MaterialApp(
@@ -137,7 +151,7 @@ void main() {
           syncClient: client,
           child: GoalActionsContext.empty(
             child: SizedBox(
-              width: 960,
+              width: 1500,
               child: FlattenedGoalTree(
                 rootGoalPaths: [const GoalPath(['container'])],
                 showAddGoal: false,
@@ -150,18 +164,22 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final pathBreadcrumbFinder = find.byType(PathBreadcrumb);
-    expect(pathBreadcrumbFinder, findsOneWidget);
-    final size = tester.getSize(pathBreadcrumbFinder);
+    final wideBreadcrumbFinder = find.byWidgetPredicate(
+      (w) =>
+          w is PathBreadcrumb &&
+          w.renderedPath ==
+              const GoalPath(['root', 'mid', 'sub_wide', 'leaf_wide']),
+    );
+    expect(wideBreadcrumbFinder, findsOneWidget);
+    final size = tester.getSize(wideBreadcrumbFinder);
 
-    expect(find.text('Root'), findsOneWidget);
-    expect(find.text('Sub Milestone'), findsOneWidget);
-    expect(find.text('Focused Goal'), findsOneWidget);
+    expect(find.text('Root'), findsNWidgets(2));
+    expect(find.text('Sub Milestone'), findsNWidgets(2));
+    expect(find.text('Intermediate Milestone'), findsOneWidget);
+    expect(find.text('Focused Destination Goal'), findsOneWidget);
     expect(find.text('…'), findsNothing);
-    // PathBreadcrumb is not clamped to 560px when maxWidth is null.
-    // In a 960px row, it expands to its natural width or row space available.
-    expect(size.width, greaterThan(200.0));
-    expect(tester.widget<PathBreadcrumb>(pathBreadcrumbFinder).maxWidth, isNull);
+    expect(size.width, greaterThan(560.0));
+    expect(tester.widget<PathBreadcrumb>(wideBreadcrumbFinder).maxWidth, isNull);
   });
 
   testWidgets(
@@ -249,5 +267,41 @@ void main() {
 
     await tester.tap(find.text('Focused Goal'));
     expect(focused.last, equals(const GoalPath(['root', 'mid', 'leaf'])));
+  });
+
+  testWidgets(
+      '(e) 2-crumb path with middle omission truncates leaf without spurious …',
+      (tester) async {
+    tester.view.physicalSize = const Size(600, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: GoalWidgetsContext(
+          syncClient: client,
+          child: GoalActionsContext.empty(
+            child: SizedBox(
+              width: 240,
+              child: PathBreadcrumb(
+                renderedPath: const GoalPath(['root', 'parent_a']),
+                omissionStrategy: PathOmissionStrategy.middle,
+                maxWidth: null,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Root'), findsOneWidget);
+    expect(
+      find.text('Ancestor Goal With Very Long Title Over Two Hundred Pixels'),
+      findsOneWidget,
+    );
+    expect(find.text('…'), findsNothing);
   });
 }
