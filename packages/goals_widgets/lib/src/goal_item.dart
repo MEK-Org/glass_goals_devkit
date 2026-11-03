@@ -503,13 +503,18 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
                                   focusNode: _focusNode,
                                 ),
                               )
-                            : (this.widget.renderedPath?.length ?? 1) > 1
-                                ? PathBreadcrumb(
-                                    renderedPath: this.widget.renderedPath!,
-                                    style: mainTextStyle,
-                                    contextPath: this.widget.path,
-                                    abbreviationStrategy:
-                                        CrumbAbbreviationStrategy.show_last,
+                            : (widget.renderedPath?.length ?? 1) > 1
+                                ? Flexible(
+                                    child: PathBreadcrumb(
+                                      renderedPath: widget.renderedPath!,
+                                      style: mainTextStyle,
+                                      contextPath: widget.path,
+                                      maxWidth: null,
+                                      omissionStrategy:
+                                          PathOmissionStrategy.middle,
+                                      abbreviationStrategy:
+                                          CrumbAbbreviationStrategy.show_last,
+                                    ),
                                   )
                                 : Flexible(
                                     child: Focus(
