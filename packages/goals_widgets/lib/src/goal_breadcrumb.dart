@@ -53,6 +53,14 @@ enum CrumbAbbreviationStrategy {
   all,
 }
 
+enum PathOmissionStrategy {
+  /// Truncate from the start (e.g. `… > crumb1 > crumb2`).
+  start,
+
+  /// Truncate from the middle (e.g. `crumb0 > … > crumbN`).
+  middle,
+}
+
 String? _doAbbreviation(String? goalName) {
   if (goalName == null) {
     return null;
@@ -199,12 +207,16 @@ class _BreadcrumbState extends State<Breadcrumb> {
 }
 
 class PathBreadcrumb extends StatefulWidget {
+  static const defaultMaxWidth = 560.0;
+
   final GoalPath renderedPath;
   final GoalPath contextPath;
   final TextStyle? style;
   final VoidCallback? onRemove;
   final bool allowTappingCrumbs;
   final CrumbAbbreviationStrategy abbreviationStrategy;
+  final double? maxWidth;
+  final PathOmissionStrategy omissionStrategy;
   const PathBreadcrumb({
     super.key,
     required this.renderedPath,
@@ -213,6 +225,8 @@ class PathBreadcrumb extends StatefulWidget {
     this.onRemove,
     this.allowTappingCrumbs = true,
     this.abbreviationStrategy = CrumbAbbreviationStrategy.none,
+    this.maxWidth = defaultMaxWidth,
+    this.omissionStrategy = PathOmissionStrategy.start,
   });
 
   @override
@@ -220,7 +234,7 @@ class PathBreadcrumb extends StatefulWidget {
 }
 
 class _PathBreadcrumbState extends State<PathBreadcrumb> {
-  static const _maxBreadcrumbWidth = 560.0;
+  static const _maxBreadcrumbWidth = PathBreadcrumb.defaultMaxWidth;
   static const _rightEdgePadding = 8.0;
   static const _chevronWidth = 24.0;
   static const _omissionWidth = 20.0;
@@ -296,67 +310,188 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
     final deepRedColor = Colors.red.shade900;
     final visibleRemoveColor = theme.iconTheme.color ?? Colors.black54;
 
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: _maxBreadcrumbWidth),
-      child: Padding(
-        padding: const EdgeInsets.only(right: _rightEdgePadding),
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _hovered = true),
-          onExit: (_) => setState(() => _hovered = false),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final availableWidth = constraints.hasBoundedWidth
-                  ? constraints.maxWidth
-                  : _maxBreadcrumbWidth;
-              final removeWidth = widget.onRemove == null
-                  ? 0.0
-                  : uiUnit(2) + _removeButtonWidth;
-              final pathLength = widget.renderedPath.length;
-              final availableCrumbWidth =
-                  (availableWidth - removeWidth).clamp(0.0, availableWidth);
-              final naturalWidths = _naturalCrumbWidths(context);
-              final allCrumbsWidth = naturalWidths.fold<double>(
-                    0.0,
-                    (sum, width) => sum + width,
-                  ) +
-                  (pathLength - 1) * _chevronWidth;
-              var firstVisible = 0;
-              if (pathLength > 1 && allCrumbsWidth > availableCrumbWidth) {
-                firstVisible = pathLength - 1;
-                var visibleWidth =
-                    _omissionWidth + _chevronWidth + naturalWidths.last;
-                for (var index = pathLength - 2; index >= 0; index--) {
-                  final candidateWidth =
-                      visibleWidth + _chevronWidth + naturalWidths[index];
-                  if (candidateWidth > availableCrumbWidth) break;
-                  firstVisible = index;
-                  visibleWidth = candidateWidth;
+    final content = Padding(
+      padding: const EdgeInsets.only(right: _rightEdgePadding),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final availableWidth = constraints.hasBoundedWidth
+                ? constraints.maxWidth
+                : (widget.maxWidth ?? _maxBreadcrumbWidth);
+            final removeWidth = widget.onRemove == null
+                ? 0.0
+                : uiUnit(2) + _removeButtonWidth;
+            final pathLength = widget.renderedPath.length;
+            final availableCrumbWidth =
+                (availableWidth - removeWidth).clamp(0.0, availableWidth);
+            final naturalWidths = _naturalCrumbWidths(context);
+            final allCrumbsWidth = naturalWidths.fold<double>(
+                  0.0,
+                  (sum, width) => sum + width,
+                ) +
+                (pathLength - 1) * _chevronWidth;
+            final widgets = <Widget>[];
+
+            void addBreadcrumb(int index, double maxWidth) {
+              final shouldAbbreviate = switch (widget.abbreviationStrategy) {
+                CrumbAbbreviationStrategy.none => false,
+                CrumbAbbreviationStrategy.show_last =>
+                  index != pathLength - 1,
+                CrumbAbbreviationStrategy.all => true,
+              };
+              widgets.add(Breadcrumb(
+                style: widget.style,
+                maxWidth: maxWidth,
+                path: GoalPath([
+                  ...widget.contextPath,
+                  ...widget.renderedPath.sublist(0, index + 1),
+                ]),
+                allowTapping: widget.allowTappingCrumbs,
+                abbreviateGoalName: shouldAbbreviate,
+              ));
+            }
+
+            void addOmission() {
+              widgets.add(const SizedBox(
+                width: _omissionWidth,
+                child: Text('…', maxLines: 1),
+              ));
+            }
+
+            void addChevron() {
+              widgets.add(const Icon(Icons.chevron_right));
+            }
+
+            if (pathLength == 0) {
+              // No crumbs to display.
+            } else if (pathLength == 1) {
+              addBreadcrumb(0, availableCrumbWidth);
+            } else if (allCrumbsWidth <= availableCrumbWidth) {
+              // Full path fits within available width.
+              for (var i = 0; i < pathLength; i++) {
+                addBreadcrumb(i, naturalWidths[i]);
+                if (i != pathLength - 1) {
+                  addChevron();
                 }
               }
+            } else if (widget.omissionStrategy == PathOmissionStrategy.middle) {
+              // Middle omission: keep index 0 and index pathLength - 1, place `…` in middle.
+              final middleOverhead =
+                  naturalWidths[0] + 2 * _chevronWidth + _omissionWidth;
+              if (availableCrumbWidth > middleOverhead) {
+                var prefixEnd = 0;
+                var suffixStart = pathLength - 1;
+                var visibleWidth = naturalWidths[0] +
+                    naturalWidths.last +
+                    2 * _chevronWidth +
+                    _omissionWidth;
+
+                while (prefixEnd < suffixStart - 1) {
+                  final suffixCandidate = suffixStart - 1;
+                  final suffixCandidateWidth =
+                      visibleWidth + _chevronWidth + naturalWidths[suffixCandidate];
+                  if (suffixCandidateWidth <= availableCrumbWidth) {
+                    suffixStart = suffixCandidate;
+                    visibleWidth = suffixCandidateWidth;
+                    if (prefixEnd < suffixStart - 1) {
+                      final prefixCandidate = prefixEnd + 1;
+                      final prefixCandidateWidth = visibleWidth +
+                          _chevronWidth +
+                          naturalWidths[prefixCandidate];
+                      if (prefixCandidateWidth <= availableCrumbWidth) {
+                        prefixEnd = prefixCandidate;
+                        visibleWidth = prefixCandidateWidth;
+                        continue;
+                      }
+                    }
+                  } else {
+                    final prefixCandidate = prefixEnd + 1;
+                    final prefixCandidateWidth = visibleWidth +
+                        _chevronWidth +
+                        naturalWidths[prefixCandidate];
+                    if (prefixCandidateWidth <= availableCrumbWidth) {
+                      prefixEnd = prefixCandidate;
+                      visibleWidth = prefixCandidateWidth;
+                      continue;
+                    }
+                    break;
+                  }
+                }
+
+                final separatorCount =
+                    (prefixEnd + 1) + (pathLength - suffixStart);
+                final displayedCrumbWidth = (availableCrumbWidth -
+                        (separatorCount * _chevronWidth) -
+                        _omissionWidth)
+                    .clamp(0.0, availableCrumbWidth);
+
+                final earlierVisibleWidths = naturalWidths
+                        .sublist(0, prefixEnd + 1)
+                        .fold<double>(0.0, (s, w) => s + w) +
+                    naturalWidths
+                        .sublist(suffixStart, pathLength - 1)
+                        .fold<double>(0.0, (s, w) => s + w);
+
+                final leafWidth = (displayedCrumbWidth - earlierVisibleWidths)
+                    .clamp(0.0, displayedCrumbWidth);
+
+                for (var i = 0; i <= prefixEnd; i++) {
+                  addBreadcrumb(i, naturalWidths[i]);
+                  addChevron();
+                }
+
+                addOmission();
+                addChevron();
+
+                for (var i = suffixStart; i < pathLength; i++) {
+                  final isLast = i == pathLength - 1;
+                  addBreadcrumb(i, isLast ? leafWidth : naturalWidths[i]);
+                  if (!isLast) {
+                    addChevron();
+                  }
+                }
+              } else {
+                // Ultra-narrow fallback where index 0 + chevrons + omission leaves no room for leaf.
+                final startOverhead = _omissionWidth + _chevronWidth;
+                if (availableCrumbWidth > startOverhead) {
+                  addOmission();
+                  addChevron();
+                  addBreadcrumb(
+                      pathLength - 1, availableCrumbWidth - startOverhead);
+                } else {
+                  addBreadcrumb(pathLength - 1, availableCrumbWidth);
+                }
+              }
+            } else {
+              // Start omission (PathOmissionStrategy.start)
+              var firstVisible = pathLength - 1;
+              var visibleWidth =
+                  _omissionWidth + _chevronWidth + naturalWidths.last;
+              for (var index = pathLength - 2; index >= 0; index--) {
+                final candidateWidth =
+                    visibleWidth + _chevronWidth + naturalWidths[index];
+                if (candidateWidth > availableCrumbWidth) break;
+                firstVisible = index;
+                visibleWidth = candidateWidth;
+              }
               final targetVisible = pathLength - firstVisible;
-              final hasOmission = firstVisible > 0;
+              final hasOmission = firstVisible > 0 &&
+                  availableCrumbWidth >= (_omissionWidth + _chevronWidth);
               final separatorCount =
                   (targetVisible - 1) + (hasOmission ? 1 : 0);
               final displayedCrumbWidth = (availableCrumbWidth -
                       (separatorCount * _chevronWidth) -
                       (hasOmission ? _omissionWidth : 0.0))
                   .clamp(0.0, availableCrumbWidth);
-              final widgets = <Widget>[];
 
               if (hasOmission) {
-                widgets.add(const SizedBox(
-                  width: _omissionWidth,
-                  child: Text('…', maxLines: 1),
-                ));
-                widgets.add(const Icon(Icons.chevron_right));
+                addOmission();
+                addChevron();
               }
 
               for (var i = firstVisible; i < pathLength; i++) {
-                final shouldAbbreviate = switch (widget.abbreviationStrategy) {
-                  CrumbAbbreviationStrategy.none => false,
-                  CrumbAbbreviationStrategy.show_last => i != pathLength - 1,
-                  CrumbAbbreviationStrategy.all => true,
-                };
                 final isNearestVisibleCrumb = i == pathLength - 1;
                 final earlierVisibleWidths = naturalWidths
                     .sublist(firstVisible, i)
@@ -365,47 +500,46 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                     ? (displayedCrumbWidth - earlierVisibleWidths)
                         .clamp(0.0, displayedCrumbWidth)
                     : naturalWidths[i];
-                widgets.add(Breadcrumb(
-                  style: widget.style,
-                  maxWidth: crumbWidth,
-                  path: GoalPath([
-                    ...widget.contextPath,
-                    ...widget.renderedPath.sublist(0, i + 1)
-                  ]),
-                  allowTapping: widget.allowTappingCrumbs,
-                  abbreviateGoalName: shouldAbbreviate,
-                ));
+                addBreadcrumb(i, crumbWidth);
                 if (i != pathLength - 1) {
-                  widgets.add(const Icon(Icons.chevron_right));
+                  addChevron();
                 }
               }
+            }
 
-              if (widget.onRemove != null) {
-                widgets.add(SizedBox(width: uiUnit(2)));
-                widgets.add(Ink(
-                  decoration: ShapeDecoration(
-                    color: _hovered ? palePinkColor : Colors.transparent,
-                    shape: CircleBorder(),
+            if (widget.onRemove != null) {
+              widgets.add(SizedBox(width: uiUnit(2)));
+              widgets.add(Ink(
+                decoration: ShapeDecoration(
+                  color: _hovered ? palePinkColor : Colors.transparent,
+                  shape: CircleBorder(),
+                ),
+                child: SizedBox(
+                  width: _removeButtonWidth,
+                  height: _removeButtonWidth,
+                  child: IconButton(
+                    color: _hovered ? deepRedColor : visibleRemoveColor,
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.close, size: 16.0),
+                    onPressed: widget.onRemove,
                   ),
-                  child: SizedBox(
-                    width: _removeButtonWidth,
-                    height: _removeButtonWidth,
-                    child: IconButton(
-                      color: _hovered ? deepRedColor : visibleRemoveColor,
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.close, size: 16.0),
-                      onPressed: widget.onRemove,
-                    ),
-                  ),
-                ));
-              }
+                ),
+              ));
+            }
 
-              return Row(mainAxisSize: MainAxisSize.min, children: widgets);
-            },
-          ),
+            return Row(mainAxisSize: MainAxisSize.min, children: widgets);
+          },
         ),
       ),
     );
+
+    if (widget.maxWidth != null) {
+      return ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: widget.maxWidth!),
+        child: content,
+      );
+    }
+    return content;
   }
 }
 
