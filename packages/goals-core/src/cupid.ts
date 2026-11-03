@@ -1,5 +1,9 @@
 import { randomBytes } from "crypto";
 
+export const UUID_MASK = 0x000000000000f000c000000000000000n;
+export const UUID_V4_VALUE = 0x00000000000040008000000000000000n;
+export const UUID_V5_VALUE = 0x00000000000050008000000000000000n;
+
 /**
  * Compressed Universal Parseable IDentifier (Cupid)
  * Typescript port of Dart Cupid class from compressed_uuid.dart
@@ -29,35 +33,50 @@ export class Cupid {
   }
 
   private toBytes(): Uint8Array {
-    const hex = this.value.toString(16).padStart(32, "0");
-    const bytes = new Uint8Array(16);
-    for (let i = 0; i < 16; i++) {
-      bytes[i] = parseInt(hex.substring(i * 2, 2), 16);
+    const bitLength = this.value === 0n ? 0 : this.value.toString(2).length;
+    const bytesLength = Math.ceil(bitLength / 8);
+    const bytes = new Uint8Array(bytesLength);
+    for (let i = 0; i < bytesLength; i++) {
+      bytes[i] = Number((this.value >> BigInt(i * 8)) & 0xffn);
     }
     return bytes;
   }
 
   static fromBytes(bytes: Uint8Array): Cupid {
-    const hex = Array.from(bytes)
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-    return Cupid.fromBigInt(BigInt("0x" + hex));
+    let value = 0n;
+    for (let i = 0; i < bytes.length; i++) {
+      value |= BigInt(bytes[i]) << BigInt(i * 8);
+    }
+    const maskedValue = value & UUID_MASK;
+    if (maskedValue !== UUID_V4_VALUE && maskedValue !== UUID_V5_VALUE) {
+      throw new Error(
+        `Invalid UUID bytes: [${Array.from(bytes).join(", ")}], maskedValue: ${maskedValue.toString(16)}`,
+      );
+    }
+    return Cupid.fromBigInt(value);
   }
 
   static random(): Cupid {
-    const bytes = randomBytes(16);
-    // Set version (4) and variant bits for UUID v4
-    bytes[6] = (bytes[6] & 0x0f) | 0x40;
-    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const bytes = randomBytes(10);
+    // Set UUID v4 version (4) and variant (10xx xxxx) bits in little-endian order
+    bytes[9] = (bytes[9] & 0x0f) | 0x40;
+    bytes[7] = (bytes[7] & 0x3f) | 0x80;
     return Cupid.fromBytes(bytes);
   }
 
   static decode(compressedUuid: string): Cupid {
     // If it's a UUID, parse as UUID
-    if (/^[0-9a-fA-F-]{36}$/.test(compressedUuid)) {
+    if (
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+        compressedUuid,
+      )
+    ) {
       return new Cupid(compressedUuid);
     }
-    // Otherwise, treat as base64url
+    // Validate base64url characters
+    if (!/^[A-Za-z0-9_-]+$/.test(compressedUuid)) {
+      throw new Error(`Invalid compressed UUID string: ${compressedUuid}`);
+    }
     let base64 = compressedUuid.replace(/-/g, "+").replace(/_/g, "/");
     while (base64.length % 4 !== 0) base64 += "=";
     const bytes = Buffer.from(base64, "base64");
@@ -69,11 +88,7 @@ export class Cupid {
       return this.toUuid();
     }
     // base64url encoding, no padding
-    return Buffer.from(this.toBytes())
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
+    return Buffer.from(this.toBytes()).toString("base64url");
   }
 
   toUuid(): string {
