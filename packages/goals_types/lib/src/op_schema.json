@@ -675,6 +675,92 @@
         }
       ]
     },
+    "WireCaseGoalLogEntry": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "case",
+              "description": "Entry type: case metadata (CASE_ENTRY_TYPE in Dart)"
+            },
+            "n": {
+              "type": "string",
+              "description": "Canonical case name (CaseGoalLogEntry.name in Dart)"
+            },
+            "c": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Court (CaseGoalLogEntry.court in Dart)"
+            },
+            "y": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Decision year (CaseGoalLogEntry.year in Dart)"
+            },
+            "dD": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Decision date (CaseGoalLogEntry.decisionDate in Dart)"
+            }
+          },
+          "required": [
+            "t",
+            "n"
+          ]
+        }
+      ]
+    },
+    "WireReporterGoalLogEntry": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "rep",
+              "description": "Entry type: reporter metadata (REPORTER_ENTRY_TYPE in Dart)"
+            },
+            "r": {
+              "type": "string",
+              "description": "Reporter name (ReporterGoalLogEntry.reporter in Dart)"
+            },
+            "sP": {
+              "type": "integer",
+              "description": "Start page in reporter (ReporterGoalLogEntry.startPage in Dart)"
+            },
+            "rI": {
+              "type": "integer",
+              "description": "Reporter index in case (ReporterGoalLogEntry.reporterIndex in Dart)"
+            },
+            "cGI": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Case goal id (ReporterGoalLogEntry.caseGoalId in Dart)"
+            }
+          },
+          "required": [
+            "t",
+            "r",
+            "sP",
+            "rI"
+          ]
+        }
+      ]
+    },
     "WireOp": {
       "type": "object",
       "properties": {

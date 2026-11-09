@@ -9,3 +9,4 @@ export * from "./subject";
 export * from "./goal-subject-registry";
 export * from "./sync-client";
 export * from "./book-metadata";
+export * from "./case-metadata";

@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:goals_core/sync.dart';
 
 export 'book_metadata.dart';
+export 'case_metadata.dart';
 export 'course_metadata.dart';
 
 const GOAL_PREFIX = 'gg://';
