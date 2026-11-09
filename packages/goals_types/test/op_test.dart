@@ -164,6 +164,32 @@ void main() {
     await expectValidOpJson(jsonObj, ref: 'WireSyllabusParseResultLogEntry');
   });
 
+  test('WireCaseGoalLogEntry validation', () async {
+    final jsonObj = {
+      'i': 'case-1',
+      'cT': 12345,
+      't': 'case',
+      'n': 'Authors Guild v. Google, Inc.',
+      'c': '2d Cir.',
+      'y': 2015,
+      'dD': 'October 16, 2015',
+    };
+    await expectValidOpJson(jsonObj, ref: 'WireCaseGoalLogEntry');
+  });
+
+  test('WireReporterGoalLogEntry validation', () async {
+    final jsonObj = {
+      'i': 'rep-1',
+      'cT': 12345,
+      't': 'rep',
+      'r': '804 F.3d',
+      'sP': 202,
+      'rI': 0,
+      'cGI': 'case-1',
+    };
+    await expectValidOpJson(jsonObj, ref: 'WireReporterGoalLogEntry');
+  });
+
   test('ops.ts has no digit-suffixed exports', () async {
     final file = File('../goals-types/src/ops.ts');
     final contents = await file.readAsString();

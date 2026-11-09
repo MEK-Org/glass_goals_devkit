@@ -328,6 +328,58 @@ export type WireLongRunningOperationEntry = WireGoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
+ * via the `definition` "WireCaseGoalLogEntry".
+ */
+export type WireCaseGoalLogEntry = WireGoalLogEntry & {
+  /**
+   * Entry type: case metadata (CASE_ENTRY_TYPE in Dart)
+   */
+  t: "case";
+  /**
+   * Canonical case name (CaseGoalLogEntry.name in Dart)
+   */
+  n: string;
+  /**
+   * Court (CaseGoalLogEntry.court in Dart)
+   */
+  c?: string | null;
+  /**
+   * Decision year (CaseGoalLogEntry.year in Dart)
+   */
+  y?: number | null;
+  /**
+   * Decision date (CaseGoalLogEntry.decisionDate in Dart)
+   */
+  dD?: string | null;
+};
+/**
+ * This interface was referenced by `OpSchema`'s JSON-Schema
+ * via the `definition` "WireReporterGoalLogEntry".
+ */
+export type WireReporterGoalLogEntry = WireGoalLogEntry & {
+  /**
+   * Entry type: reporter metadata (REPORTER_ENTRY_TYPE in Dart)
+   */
+  t: "rep";
+  /**
+   * Reporter name (ReporterGoalLogEntry.reporter in Dart)
+   */
+  r: string;
+  /**
+   * Start page in reporter (ReporterGoalLogEntry.startPage in Dart)
+   */
+  sP: number;
+  /**
+   * Reporter index in case (ReporterGoalLogEntry.reporterIndex in Dart)
+   */
+  rI: number;
+  /**
+   * Case goal id (ReporterGoalLogEntry.caseGoalId in Dart)
+   */
+  cGI?: string | null;
+};
+/**
+ * This interface was referenced by `OpSchema`'s JSON-Schema
  * via the `definition` "WireDeltaOp".
  */
 export type WireDeltaOp = WireOp & {
