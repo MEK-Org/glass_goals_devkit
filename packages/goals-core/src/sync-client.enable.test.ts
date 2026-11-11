@@ -178,11 +178,15 @@ describe("re-enabled ops", () => {
         delta: { id: goalId, text: value },
       }) as DeltaOp;
 
+    // Built in delivery order so each HLC is later than the one before:
+    // x2/y2 must be newer than x1/y1 to win once they are re-enabled.
+    const x1 = textOp("x1", "x", "x one");
+    const y1 = textOp("y1", "y", "y one");
     const x2 = textOp("x2", "x", "x two");
     const y2 = textOp("y2", "y", "y two");
     await server.deliver([
-      textOp("x1", "x", "x one"),
-      textOp("y1", "y", "y one"),
+      x1,
+      y1,
       x2,
       y2,
       { id: "dx", hlcTimestamp: nextHlc(), version: 6, type: "disable", opId: x2.id } as AnyOp,

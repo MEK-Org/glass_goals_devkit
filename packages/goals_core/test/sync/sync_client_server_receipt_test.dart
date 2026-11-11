@@ -474,11 +474,15 @@ void main() {
         hlcTimestamp: nextHlc(),
         delta: GoalDelta(id: goalId, text: value));
 
+    // Built in delivery order so each HLC is later than the one before:
+    // x2/y2 must be newer than x1/y1 to win once they are re-enabled.
+    final x1 = text('x1', 'x', 'x one');
+    final y1 = text('y1', 'y', 'y one');
     final x2 = text('x2', 'x', 'x two');
     final y2 = text('y2', 'y', 'y two');
     await server.deliver([
-      text('x1', 'x', 'x one'),
-      text('y1', 'y', 'y one'),
+      x1,
+      y1,
       x2,
       y2,
       DisableOp(id: 'dx', hlcTimestamp: nextHlc(), opId: x2.id),
