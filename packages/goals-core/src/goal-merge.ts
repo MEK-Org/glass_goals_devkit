@@ -145,44 +145,64 @@ export function planGoalMerge(input: GoalMergePlanInput): GoalMergePlan {
   const nonEmptyDocuments = goals
     .map((goal) => ({goal, text: documents.get(goal.id) ?? ""}))
     .filter(({text}) => text.length > 0);
-  let mergedDocument: string | undefined;
-  switch (
-    input.documentContentsStrategy ?? DocumentContentsMergeStrategy.Combine
-  ) {
+  const strategy =
+    input.documentContentsStrategy ?? DocumentContentsMergeStrategy.Combine;
+  let mergedDocument = "";
+  switch (strategy) {
     case DocumentContentsMergeStrategy.Combine:
-      mergedDocument = nonEmptyDocuments.length
-        ? nonEmptyDocuments.map(({text}) => text.trim()).join("\n\n")
-        : undefined;
+      mergedDocument = nonEmptyDocuments
+        .map(({text}) => text.trim())
+        .join("\n\n");
       break;
     case DocumentContentsMergeStrategy.KeepOldest:
-      mergedDocument = documents.get(survivingGoal.id);
+      mergedDocument = documents.get(survivingGoal.id) ?? "";
       break;
     case DocumentContentsMergeStrategy.KeepNewest:
-      mergedDocument = documents.get(goals.at(-1)!.id);
+      mergedDocument = documents.get(goals.at(-1)!.id) ?? "";
       break;
     case DocumentContentsMergeStrategy.KeepGoalId:
       if (!input.documentContentsGoalId || !mergedIds.has(input.documentContentsGoalId)) {
         throw new Error("A selected document goal id is required");
       }
-      mergedDocument = documents.get(input.documentContentsGoalId);
+      mergedDocument = documents.get(input.documentContentsGoalId) ?? "";
       break;
   }
+  // An explicit keep of an empty document clears the survivor's document;
+  // combining never discards a non-empty document, so it never clears.
   const existingDocument = documents.get(survivingGoal.id) ?? "";
-  if (mergedDocument && mergedDocument !== existingDocument) {
-    deltas.push({
-      id: survivingGoal.id,
-      logEntry: entry(newId, now, {type: "documentContents", text: mergedDocument}),
-    });
+  let copiedLogEntriesCount = 0;
+  if (mergedDocument !== existingDocument) {
+    if (mergedDocument.length > 0) {
+      deltas.push({
+        id: survivingGoal.id,
+        logEntry: entry(newId, now, {type: "documentContents", text: mergedDocument}),
+      });
+      copiedLogEntriesCount++;
+    } else if (strategy !== DocumentContentsMergeStrategy.Combine) {
+      deltas.push({
+        id: survivingGoal.id,
+        logEntry: entry(newId, now, {type: "clearDocumentContents"}),
+      });
+      copiedLogEntriesCount++;
+    }
   }
 
-  let copiedLogEntriesCount =
-    mergedDocument && mergedDocument !== existingDocument ? 1 : 0;
   for (const archivedGoal of archivedGoals) {
     for (const logEntry of [...archivedGoal.log].reverse()) {
       if (structuralOrStatusOrDocument(logEntry)) continue;
       deltas.push({id: survivingGoal.id, logEntry});
       copiedLogEntriesCount++;
     }
+  }
+
+  // Edges inside the merged set would leave the survivor attached to an
+  // archived goal; archived members drop all of their parents below.
+  for (const parentId of survivingGoal.superGoalIds) {
+    if (!archivedIds.has(parentId)) continue;
+    deltas.push({
+      id: survivingGoal.id,
+      logEntry: entry(newId, now, {type: "removeParent", parentId}),
+    });
   }
 
   const parentIds = new Set(survivingGoal.superGoalIds);
