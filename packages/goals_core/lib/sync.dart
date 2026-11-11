@@ -6,4 +6,5 @@ export 'src/sync/persistence_service.dart';
 export 'src/sync/sync_repository.dart';
 export 'src/sync/local_store.dart';
 export 'src/sync/sync_logger.dart';
+export 'goal_merge.dart';
 export 'package:goals_types/goals_types.dart';

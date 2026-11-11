@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 import 'package:collection/collection.dart';
-import 'package:goals_core/sync.dart';
+import 'package:goals_types/goals_types.dart';
 
 export 'book_metadata.dart';
 export 'case_metadata.dart';
