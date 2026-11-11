@@ -148,4 +148,122 @@ describe("planGoalMerge", () => {
     }
     expect(keptDocument.text).toBe("B prose");
   });
+  it.each([
+    {
+      name: "keep_newest with an empty newest document",
+      strategy: DocumentContentsMergeStrategy.KeepNewest,
+      documentContentsGoalId: undefined,
+      documents: new Map([["a", "A prose"]]),
+    },
+    {
+      name: "keep_goal_id with an absent selected document",
+      strategy: DocumentContentsMergeStrategy.KeepGoalId,
+      documentContentsGoalId: "b",
+      documents: new Map([["a", "A prose"]]),
+    },
+    {
+      name: "keep_goal_id with an explicitly empty selected document",
+      strategy: DocumentContentsMergeStrategy.KeepGoalId,
+      documentContentsGoalId: "b",
+      documents: new Map([
+        ["a", "A prose"],
+        ["b", ""],
+      ]),
+    },
+  ])("clears the survivor document for $name", (testCase) => {
+    const plan = planGoalMerge({
+      goals: [goal("a", 10, "A"), goal("b", 20, "B")],
+      documentContents: testCase.documents,
+      documentContentsStrategy: testCase.strategy,
+      documentContentsGoalId: testCase.documentContentsGoalId,
+      now: 100,
+      newId: () => "generated",
+    });
+
+    const documentDeltas = plan.deltas.filter(
+      (delta) =>
+        delta.logEntry?.type === "documentContents" ||
+        delta.logEntry?.type === "clearDocumentContents",
+    );
+    expect(documentDeltas).toHaveLength(1);
+    expect(documentDeltas[0]?.id).toBe("a");
+    expect(documentDeltas[0]?.logEntry?.type).toBe("clearDocumentContents");
+    expect(plan.copiedLogEntriesCount).toBe(1);
+  });
+
+  it("keeps an empty oldest document without emitting a document delta", () => {
+    const plan = planGoalMerge({
+      goals: [goal("a", 10, "A"), goal("b", 20, "B")],
+      documentContents: new Map([["b", "B prose"]]),
+      documentContentsStrategy: DocumentContentsMergeStrategy.KeepOldest,
+      now: 100,
+      newId: () => "generated",
+    });
+
+    expect(
+      plan.deltas.filter(
+        (delta) =>
+          delta.logEntry?.type === "documentContents" ||
+          delta.logEntry?.type === "clearDocumentContents",
+      ),
+    ).toHaveLength(0);
+    expect(plan.copiedLogEntriesCount).toBe(0);
+  });
+
+  it("removes edges between merged goals in both directions", () => {
+    const child = goal("child", 10, "Oldest child");
+    const parent = goal("parent", 20, "Newer parent");
+    const grandchild = goal("grandchild", 30, "Newest grandchild");
+    const parentEdge: LogEntry = {
+      id: "child-under-parent",
+      creationTime: 20,
+      type: "addParent",
+      parentId: "parent",
+    };
+    child.addSuperGoal("parent", parentEdge);
+    parent.addSubGoal("child", parentEdge);
+    const grandchildEdge: LogEntry = {
+      id: "grandchild-under-child",
+      creationTime: 30,
+      type: "addParent",
+      parentId: "child",
+    };
+    grandchild.addSuperGoal("child", grandchildEdge);
+    child.addSubGoal("grandchild", grandchildEdge);
+    const externalEdge: LogEntry = {
+      id: "child-under-external",
+      creationTime: 15,
+      type: "addParent",
+      parentId: "external",
+    };
+    child.addSuperGoal("external", externalEdge);
+
+    let serial = 0;
+    const plan = planGoalMerge({
+      goals: [parent, grandchild, child],
+      now: 100,
+      newId: () => `generated-${serial++}`,
+    });
+
+    expect(plan.survivingGoalId).toBe("child");
+    const removals = plan.deltas.flatMap((delta) =>
+      delta.logEntry?.type === "removeParent"
+        ? [
+            `${delta.id}<-${(delta.logEntry as {parentId: string}).parentId}`,
+          ]
+        : [],
+    );
+    expect(removals).toContain("child<-parent");
+    expect(removals).toContain("grandchild<-child");
+    expect(removals).not.toContain("child<-external");
+    const mergedIds = [...plan.archivedGoalIds, plan.survivingGoalId];
+    expect(
+      plan.deltas.filter(
+        (delta) =>
+          delta.logEntry?.type === "addParent" &&
+          mergedIds.includes(delta.id) &&
+          mergedIds.includes((delta.logEntry as {parentId: string}).parentId),
+      ),
+    ).toHaveLength(0);
+  });
 });

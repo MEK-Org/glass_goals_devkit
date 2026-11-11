@@ -111,4 +111,111 @@ void main() {
         .logEntry as DocumentContentsEntry;
     expect(entry.text, 'B prose');
   });
+
+  bool isDocumentDelta(GoalDelta delta) =>
+      delta.logEntry is DocumentContentsEntry ||
+      delta.logEntry is ClearDocumentContentsEntry;
+
+  for (final testCase in [
+    (
+      name: 'keepNewest with an empty newest document',
+      strategy: DocumentContentsMergeStrategy.keepNewest,
+      goalId: null,
+      documents: const {'a': 'A prose'},
+    ),
+    (
+      name: 'keepGoalId with an absent selected document',
+      strategy: DocumentContentsMergeStrategy.keepGoalId,
+      goalId: 'b',
+      documents: const {'a': 'A prose'},
+    ),
+    (
+      name: 'keepGoalId with an explicitly empty selected document',
+      strategy: DocumentContentsMergeStrategy.keepGoalId,
+      goalId: 'b',
+      documents: const {'a': 'A prose', 'b': ''},
+    ),
+  ]) {
+    test('clears the survivor document for ${testCase.name}', () {
+      final plan = planGoalMerge(
+        goals: [_goal('a', 10, 'A'), _goal('b', 20, 'B')],
+        documentContents: testCase.documents,
+        documentContentsStrategy: testCase.strategy,
+        documentContentsGoalId: testCase.goalId,
+        now: DateTime.fromMillisecondsSinceEpoch(100),
+        newId: () => 'generated',
+      );
+
+      final documentDelta = plan.deltas.where(isDocumentDelta).single;
+      expect(documentDelta.id, 'a');
+      expect(documentDelta.logEntry, isA<ClearDocumentContentsEntry>());
+      expect(plan.copiedLogEntriesCount, 1);
+    });
+  }
+
+  test('keeps an empty oldest document without emitting a document delta', () {
+    final plan = planGoalMerge(
+      goals: [_goal('a', 10, 'A'), _goal('b', 20, 'B')],
+      documentContents: const {'b': 'B prose'},
+      documentContentsStrategy: DocumentContentsMergeStrategy.keepOldest,
+      now: DateTime.fromMillisecondsSinceEpoch(100),
+      newId: () => 'generated',
+    );
+
+    expect(plan.deltas.where(isDocumentDelta), isEmpty);
+    expect(plan.copiedLogEntriesCount, 0);
+  });
+
+  test('removes edges between merged goals in both directions', () {
+    final child = _goal('child', 10, 'Oldest child');
+    final parent = _goal('parent', 20, 'Newer parent');
+    final grandchild = _goal('grandchild', 30, 'Newest grandchild');
+    final parentEdge = AddParentLogEntry(
+      id: 'child-under-parent',
+      creationTime: DateTime.fromMillisecondsSinceEpoch(20),
+      parentId: 'parent',
+    );
+    child.addSuperGoal('parent', parentEdge);
+    parent.addSubGoal('child', parentEdge);
+    final grandchildEdge = AddParentLogEntry(
+      id: 'grandchild-under-child',
+      creationTime: DateTime.fromMillisecondsSinceEpoch(30),
+      parentId: 'child',
+    );
+    grandchild.addSuperGoal('child', grandchildEdge);
+    child.addSubGoal('grandchild', grandchildEdge);
+    child.addSuperGoal(
+      'external',
+      AddParentLogEntry(
+        id: 'child-under-external',
+        creationTime: DateTime.fromMillisecondsSinceEpoch(15),
+        parentId: 'external',
+      ),
+    );
+
+    var serial = 0;
+    final plan = planGoalMerge(
+      goals: [parent, grandchild, child],
+      now: DateTime.fromMillisecondsSinceEpoch(100),
+      newId: () => 'generated-${serial++}',
+    );
+
+    expect(plan.survivingGoalId, 'child');
+    final removals = [
+      for (final delta in plan.deltas)
+        if (delta.logEntry case RemoveParentLogEntry(:final parentId))
+          '${delta.id}<-$parentId',
+    ];
+    expect(removals, contains('child<-parent'));
+    expect(removals, contains('grandchild<-child'));
+    expect(removals, isNot(contains('child<-external')));
+    final mergedIds = {...plan.archivedGoalIds, plan.survivingGoalId};
+    expect(
+      plan.deltas.where((delta) =>
+          mergedIds.contains(delta.id) &&
+          delta.logEntry is AddParentLogEntry &&
+          mergedIds.contains((delta.logEntry as AddParentLogEntry).parentId)),
+      isEmpty,
+    );
+  });
 }
