@@ -1269,6 +1269,9 @@ class SyncClient {
   Iterable<Op> _reHlcOps(Iterable<Op> ops) {
     List<Op> result = [];
     for (Op op in ops) {
+      // Increment first: the current HLC already stamps the newest local op,
+      // and a pushed copy must not share an HLC with an op still unsynced.
+      hlc = hlc.increment();
       final newHlc = hlc.pack();
       result.add(switch (op) {
         DeltaOp() => DeltaOp(
@@ -1290,8 +1293,6 @@ class SyncClient {
         _ => throw Exception(
             'Unknown op type encountered in _reHlcOps: \${op.runtimeType}'),
       });
-
-      hlc = hlc.increment();
     }
 
     return result;
@@ -1317,8 +1318,10 @@ class SyncClient {
         if (opToEnable != null) {
           // if the op that we're enabling is in the disabledOpMap, we remove it
           // from the disabledOpMap and add it back to the opMap
+          // Key it by its own id, so a later disable finds it and enable ops
+          // that share an HLC each keep their own target.
           disabledOpMap.remove(op.opId);
-          opMap[op.hlcTimestamp] = opToEnable;
+          opMap[opToEnable.id] = opToEnable;
         }
       }
     }
