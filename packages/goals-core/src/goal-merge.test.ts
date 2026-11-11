@@ -1,5 +1,10 @@
 import {describe, expect, it} from "vitest";
-import type {DeltaOp, LogEntry} from "@thkp-eng/goals-types";
+import type {
+  AddParentLogEntry,
+  DeltaOp,
+  DocumentContentsLogEntry,
+  LogEntry,
+} from "@thkp-eng/goals-types";
 import {Goal} from "./model";
 import {
   DocumentContentsMergeStrategy,
@@ -21,6 +26,24 @@ const rename = (
   hlcTimestamp,
   delta: {id: goalId, text},
 });
+
+type NonEmptyDocumentContentsLogEntry = DocumentContentsLogEntry & {
+  text: string;
+};
+
+const isDocumentContentsLogEntry = (
+  entry: LogEntry | undefined,
+): entry is NonEmptyDocumentContentsLogEntry =>
+  entry?.type === "documentContents" &&
+  "text" in entry &&
+  typeof entry.text === "string";
+
+const isAddParentLogEntry = (
+  entry: LogEntry | undefined,
+): entry is AddParentLogEntry =>
+  entry?.type === "addParent" &&
+  "parentId" in entry &&
+  typeof entry.parentId === "string";
 
 describe("planGoalMerge", () => {
   it("plans a deterministic n-way merge with documents and relationships", () => {
@@ -71,11 +94,10 @@ describe("planGoalMerge", () => {
     expect(plan.survivingGoalId).toBe("oldest");
     expect(plan.archivedGoalIds).toEqual(["middle", "newest"]);
     expect(plan.chosenName).toBe("Middle title");
-    const combinedDocument = plan.deltas.find(
-      (delta) => delta.logEntry?.type === "documentContents",
-    )?.logEntry;
-    expect(combinedDocument?.type).toBe("documentContents");
-    if (combinedDocument?.type !== "documentContents") {
+    const combinedDocument = plan.deltas
+      .map((delta) => delta.logEntry)
+      .find(isDocumentContentsLogEntry);
+    if (combinedDocument === undefined) {
       throw new Error("Expected a document contents delta");
     }
     expect(combinedDocument.text).toBe(
@@ -84,10 +106,10 @@ describe("planGoalMerge", () => {
     expect(
       plan.deltas.filter((delta) => delta.logEntry?.type === "note"),
     ).toHaveLength(1);
-    const copiedParent = plan.deltas.find((delta) => {
-      const logEntry = delta.logEntry;
-      return logEntry?.type === "addParent" && logEntry.parentId === "parent";
-    })?.logEntry;
+    const copiedParent = plan.deltas
+      .map((delta) => delta.logEntry)
+      .filter(isAddParentLogEntry)
+      .find((logEntry) => logEntry.parentId === "parent");
     expect(copiedParent).toMatchObject({
       displayedChildPath: ["parent", "oldest"],
     });
@@ -118,11 +140,10 @@ describe("planGoalMerge", () => {
       newId: () => "generated",
     });
 
-    const keptDocument = plan.deltas.find(
-      (delta) => delta.logEntry?.type === "documentContents",
-    )?.logEntry;
-    expect(keptDocument?.type).toBe("documentContents");
-    if (keptDocument?.type !== "documentContents") {
+    const keptDocument = plan.deltas
+      .map((delta) => delta.logEntry)
+      .find(isDocumentContentsLogEntry);
+    if (keptDocument === undefined) {
       throw new Error("Expected a document contents delta");
     }
     expect(keptDocument.text).toBe("B prose");
