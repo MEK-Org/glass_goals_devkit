@@ -422,7 +422,7 @@ export class SyncClient {
         continue;
       }
       const wire = compressOp(op) as any;
-      wire.d.l.te = await this.loadString(entry.id);
+      wire.d.lE.te = await this.loadString(entry.id);
       result.push(JSON.stringify(wire));
       if (result.length >= chunkSize) {
         await handleChunk(result);
