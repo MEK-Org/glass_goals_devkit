@@ -90,6 +90,26 @@ const scenarios = [
     ],
   },
   {
+    // #38: an op restored by an Enable keeps its own id and HLC place.
+    name: "reenabled_op_identity",
+    seed: [create("z1", 1000, "g", "zero")],
+    steps: [
+      { op: "start" },
+      { op: "remote", ops: [text("o1", 2000, "g", "one")] },
+      { op: "remote", ops: [text("o2", 3000, "g", "two")] }, snap("two working text ops"),
+      { op: "remote", ops: [disable("d1", 4000, "o1")] },
+      { op: "remote", ops: [enable("e1", 5000, "o1")] }, snap("older op re-enabled under a newer one"),
+      { op: "remote", ops: [disable("d2", 6000, "o2")] }, snap("newer op disabled"),
+      { op: "remote", ops: [disable("d3", 7000, "o1")] }, snap("re-enabled op disabled again"),
+      { op: "modify", deltas: [{ i: "g", t: "local" }] },
+      { op: "undo" }, { op: "redo" }, { op: "undo" }, snap("local undo after redo"),
+      { op: "modify", deltas: [{ i: "g", lE: { t: "n", i: "m-n", cT: 8000, te: "local note" } }] },
+      { op: "undo" }, { op: "redo" }, { op: "undo" }, { op: "redo" }, snap("note redone after two cycles"),
+      { op: "undo" }, snap("note undone again"),
+      { op: "restart" }, { op: "load", id: "g" }, snap("after restart"),
+    ],
+  },
+  {
     name: "root_index",
     seed: [create("a1", 1000, "a", "A"), create("b1", 1100, "b", "B"), addParent("b2", 1200, "b", "a")],
     steps: [
