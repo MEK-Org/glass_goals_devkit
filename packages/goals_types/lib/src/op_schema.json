@@ -761,6 +761,41 @@
         }
       ]
     },
+    "WireDocNoteLogEntry": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/WireGoalLogEntry"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "docNote",
+              "description": "Entry type: document note configuration metadata (DOC_NOTE_ENTRY_TYPE in Dart)"
+            },
+            "k": {
+              "type": "string",
+              "enum": [
+                "footnote",
+                "endnote",
+                "omittedFromExport",
+                "omit"
+              ],
+              "description": "Note kind: footnote, endnote, or omittedFromExport (DocNoteKind in Dart)"
+            },
+            "dV": {
+              "type": "string",
+              "description": "Display value: empty for blank chip, # for auto-numbering, or literal label (DocNoteLogEntry.displayValue in Dart)"
+            }
+          },
+          "required": [
+            "t",
+            "k",
+            "dV"
+          ]
+        }
+      ]
+    },
     "WireOp": {
       "type": "object",
       "properties": {
