@@ -519,19 +519,6 @@ class CachingLocalStore implements LocalStore {
       final opLogger = Logger(op.id);
       opLogger.fine("Storing Op");
 
-      // Remove the op from unsyncedOps one at a time
-      // to avoid clobbering other updates to unsyncedOps
-      // that may have happened while this function was running.
-      final unsyncedOps = [...repo.getUnsyncedOps()];
-      for (final unsyncedOp in unsyncedOps) {
-        if (unsyncedOp.id == op.id) {
-          opLogger.fine("Clearing unsyncedOp");
-          unsyncedOps.remove(unsyncedOp);
-          setUnsyncedOps(unsyncedOps);
-          break;
-        }
-      }
-
       final opJsonMap = op.toJsonMap();
 
       opLogger.fine("extracting text entry field");
@@ -630,6 +617,22 @@ class CachingLocalStore implements LocalStore {
     }
 
     await repo.storeGoalIndexEntries(goalIndexEntriesToWrite);
+
+    // Only now that the ops are stored and indexed do they leave
+    // unsyncedOps, so a stop before this point leaves them pending (#42).
+    // Remove them one at a time to avoid clobbering other updates to
+    // unsyncedOps that may have happened while this function was running.
+    for (final op in sortedOps) {
+      final unsyncedOps = [...repo.getUnsyncedOps()];
+      for (final unsyncedOp in unsyncedOps) {
+        if (unsyncedOp.id == op.id) {
+          Logger(op.id).fine("Clearing unsyncedOp");
+          unsyncedOps.remove(unsyncedOp);
+          setUnsyncedOps(unsyncedOps);
+          break;
+        }
+      }
+    }
   }
 
   @override

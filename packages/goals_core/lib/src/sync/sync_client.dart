@@ -1142,13 +1142,15 @@ class SyncClient {
       _saveGoalNamesIndex();
     }
 
-    // The indexes now include the received ops, so they can leave the
-    // unsynced ops without disappearing from any view.
-    _acknowledgeReceivedOps(newSyncedOps);
-
     // synchronously updates the caches and queues storage to hive
-    // so we don't need to wait.
-    localStore.storeSyncedOps(newSyncedOps);
+    // so we don't need to wait. The indexes now include the received ops, so
+    // they can leave the unsynced ops without disappearing from any view, but
+    // only once they are stored: until then a restart still finds them
+    // pending and acked, so the pull starts before them even though the
+    // cursor already covers them (#42).
+    localStore
+        .storeSyncedOps(newSyncedOps)
+        .then((_) => _acknowledgeReceivedOps(newSyncedOps));
 
     _maybeEvict();
   }
@@ -1391,7 +1393,7 @@ class SyncClient {
   }
 
   /// An op is synced once the server sends it back, not when a push succeeds.
-  /// Called by [_persistOps] after it has indexed [ops].
+  /// Called by [_persistOps] after it has indexed and stored [ops].
   void _acknowledgeReceivedOps(Iterable<Op> ops) {
     final receivedIds = ops.map((op) => op.id).toSet();
     final unsyncedOps = localStore.getUnsyncedOps().toList();

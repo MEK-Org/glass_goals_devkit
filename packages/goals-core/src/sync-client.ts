@@ -937,8 +937,13 @@ export class SyncClient {
       this.saveGoalNamesIndex().catch(this.onError);
     }
 
-    this.acknowledgeReceivedOps(newSyncedOps);
-    this.localStore.storeSyncedOps(newSyncedOps).catch(this.onError);
+    // A received op leaves the unsynced and acked lists only once it is
+    // stored. Until then a restart still finds it pending and acked, so the
+    // pull starts before it even though the cursor already covers it (#42).
+    this.localStore
+      .storeSyncedOps(newSyncedOps)
+      .then(() => this.acknowledgeReceivedOps(newSyncedOps))
+      .catch(this.onError);
     this.maybeEvict();
   }
 
