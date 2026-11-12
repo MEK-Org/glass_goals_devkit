@@ -136,15 +136,16 @@ export class SyncClient {
     if (this.persistenceService) {
       this.unsubscribePersistence = this.persistenceService.subscribeJSON(
         this.localStore.cursor,
-        (ops, cursor) => {
-          this.handleRemoteOps(ops, cursor).catch(this.onError);
+        (ops) => {
+          this.handleRemoteOps(ops).catch(this.onError);
         },
       );
     }
   }
 
-  private async handleRemoteOps(ops: AnyOp[], cursor: string): Promise<void> {
-    this.localStore.cursor = cursor;
+  // The local store moves the cursor past these ops once it has stored and
+  // indexed them, so a stop before then pulls them again on restart (#42).
+  private async handleRemoteOps(ops: AnyOp[]): Promise<void> {
     for (const op of ops) {
       this.workingOps.set(op.id, op);
     }
@@ -937,13 +938,8 @@ export class SyncClient {
       this.saveGoalNamesIndex().catch(this.onError);
     }
 
-    // A received op leaves the unsynced and acked lists only once it is
-    // stored. Until then a restart still finds it pending and acked, so the
-    // pull starts before it even though the cursor already covers it (#42).
-    this.localStore
-      .storeSyncedOps(newSyncedOps)
-      .then(() => this.acknowledgeReceivedOps(newSyncedOps))
-      .catch(this.onError);
+    this.acknowledgeReceivedOps(newSyncedOps);
+    this.localStore.storeSyncedOps(newSyncedOps).catch(this.onError);
     this.maybeEvict();
   }
 

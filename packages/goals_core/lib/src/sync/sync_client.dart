@@ -178,10 +178,11 @@ class SyncClient {
       persistenceSubscription = persistenceService!
           .stream(localStore.cursor)
           .listen((opsEvent) async {
-        final (ops, cursor) = opsEvent;
+        final (ops, _) = opsEvent;
 
-        // TODO: it seems like we shouldn't be setting the cursor until after persisting the ops???
-        localStore.cursor = cursor;
+        // The local store moves the cursor past these ops once it has stored
+        // and indexed them, so a stop before then pulls them again on
+        // restart (#42).
         for (final op in ops) {
           _logger?.log('Received op from remote, updating entry in _workingOps',
               opId: op.id);
@@ -1142,15 +1143,13 @@ class SyncClient {
       _saveGoalNamesIndex();
     }
 
+    // The indexes now include the received ops, so they can leave the
+    // unsynced ops without disappearing from any view.
+    _acknowledgeReceivedOps(newSyncedOps);
+
     // synchronously updates the caches and queues storage to hive
-    // so we don't need to wait. The indexes now include the received ops, so
-    // they can leave the unsynced ops without disappearing from any view, but
-    // only once they are stored: until then a restart still finds them
-    // pending and acked, so the pull starts before them even though the
-    // cursor already covers them (#42).
-    localStore
-        .storeSyncedOps(newSyncedOps)
-        .then((_) => _acknowledgeReceivedOps(newSyncedOps));
+    // so we don't need to wait.
+    localStore.storeSyncedOps(newSyncedOps);
 
     _maybeEvict();
   }
@@ -1393,7 +1392,7 @@ class SyncClient {
   }
 
   /// An op is synced once the server sends it back, not when a push succeeds.
-  /// Called by [_persistOps] after it has indexed and stored [ops].
+  /// Called by [_persistOps] after it has indexed [ops].
   void _acknowledgeReceivedOps(Iterable<Op> ops) {
     final receivedIds = ops.map((op) => op.id).toSet();
     final unsyncedOps = localStore.getUnsyncedOps().toList();

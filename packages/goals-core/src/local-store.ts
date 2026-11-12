@@ -544,6 +544,16 @@ export class CachingLocalStore implements LocalStore {
         maxHlc = op.hlcTimestamp;
       }
 
+      // Remove the op from unsyncedOps one at a time to avoid clobbering
+      // other updates to unsyncedOps that may have happened while this
+      // function was running.
+      const unsyncedOps = this.repo.getUnsyncedOps();
+      const index = unsyncedOps.findIndex((unsynced) => unsynced.id === op.id);
+      if (index !== -1) {
+        unsyncedOps.splice(index, 1);
+        void this.setUnsyncedOps(unsyncedOps);
+      }
+
       const text = extractEntryTextField(op);
       if (text) {
         stringsToWrite.set(text.entryId, text.text);
@@ -551,10 +561,6 @@ export class CachingLocalStore implements LocalStore {
       } else {
         opsToWrite.push(op);
       }
-    }
-
-    if (maxHlc != null) {
-      this.repo.cursor = maxHlc;
     }
 
     await this.repo.storeStrings(stringsToWrite);
@@ -622,17 +628,10 @@ export class CachingLocalStore implements LocalStore {
 
     await this.repo.storeGoalIndexEntries(goalIndexEntriesToWrite);
 
-    // Only now that the ops are stored and indexed do they leave
-    // unsyncedOps, so a stop before this point leaves them pending (#42).
-    // Remove them one at a time to avoid clobbering other updates to
-    // unsyncedOps that may have happened while this function was running.
-    for (const op of sortedOps) {
-      const unsyncedOps = this.repo.getUnsyncedOps();
-      const index = unsyncedOps.findIndex((unsynced) => unsynced.id === op.id);
-      if (index !== -1) {
-        unsyncedOps.splice(index, 1);
-        void this.setUnsyncedOps(unsyncedOps);
-      }
+    // Only now that the ops are stored and indexed does the cursor cover
+    // them; a stop before this point pulls them again on restart (#42).
+    if (maxHlc != null) {
+      this.repo.cursor = maxHlc;
     }
   }
 
