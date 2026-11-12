@@ -46,6 +46,13 @@ export interface LocalStore {
 
   storeSyncedOps(ops: Iterable<AnyOp>): Promise<void>;
 
+  /**
+   * Resolves once every op batch queued by `storeSyncedOps` so far has been
+   * written to the repository, including batches queued while waiting. The
+   * store cursor covers those ops from then on.
+   */
+  settled(): Promise<void>;
+
   getIndexGoalIds(key: string): Set<string>;
   setIndexGoalIds(key: string, goalIds: Set<string>): void;
 
@@ -521,9 +528,8 @@ export class CachingLocalStore implements LocalStore {
   }
 
   /**
-   * TS only: resolves once every op batch queued by [storeSyncedOps] so far
-   * has been written to the repository, including batches queued while
-   * waiting. The Dart has no equivalent; `SyncClient` does not await storage.
+   * Resolves once every op batch queued by `storeSyncedOps` so far has been
+   * written to the repository, including batches queued while waiting.
    */
   async settled(): Promise<void> {
     let queue: Promise<void>;

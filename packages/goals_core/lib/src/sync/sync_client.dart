@@ -1497,6 +1497,11 @@ class SyncClient {
       await _pull();
 
       await _push();
+
+      // sync() is the durability barrier: a restart on this store must start
+      // from fully stored local state, so the store cursor may only cover
+      // the ops above once they are actually stored and indexed (#42).
+      await localStore.settled();
     }
 
     _computeAndEmitUnsyncedState("sync");

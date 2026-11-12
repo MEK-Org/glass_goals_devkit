@@ -1209,6 +1209,11 @@ export class SyncClient {
       if (this.persistenceService != null) {
         await this.pull();
         await this.push();
+        // sync() is the durability barrier: a restart on this store must
+        // start from fully stored local state, so the store cursor may only
+        // cover the ops above once they are actually stored and indexed
+        // (#42).
+        await this.localStore.settled();
       }
       this.computeAndEmitUnsyncedState("sync");
     } finally {

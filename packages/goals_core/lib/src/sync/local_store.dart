@@ -47,6 +47,11 @@ abstract class LocalStore {
 
   Future<void> storeSyncedOps(Iterable<Op> ops);
 
+  /// Resolves once every op batch queued by [storeSyncedOps] so far has been
+  /// written to the repository, including batches queued while waiting. The
+  /// store cursor covers those ops from then on.
+  Future<void> settled();
+
   Set<String> getIndexGoalIds(String key);
   void setIndexGoalIds(String key, Set<String> goalIds);
 
@@ -474,6 +479,13 @@ class CachingLocalStore implements LocalStore {
 
     // queue storage of the ops without waiting
     await _opStorageQueue.add(() => _doOpStorage(ops));
+  }
+
+  @override
+  Future<void> settled() async {
+    while (_opStorageQueue.remainingItemCount > 0) {
+      await _opStorageQueue.onComplete;
+    }
   }
 
   @override
