@@ -116,9 +116,13 @@ Other modules:
   pending; the Dart writes the repository copy unconditionally. Because a
   concurrent read of the same goal joins the pending request, no known
   sequence reaches this, so the guard is defensive only.
-- `CachingLocalStore.settled()` is TS only. It resolves once queued op storage
-  has reached the repository, so scripts and tests can wait for it. The Dart
-  `SyncClient` does not await storage, and neither does the TS client.
+- `CachingLocalStore.settled()` exists in both clients. It drains queued op
+  storage, including batches queued while it waits, so the repository and its
+  cursor cover those batches when it resolves. `SyncClient.sync()` awaits this
+  barrier after its pull and push in both clients. It covers storage already
+  queued by the pull or an echo; a pushed operation whose server echo arrives
+  only after that drain can still remain pending/acknowledged when `sync()`
+  returns.
 - `MemoryPersistenceService.settled()` is a method; the Dart's is a getter.
 - After `dispose`, a late emission is dropped. The Dart throws "Cannot add new
   events after calling close" into the zone.

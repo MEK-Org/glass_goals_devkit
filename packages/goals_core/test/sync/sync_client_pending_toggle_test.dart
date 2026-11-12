@@ -156,13 +156,6 @@ Future<void> _deliverAndSettle(
   await store.waitForCompletedWrites(completes);
 }
 
-/// Lets queued storage, index writes and the store's 10ms read batch finish.
-Future<void> _settle() async {
-  for (var i = 0; i < 4; i++) {
-    await Future<void>.delayed(const Duration(milliseconds: 40));
-  }
-}
-
 void main() {
   test('pending final Undo remains recoverable before its local write finishes (#42)',
       () async {
@@ -222,14 +215,15 @@ void main() {
     // Stop here: the blocked write never completes. Only writes that finished
     // are in the repository, as after a closed tab. Reopen the same repository.
     client.dispose();
+    final recoveringStore = _TrackingStore(repository);
     final recovering = SyncClient(
       persistenceService: persistence,
-      localStore: _TrackingStore(repository),
+      localStore: recoveringStore,
     );
     await recovering.init();
     await recovering.loadGoal('g');
     final recoveringText = _text(recovering);
-    await _settle();
+    await recoveringStore.settled();
     final recoveredPersisted = await _storedIds(repository);
     print('[#42] recovering restart ${jsonEncode({
           'text': recoveringText,
@@ -249,7 +243,6 @@ void main() {
     await restarted.init();
     await restarted.loadGoal('g');
     final restartedText = _text(restarted);
-    await _settle();
     restarted.dispose();
     print('[#42] settled restart ${jsonEncode({'text': restartedText})}');
 
