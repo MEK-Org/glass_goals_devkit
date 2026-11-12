@@ -1,0 +1,185 @@
+{
+  "description": "DocNoteLogEntry DeltaOps in the wire shape Dart Op.toJsonMap writes. Read by goals_core/test/doc_note_wire_test.dart and goals-core/src/doc-note-conversion.test.ts so both languages agree on kind (k) and exact display value (dV).",
+  "ops": [
+    {
+      "h": "1700000000000:0000:dart",
+      "i": "dart-op-footnote-blank",
+      "v": 6,
+      "t": "d",
+      "d": {
+        "i": "note-goal",
+        "lE": {
+          "i": "dart-entry-footnote-blank",
+          "cT": 1700000000000,
+          "p": [
+            "parent-goal",
+            "note-goal"
+          ],
+          "t": "docNote",
+          "k": "footnote",
+          "dV": ""
+        }
+      }
+    },
+    {
+      "h": "1700000000000:0000:dart",
+      "i": "dart-op-footnote-#",
+      "v": 6,
+      "t": "d",
+      "d": {
+        "i": "note-goal",
+        "lE": {
+          "i": "dart-entry-footnote-#",
+          "cT": 1700000000000,
+          "p": [
+            "parent-goal",
+            "note-goal"
+          ],
+          "t": "docNote",
+          "k": "footnote",
+          "dV": "#"
+        }
+      }
+    },
+    {
+      "h": "1700000000000:0000:dart",
+      "i": "dart-op-footnote-Note A",
+      "v": 6,
+      "t": "d",
+      "d": {
+        "i": "note-goal",
+        "lE": {
+          "i": "dart-entry-footnote-Note A",
+          "cT": 1700000000000,
+          "p": [
+            "parent-goal",
+            "note-goal"
+          ],
+          "t": "docNote",
+          "k": "footnote",
+          "dV": "Note A"
+        }
+      }
+    },
+    {
+      "h": "1700000000000:0000:dart",
+      "i": "dart-op-endnote-blank",
+      "v": 6,
+      "t": "d",
+      "d": {
+        "i": "note-goal",
+        "lE": {
+          "i": "dart-entry-endnote-blank",
+          "cT": 1700000000000,
+          "p": [
+            "parent-goal",
+            "note-goal"
+          ],
+          "t": "docNote",
+          "k": "endnote",
+          "dV": ""
+        }
+      }
+    },
+    {
+      "h": "1700000000000:0000:dart",
+      "i": "dart-op-endnote-#",
+      "v": 6,
+      "t": "d",
+      "d": {
+        "i": "note-goal",
+        "lE": {
+          "i": "dart-entry-endnote-#",
+          "cT": 1700000000000,
+          "p": [
+            "parent-goal",
+            "note-goal"
+          ],
+          "t": "docNote",
+          "k": "endnote",
+          "dV": "#"
+        }
+      }
+    },
+    {
+      "h": "1700000000000:0000:dart",
+      "i": "dart-op-endnote-Note A",
+      "v": 6,
+      "t": "d",
+      "d": {
+        "i": "note-goal",
+        "lE": {
+          "i": "dart-entry-endnote-Note A",
+          "cT": 1700000000000,
+          "p": [
+            "parent-goal",
+            "note-goal"
+          ],
+          "t": "docNote",
+          "k": "endnote",
+          "dV": "Note A"
+        }
+      }
+    },
+    {
+      "h": "1700000000000:0000:dart",
+      "i": "dart-op-omittedFromExport-blank",
+      "v": 6,
+      "t": "d",
+      "d": {
+        "i": "note-goal",
+        "lE": {
+          "i": "dart-entry-omittedFromExport-blank",
+          "cT": 1700000000000,
+          "p": [
+            "parent-goal",
+            "note-goal"
+          ],
+          "t": "docNote",
+          "k": "omittedFromExport",
+          "dV": ""
+        }
+      }
+    },
+    {
+      "h": "1700000000000:0000:dart",
+      "i": "dart-op-omittedFromExport-#",
+      "v": 6,
+      "t": "d",
+      "d": {
+        "i": "note-goal",
+        "lE": {
+          "i": "dart-entry-omittedFromExport-#",
+          "cT": 1700000000000,
+          "p": [
+            "parent-goal",
+            "note-goal"
+          ],
+          "t": "docNote",
+          "k": "omittedFromExport",
+          "dV": "#"
+        }
+      }
+    },
+    {
+      "h": "1700000000000:0000:dart",
+      "i": "dart-op-omittedFromExport-Note A",
+      "v": 6,
+      "t": "d",
+      "d": {
+        "i": "note-goal",
+        "lE": {
+          "i": "dart-entry-omittedFromExport-Note A",
+          "cT": 1700000000000,
+          "p": [
+            "parent-goal",
+            "note-goal"
+          ],
+          "t": "docNote",
+          "k": "omittedFromExport",
+          "dV": "Note A"
+        }
+      }
+    }
+  ]
+}

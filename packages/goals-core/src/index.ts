@@ -10,3 +10,4 @@ export * from "./goal-subject-registry";
 export * from "./sync-client";
 export * from "./book-metadata";
 export * from "./case-metadata";
+export * from "./doc-note-metadata";
