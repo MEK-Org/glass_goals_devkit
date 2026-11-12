@@ -23,6 +23,7 @@ import {
   ClearAnchorLogEntry,
   DocumentContentsLogEntry,
   ClearDocumentContentsLogEntry,
+  DocNoteLogEntry,
   GoalLogEntry,
   NoteLogEntry,
   PriorityLogEntry,
@@ -59,6 +60,32 @@ const LOG_ENTRY_TYPE_MAP: Record<string, string> = {
   documentContents: "d",
   clearDocumentContents: "cD",
 };
+
+/** Dart `DocNoteLogEntryModule` also reads this alias; it writes "docNote". */
+const DOC_NOTE_ALIAS_ENTRY_TYPE = "dN";
+
+/**
+ * Canonical wire value for a note kind, matching Dart `DocNoteKind.fromWire`
+ * aliases. Unrecognised values pass through unchanged rather than being lost.
+ */
+function canonicalDocNoteKind(kind: unknown): unknown {
+  switch (kind) {
+    case "footnote":
+    case "Footnote":
+      return "footnote";
+    case "endnote":
+    case "Endnote":
+      return "endnote";
+    case "omittedFromExport":
+    case "OmittedFromExport":
+    case "omit":
+    case "omitted":
+    case "omitFromExport":
+      return "omittedFromExport";
+    default:
+      return kind;
+  }
+}
 
 const OP_REVERSE_TYPE_MAP = Object.fromEntries(
   Object.entries(OP_TYPE_MAP).map(([k, v]) => [v, k])
@@ -119,6 +146,11 @@ export function compressLogEntry(pretty: LogEntry): WireGoalLogEntry {
     case "documentContents":
       (compressed as WireDocumentContentsLogEntry).te = (pretty as DocumentContentsLogEntry).text;
       break;
+    case "docNote":
+      const docNote = pretty as DocNoteLogEntry;
+      if (docNote.kind !== undefined) compressed.k = canonicalDocNoteKind(docNote.kind);
+      if (docNote.displayValue !== undefined) compressed.dV = docNote.displayValue;
+      break;
   }
 
   return compressed as WireGoalLogEntry;
@@ -126,7 +158,10 @@ export function compressLogEntry(pretty: LogEntry): WireGoalLogEntry {
 
 export function expandLogEntry(compressed: WireGoalLogEntry): LogEntry {
   const c = compressed as any;
-  const type = LOG_ENTRY_REVERSE_TYPE_MAP[c.t] || c.t || "unknown";
+  const type =
+    c.t === DOC_NOTE_ALIAS_ENTRY_TYPE
+      ? "docNote"
+      : LOG_ENTRY_REVERSE_TYPE_MAP[c.t] || c.t || "unknown";
 
   const pretty: any = {
     id: c.i,
@@ -161,6 +196,10 @@ export function expandLogEntry(compressed: WireGoalLogEntry): LogEntry {
       if (c.s !== undefined) pretty.status = c.s;
       if (c.sT !== undefined) pretty.startTime = c.sT;
       if (c.eT !== undefined) pretty.endTime = c.eT;
+      break;
+    case "docNote":
+      if (c.k !== undefined) pretty.kind = canonicalDocNoteKind(c.k);
+      if (c.dV !== undefined) pretty.displayValue = c.dV;
       break;
   }
 

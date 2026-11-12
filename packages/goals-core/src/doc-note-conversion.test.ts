@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   AnyOp,
@@ -44,25 +46,20 @@ function docNoteOp(kind: DocNoteKind, displayValue: string): DeltaOp {
   };
 }
 
-/** The wire shape Dart's DocNoteLogEntry.toJsonMap writes inside a DeltaOp. */
+// Shared with goals_core/test/doc_note_wire_test.dart: the wire shape Dart's
+// Op.toJsonMap writes for a DeltaOp carrying a DocNoteLogEntry.
+const dartWireOps: WireOp[] = JSON.parse(
+  readFileSync(
+    join(__dirname, "../../goals_core/test/fixtures/doc_note_wire_ops.json"),
+    "utf8",
+  ),
+).ops;
+
 function dartWireOp(kind: DocNoteKind, displayValue: string): WireOp {
-  return {
-    h: "1700000000000:0000:dart",
-    i: `dart-op-${kind}-${displayValue || "blank"}`,
-    v: 6,
-    t: "d",
-    d: {
-      i: "note-goal",
-      lE: {
-        i: `dart-entry-${kind}-${displayValue || "blank"}`,
-        cT: 1700000000000,
-        p: PATH,
-        t: "docNote",
-        k: kind,
-        dV: displayValue,
-      },
-    },
-  } as unknown as WireOp;
+  const id = `dart-op-${kind}-${displayValue || "blank"}`;
+  const op = dartWireOps.find((o) => o.i === id);
+  if (op == null) throw new Error(`missing fixture op ${id}`);
+  return op;
 }
 
 function logEntryOf(op: AnyOp): DocNoteLogEntry {
@@ -110,6 +107,10 @@ describe("DocNoteLogEntry through compressOp/expandOp", () => {
       });
     }
   }
+
+  it("covers every op in the shared Dart fixture", () => {
+    expect(dartWireOps).toHaveLength(KINDS.length * DISPLAY_VALUES.length);
+  });
 
   it("normalises the omit alias to omittedFromExport on the wire", () => {
     const op = docNoteOp("omit", "x");
@@ -201,11 +202,19 @@ describe("DocNoteLogEntry through SyncClient undo/redo and restart", () => {
       kind: "omittedFromExport",
       displayValue: "Lit",
     });
+    client.dispose();
+  });
 
-    // Undoing the first configuration leaves the goal unconfigured.
+  it("is unconfigured again once every configuration is undone, across restart", async () => {
+    const client = new SyncClient(null);
+    await client.init();
+    await client.modifyGoal({ id: "note-goal", text: "Note" });
+    await client.modifyGoal(configure("cfg-1", "endnote", "#", 1000));
+    await client.modifyGoal(configure("cfg-2", "footnote", "", 2000));
+
     await client.undo();
     await client.undo();
-    expect(current()).toBeNull();
+    expect(getDocNoteEntry(client.getGoals().get("note-goal")!)).toBeNull();
     expect(await reopen(client.getUnsyncedOpStrings())).toBeNull();
     client.dispose();
   });

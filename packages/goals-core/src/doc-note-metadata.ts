@@ -1,10 +1,13 @@
 import {
+  DocNoteLogEntry,
   GoalLogEntry,
   WireDocNoteLogEntry,
 } from "@thkp-eng/goals-types";
 import { Goal } from "./model";
 
-export type { WireDocNoteLogEntry };
+// The pretty entry lives in goals-types so the normal compressOp/expandOp
+// converters carry kind and displayValue; it is re-exported here for callers.
+export type { DocNoteLogEntry, WireDocNoteLogEntry };
 
 export const DOC_NOTE_ENTRY_TYPE = "docNote";
 export const DOC_NOTE_ALIAS_ENTRY_TYPE = "dN";
@@ -29,12 +32,6 @@ export const DocNoteKind = {
   OmittedFromExport: "omittedFromExport" as const,
   Omit: "omittedFromExport" as const,
 };
-
-export interface DocNoteLogEntry extends GoalLogEntry {
-  type: typeof DOC_NOTE_ENTRY_TYPE;
-  kind: DocNoteKind;
-  displayValue: string;
-}
 
 export function docNoteLogEntryFromWire(
   wire: any,
