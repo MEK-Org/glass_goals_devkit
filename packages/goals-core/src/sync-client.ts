@@ -1056,8 +1056,8 @@ export class SyncClient {
   }
 
   /**
-   * Drops disabled ops. Note the Dart keys a re-enabled op by the Enable op's
-   * HLC, so an op that is disabled and enabled again is applied once more.
+   * Drops disabled ops. Like the Dart, a re-enabled op is keyed by its own id,
+   * so a later disable finds it and enable ops sharing an HLC both apply.
    */
   private applyEnableAndDisableOps(ops: Iterable<AnyOp>): AnyOp[] {
     const opMap = new Map<string, AnyOp>();
@@ -1074,7 +1074,7 @@ export class SyncClient {
         const opToEnable = disabledOpMap.get(op.opId);
         if (opToEnable != null) {
           disabledOpMap.delete(op.opId);
-          opMap.set(op.hlcTimestamp, opToEnable);
+          opMap.set(opToEnable.id, opToEnable);
         }
       }
     }

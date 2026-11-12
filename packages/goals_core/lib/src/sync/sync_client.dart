@@ -1317,8 +1317,10 @@ class SyncClient {
         if (opToEnable != null) {
           // if the op that we're enabling is in the disabledOpMap, we remove it
           // from the disabledOpMap and add it back to the opMap
+          // Key it by its own id, so a later disable finds it and enable ops
+          // that share an HLC each keep their own target.
           disabledOpMap.remove(op.opId);
-          opMap[op.hlcTimestamp] = opToEnable;
+          opMap[opToEnable.id] = opToEnable;
         }
       }
     }
