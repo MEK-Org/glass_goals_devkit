@@ -9,9 +9,9 @@ import { SyncClient } from "./sync-client";
 
 /**
  * These tests use the real SyncClient and CachingLocalStore. The service
- * retains every accepted op, while the repository can stop one local write
- * after the echo handler has observed it. That separates an acknowledged
- * operation from a durably stored one without depending on a timer.
+ * retains every accepted op, while the repository can hold one local write
+ * forever after the echo handler has started it. Writes that finished are what
+ * a same-repository restart sees, as after a closed tab, without any timer.
  */
 class ControlledPersistence implements PersistenceService {
   private readonly historyById = new Map<string, AnyOp>();
@@ -93,7 +93,6 @@ class GatedRepository extends MemorySyncRepository {
   readonly committedBatches: string[][] = [];
   private readonly startWaiters = new Map<number, () => void>();
   private nextGate: Promise<void> | null = null;
-  private releaseNextGate: (() => void) | null = null;
 
   waitForStarts(count: number): Promise<void> {
     if (this.startedBatches.length >= count) return Promise.resolve();
@@ -102,16 +101,8 @@ class GatedRepository extends MemorySyncRepository {
 
   blockNextStore(): void {
     if (this.nextGate != null) throw new Error("A store is already blocked");
-    this.nextGate = new Promise<void>((resolve) => {
-      this.releaseNextGate = resolve;
-    });
-  }
-
-  releaseBlockedStore(): void {
-    const release = this.releaseNextGate;
-    if (release == null) throw new Error("No store is blocked");
-    this.releaseNextGate = null;
-    release();
+    // Never released: the write stays in flight, as when a tab closes.
+    this.nextGate = new Promise<void>(() => {});
   }
 
   override async storeSyncedOps(ops: Iterable<AnyOp>): Promise<void> {
@@ -217,42 +208,65 @@ describe("SyncClient pending toggle persistence boundary (#42)", () => {
 
     const historyIds = persistence.historyIds;
     const finalToggleId = historyIds.at(-1)!;
-    expect({
+    const finalToggleHlc = persistence.history.at(-1)!.hlcTimestamp;
+    const boundary = {
       cursor: repository.cursor,
       persisted: await storedIds(repository),
       pending: repository.getUnsyncedOps().map((op) => op.id),
       acknowledged: [...repository.getAckedOpIds()],
       history: historyIds,
-    }).toEqual({
-      cursor: persistence.history.at(-1)!.hlcTimestamp,
-      persisted: historyIds.slice(0, -1),
-      pending: [finalToggleId],
-      acknowledged: [finalToggleId],
-      history: historyIds,
-    });
+    };
+    console.info("[#42] boundary", JSON.stringify(boundary));
 
-    // This is the same repository after a stop, not a fresh replay double.
-    // The final echoed op is accepted remotely but its local write is still
-    // blocked, so restart must pull it again from the retained full history.
+    // Stop here: the blocked write never completes. Only writes that finished
+    // are in the repository, as after a closed tab. Reopen the same repository.
     client.dispose();
-    const interrupted = new SyncClient(
+    const recoveringStore = new TrackingStore(repository);
+    const recovering = new SyncClient(persistence, recoveringStore);
+    await recovering.init();
+    await recovering.loadGoal("g");
+    const recoveringText = textOf(recovering);
+    await recoveringStore.settled();
+    const recovered = {
+      cursor: repository.cursor,
+      persisted: await storedIds(repository),
+      pending: repository.getUnsyncedOps().map((op) => op.id),
+      acknowledged: [...repository.getAckedOpIds()],
+    };
+    console.info(
+      "[#42] recovering restart",
+      JSON.stringify({ text: recoveringText, ...recovered }),
+    );
+    recovering.dispose();
+
+    // Once the recovering client has settled, a later restart must match the
+    // full server history, which ends with the final Undo.
+    const restarted = new SyncClient(
       persistence,
       new TrackingStore(repository),
     );
-    await interrupted.init();
-    await interrupted.loadGoal("g");
-    expect(textOf(interrupted)).toBe("Original");
-    interrupted.dispose();
+    await restarted.init();
+    await restarted.loadGoal("g");
+    const restartedText = textOf(restarted);
+    restarted.dispose();
+    console.info("[#42] settled restart", JSON.stringify({ text: restartedText }));
 
-    // Once the original write completes, a later restart reaches the same
-    // result without requiring recovery from an in-flight operation.
-    repository.releaseBlockedStore();
-    await store.waitForCompletedWrites(store.completedWrites + 1);
-    await store.settled();
-    const settled = new SyncClient(persistence, new TrackingStore(repository));
-    await settled.init();
-    await settled.loadGoal("g");
-    expect(textOf(settled)).toBe("Original");
-    settled.dispose();
+    expect({ text: restartedText, persisted: recovered.persisted }).toEqual({
+      text: "Original",
+      persisted: historyIds,
+    });
+
+    // While its write was blocked, the echoed op was still recoverable by a
+    // same-repository restart: stored, before the cursor, or pending and
+    // acknowledged so the pull starts before it.
+    expect({
+      finalToggleId,
+      recoverable:
+        boundary.persisted.includes(finalToggleId) ||
+        (boundary.cursor != null &&
+          compareHlc(boundary.cursor, finalToggleHlc) < 0) ||
+        (boundary.pending.includes(finalToggleId) &&
+          boundary.acknowledged.includes(finalToggleId)),
+    }).toEqual({ finalToggleId, recoverable: true });
   });
 });

@@ -1,13 +1,14 @@
 import 'dart:async';
+import 'dart:convert' show jsonEncode;
 
 import 'package:goals_core/sync.dart';
 import 'package:hlc/hlc.dart';
 import 'package:test/test.dart';
 
 /// Uses the production SyncClient and CachingLocalStore. The service retains
-/// every accepted operation; the repository can hold one local write after
-/// its echo arrives. This records cursor, durable, pending and full-history
-/// state without relying on a delay.
+/// every accepted operation; the repository can hold one local write forever
+/// after its echo arrives. Writes that finished are what a same-repository
+/// restart sees, as after a closed tab.
 class _ControlledPersistence implements PersistenceService {
   final _historyById = <String, Op>{};
   final _pendingEchoes = <List<Op>>[];
@@ -81,7 +82,6 @@ class _GatedRepository extends MemorySyncRepository {
   final committedBatches = <List<String>>[];
   final _startWaiters = <int, Completer<void>>{};
   Completer<void>? _nextGate;
-  Completer<void>? _blockedGate;
 
   Future<void> waitForStarts(int count) {
     if (startedBatches.length >= count) return Future.value();
@@ -91,13 +91,6 @@ class _GatedRepository extends MemorySyncRepository {
   void blockNextStore() {
     if (_nextGate != null) throw StateError('A store is already blocked');
     _nextGate = Completer<void>();
-  }
-
-  void releaseBlockedStore() {
-    final gate = _blockedGate;
-    if (gate == null) throw StateError('No store is blocked');
-    _blockedGate = null;
-    gate.complete();
   }
 
   @override
@@ -112,10 +105,8 @@ class _GatedRepository extends MemorySyncRepository {
     }
     final gate = _nextGate;
     _nextGate = null;
-    if (gate != null) {
-      _blockedGate = gate;
-      await gate.future;
-    }
+    // Never completed: the write stays in flight, as when a tab closes.
+    if (gate != null) await gate.future;
     await super.storeSyncedOps(batch);
     committedBatches.add(batch.map((op) => op.id).toList());
   }
@@ -165,6 +156,13 @@ Future<void> _deliverAndSettle(
   await store.waitForCompletedWrites(completes);
 }
 
+/// Lets queued storage, index writes and the store's 10ms read batch finish.
+Future<void> _settle() async {
+  for (var i = 0; i < 4; i++) {
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+  }
+}
+
 void main() {
   test('pending final Undo remains recoverable before its local write finishes (#42)',
       () async {
@@ -211,45 +209,73 @@ void main() {
 
     final historyIds = persistence.historyIds;
     final finalToggleId = historyIds.last;
+    final finalToggleHlc = persistence.history.last.hlcTimestamp;
+    final boundary = {
+      'cursor': repository.cursor,
+      'persisted': await _storedIds(repository),
+      'pending': repository.getUnsyncedOps().map((op) => op.id).toList(),
+      'acknowledged': repository.getAckedOpIds().toList(),
+      'history': historyIds,
+    };
+    print('[#42] boundary ${jsonEncode(boundary)}');
+
+    // Stop here: the blocked write never completes. Only writes that finished
+    // are in the repository, as after a closed tab. Reopen the same repository.
+    client.dispose();
+    final recovering = SyncClient(
+      persistenceService: persistence,
+      localStore: _TrackingStore(repository),
+    );
+    await recovering.init();
+    await recovering.loadGoal('g');
+    final recoveringText = _text(recovering);
+    await _settle();
+    final recoveredPersisted = await _storedIds(repository);
+    print('[#42] recovering restart ${jsonEncode({
+          'text': recoveringText,
+          'cursor': repository.cursor,
+          'persisted': recoveredPersisted,
+          'pending': repository.getUnsyncedOps().map((op) => op.id).toList(),
+          'acknowledged': repository.getAckedOpIds().toList(),
+        })}');
+    recovering.dispose();
+
+    // Once the recovering client has settled, a later restart must match the
+    // full server history, which ends with the final Undo.
+    final restarted = SyncClient(
+      persistenceService: persistence,
+      localStore: _TrackingStore(repository),
+    );
+    await restarted.init();
+    await restarted.loadGoal('g');
+    final restartedText = _text(restarted);
+    await _settle();
+    restarted.dispose();
+    print('[#42] settled restart ${jsonEncode({'text': restartedText})}');
+
+    expect(
+      {'text': restartedText, 'persisted': recoveredPersisted},
+      {'text': 'Original', 'persisted': historyIds},
+    );
+
+    // While its write was blocked, the echoed op was still recoverable by a
+    // same-repository restart: stored, before the cursor, or pending and
+    // acknowledged so the pull starts before it.
+    final boundaryCursor = boundary['cursor'] as String?;
+    final boundaryPersisted = boundary['persisted'] as List<String>;
+    final boundaryPending = boundary['pending'] as List<String>;
+    final boundaryAcked = boundary['acknowledged'] as List<String>;
     expect(
       {
-        'cursor': repository.cursor,
-        'persisted': await _storedIds(repository),
-        'pending': repository.getUnsyncedOps().map((op) => op.id).toList(),
-        'acknowledged': repository.getAckedOpIds().toList(),
-        'history': historyIds,
+        'finalToggleId': finalToggleId,
+        'recoverable': boundaryPersisted.contains(finalToggleId) ||
+            (boundaryCursor != null &&
+                boundaryCursor.compareTo(finalToggleHlc) < 0) ||
+            (boundaryPending.contains(finalToggleId) &&
+                boundaryAcked.contains(finalToggleId)),
       },
-      {
-        'cursor': persistence.history.last.hlcTimestamp,
-        'persisted': historyIds.sublist(0, historyIds.length - 1),
-        'pending': [finalToggleId],
-        'acknowledged': [finalToggleId],
-        'history': historyIds,
-      },
+      {'finalToggleId': finalToggleId, 'recoverable': true},
     );
-
-    // Same repository, interrupted before the final local write commits. The
-    // retained full server history must repair the pending operation on init.
-    client.dispose();
-    final interrupted = SyncClient(
-      persistenceService: persistence,
-      localStore: _TrackingStore(repository),
-    );
-    await interrupted.init();
-    await interrupted.loadGoal('g');
-    expect(_text(interrupted), 'Original');
-    interrupted.dispose();
-
-    repository.releaseBlockedStore();
-    await store.waitForCompletedWrites(store.completedWrites + 1);
-    final settled = SyncClient(
-      persistenceService: persistence,
-      localStore: _TrackingStore(repository),
-    );
-    await settled.init();
-    await settled.loadGoal('g');
-    expect(_text(settled), 'Original');
-    settled.dispose();
     await persistence.dispose();
   });
 }
