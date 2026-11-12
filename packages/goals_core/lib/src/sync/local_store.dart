@@ -202,8 +202,9 @@ class CachingLocalStore implements LocalStore {
     }
 
     // Check if any of the requested indices have been added to the cache
-    // between the time the request was made and now.
-    for (final goalId in _goalIndexLoadRequests.keys) {
+    // between the time the request was made and now. Iterate a copy: the
+    // loop removes answered requests (matches the TS store).
+    for (final goalId in _goalIndexLoadRequests.keys.toList()) {
       if (_goalOpsIndexCache.containsKey(goalId)) {
         final completer = _goalIndexLoadRequests.remove(goalId);
         completer?.complete(_goalOpsIndexCache[goalId]);
