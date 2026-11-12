@@ -135,13 +135,25 @@ void main() {
   });
 
   group('undo/redo replays the same after a restart (#38)', () {
+    /// Lets the echo of every pushed op reach the local store before a
+    /// restart, like the parity runner's pump. The client sets the store
+    /// cursor before it persists an echo, and the caching store batches on a
+    /// 10ms timer, so `settled` alone can stop a client mid-echo.
+    Future<void> settle(MemoryPersistenceService persistence) async {
+      for (var i = 0; i < 4; i++) {
+        await persistence.settled;
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+      }
+    }
+
     Future<SyncClient> restarted(
         MemoryPersistenceService persistence, MemoryLocalStore store) async {
-      await persistence.settled;
+      await settle(persistence);
       final client =
           SyncClient(persistenceService: persistence, localStore: store);
       await client.init();
       await client.loadGoal('g');
+      await settle(persistence);
       return client;
     }
 
@@ -170,7 +182,7 @@ void main() {
       await client.redo();
       await client.undo();
       expect(_text(client, 'g'), 'Original');
-      await persistence.settled;
+      await settle(persistence);
       client.dispose();
 
       final reopened = await restarted(persistence, store);
@@ -196,7 +208,7 @@ void main() {
         await client.redo();
       }
       expect(_text(client, 'g'), 'Changed');
-      await persistence.settled;
+      await settle(persistence);
       client.dispose();
 
       final reopened = await restarted(persistence, store);
