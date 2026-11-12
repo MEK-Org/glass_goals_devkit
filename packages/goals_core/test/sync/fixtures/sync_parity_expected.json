@@ -778,12 +778,6 @@
     {
       "label": "after undoing both actions",
       "state": {
-        "c": {
-          "text": "Renamed",
-          "parents": [],
-          "children": [],
-          "log": []
-        },
         "p": {
           "text": "Parent",
           "parents": [],
@@ -794,7 +788,6 @@
       "resident": 1,
       "pinned": 0,
       "roots": [
-        "c",
         "p"
       ],
       "unsynced": 0,
@@ -810,7 +803,7 @@
       "label": "after redo create",
       "state": {
         "c": {
-          "text": "Renamed",
+          "text": "Child",
           "parents": [
             "p"
           ],
@@ -846,7 +839,7 @@
       "label": "after restart",
       "state": {
         "c": {
-          "text": "Renamed",
+          "text": "Child",
           "parents": [
             "p"
           ],
@@ -873,6 +866,194 @@
       "loads": {
         "c": 2,
         "p": 2
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    }
+  ],
+  "reenabled_op_identity": [
+    {
+      "label": "two working text ops",
+      "state": {
+        "g": {
+          "text": "two",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "older op re-enabled under a newer one",
+      "state": {
+        "g": {
+          "text": "two",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "newer op disabled",
+      "state": {
+        "g": {
+          "text": "one",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "re-enabled op disabled again",
+      "state": {
+        "g": {
+          "text": "zero",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "local undo after redo",
+      "state": {
+        "g": {
+          "text": "zero",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "note redone after two cycles",
+      "state": {
+        "g": {
+          "text": "zero",
+          "parents": [],
+          "children": [],
+          "log": [
+            "n:m-n:local note"
+          ]
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "note undone again",
+      "state": {
+        "g": {
+          "text": "zero",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 1
+      },
+      "getAllOps": 0,
+      "refs": {},
+      "watches": {}
+    },
+    {
+      "label": "after restart",
+      "state": {
+        "g": {
+          "text": "zero",
+          "parents": [],
+          "children": [],
+          "log": []
+        }
+      },
+      "resident": 1,
+      "pinned": 0,
+      "roots": [
+        "g"
+      ],
+      "unsynced": 0,
+      "loads": {
+        "g": 2
       },
       "getAllOps": 0,
       "refs": {},

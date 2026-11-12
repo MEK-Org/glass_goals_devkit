@@ -34,6 +34,7 @@ The scenarios cover:
 - exact redelivery;
 - Disable/Enable before and after the base cursor;
 - mutate, echo, undo and redo across a restart;
+- a re-enabled op that is disabled again, in HLC order (#38);
 - the root index;
 - LRU touches and eviction;
 - pin, release and watch disposal;
