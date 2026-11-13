@@ -25,6 +25,7 @@ import {
   ClearDocumentContentsLogEntry,
   DocNoteLogEntry,
   GoalLogEntry,
+  TextGoalLogEntry,
   NoteLogEntry,
   PriorityLogEntry,
   SetParentLogEntry,
@@ -155,6 +156,12 @@ export function compressLogEntry(pretty: LogEntry): WireGoalLogEntry {
       break;
   }
 
+  // `te` is the shared text field even for module/extension entry types.
+  // Keep it in the normal text-extraction path rather than wireExtras.
+  if (Object.hasOwn(pretty, "text")) {
+    compressed.te = (pretty as TextGoalLogEntry).text;
+  }
+
   return compressed as WireGoalLogEntry;
 }
 
@@ -205,6 +212,8 @@ export function expandLogEntry(compressed: WireGoalLogEntry): LogEntry {
       if (c.dV !== undefined) pretty.displayValue = c.dV;
       break;
   }
+
+  if (typeof c.te === "string" || c.te === null) pretty.text = c.te;
 
   // Keep fields the typed converter does not understand. Known fields stay
   // in their pretty form so later edits (especially extracted text) win.

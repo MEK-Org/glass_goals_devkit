@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compressLogEntry, expandLogEntry } from "@thkp-eng/goals-types";
+import { extractEntryTextField } from "./op-utils";
 
 describe("wire log-entry preservation", () => {
   it.each([
@@ -27,4 +28,19 @@ describe("wire log-entry preservation", () => {
       i: "new-id", cT: 123, t: "d", te: null, extra: 42,
     });
   });
+
+  it.each(["su", "pCC", "future-type"])(
+    "extracts %s text through the shared string-storage path",
+    (type) => {
+      const wire = { i: "text-entry", cT: 123, t: type, te: "Exact text", pI: "parent" };
+      const op = {
+        id: "op", hlcTimestamp: "hlc", version: 6, type: "delta" as const,
+        delta: { id: "goal", logEntry: expandLogEntry(wire) },
+      };
+      const extracted = extractEntryTextField(op)!;
+      expect(extracted.text).toBe("Exact text");
+      const stripped = extracted.stripped as typeof op;
+      expect(compressLogEntry(stripped.delta.logEntry)).toEqual({ ...wire, te: null });
+    },
+  );
 });
