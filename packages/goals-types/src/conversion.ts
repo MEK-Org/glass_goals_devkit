@@ -48,6 +48,15 @@ const OP_TYPE_MAP: Record<string, string> = {
 
 const LOG_ENTRY_TYPE_MAP: Record<string, string> = {
   note: "n",
+  setSummary: "su",
+  clearSummary: "cSu",
+  makeAnchor: "mA",
+  addStatusIntention: "aSI",
+  addStatusReflection: "aSR",
+  parentContextComment: "pCC",
+  longRunningOperation: "lRO",
+  courseMetadata: "cM",
+  readingAssignment: "rA",
   priority: "p",
   setParent: "sP",
   addParent: "aP",
@@ -96,6 +105,55 @@ const LOG_ENTRY_REVERSE_TYPE_MAP = Object.fromEntries(
   Object.entries(LOG_ENTRY_TYPE_MAP).map(([k, v]) => [v, k])
 );
 
+/** A runtime extension, analogous to Dart's LogEntryModule. */
+export interface LogEntryModule {
+  wireTypes: readonly string[];
+  types: readonly string[];
+  fromWire(wire: WireGoalLogEntry): LogEntry;
+  toWire(entry: LogEntry): WireGoalLogEntry;
+}
+
+const wireModules = new Map<string, LogEntryModule>();
+const prettyModules = new Map<string, LogEntryModule>();
+
+/** Register once at application startup, before reading persisted operations. */
+export function registerLogEntryModule(module: LogEntryModule): () => void {
+  for (const type of module.wireTypes) {
+    if (isKnownLogEntryType(type)) throw new Error(`Log-entry wire type already registered: ${type}`);
+  }
+  for (const type of module.types) {
+    if (Object.hasOwn(LOG_ENTRY_TYPE_MAP, type) || type === "docNote" || prettyModules.has(type)) {
+      throw new Error(`Log-entry type already registered: ${type}`);
+    }
+  }
+  for (const type of module.wireTypes) wireModules.set(type, module);
+  for (const type of module.types) prettyModules.set(type, module);
+  return () => {
+    for (const type of module.wireTypes) {
+      if (wireModules.get(type) === module) wireModules.delete(type);
+    }
+    for (const type of module.types) {
+      if (prettyModules.get(type) === module) prettyModules.delete(type);
+    }
+  };
+}
+
+/** Whether the decoder knows this wire type, including registered modules. */
+export function isKnownLogEntryType(type: string): boolean {
+  return Object.hasOwn(LOG_ENTRY_REVERSE_TYPE_MAP, type) ||
+    type === "docNote" || type === DOC_NOTE_ALIAS_ENTRY_TYPE || wireModules.has(type);
+}
+
+// Remaining built-ins use the same scalar/list field mapping as Dart.
+const LOG_ENTRY_FIELDS: Record<string, Record<string, string>> = {
+  addStatusIntention: { intentionText: "iT", statusId: "sI" },
+  addStatusReflection: { reflectionText: "rT", statusId: "sI" },
+  parentContextComment: { parentId: "pI" },
+  longRunningOperation: { operationId: "oId", operationType: "oT", status: "s", errorMessage: "eM", resultData: "rD" },
+  courseMetadata: { textbookGoalIds: "tGI" },
+  readingAssignment: { textbookGoalId: "tGI", startPage: "sP", endPage: "eP", startPageFormat: "sPF", endPageFormat: "ePF" },
+};
+
 export function compressLogEntry(pretty: LogEntry): WireGoalLogEntry {
   const compressed: any = {
     ...pretty.wireExtras,
@@ -105,6 +163,13 @@ export function compressLogEntry(pretty: LogEntry): WireGoalLogEntry {
   if (pretty.path) compressed.p = pretty.path;
   if (pretty.type) compressed.t = Object.hasOwn(LOG_ENTRY_TYPE_MAP, pretty.type)
     ? LOG_ENTRY_TYPE_MAP[pretty.type] : pretty.type;
+
+  const module = prettyModules.get(pretty.type);
+  if (module) Object.assign(compressed, module.toWire(pretty));
+  for (const [field, key] of Object.entries(LOG_ENTRY_FIELDS[pretty.type] ?? {})) {
+    const value = (pretty as unknown as Record<string, unknown>)[field];
+    if (value !== undefined) compressed[key] = value;
+  }
 
   // Type-specific fields
   switch (pretty.type) {
@@ -173,11 +238,14 @@ export function expandLogEntry(compressed: WireGoalLogEntry): LogEntry {
       : Object.hasOwn(LOG_ENTRY_REVERSE_TYPE_MAP, c.t)
         ? LOG_ENTRY_REVERSE_TYPE_MAP[c.t] : c.t || "unknown";
 
-  const pretty: any = {
+  const pretty: any = wireModules.get(c.t)?.fromWire(compressed) ?? {
     id: c.i,
     creationTime: c.cT,
     type,
   };
+  for (const [field, key] of Object.entries(LOG_ENTRY_FIELDS[type] ?? {})) {
+    if (c[key] !== undefined) pretty[field] = c[key];
+  }
   if (c.p) pretty.path = c.p;
 
   switch (type) {
