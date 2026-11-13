@@ -178,10 +178,11 @@ class SyncClient {
       persistenceSubscription = persistenceService!
           .stream(localStore.cursor)
           .listen((opsEvent) async {
-        final (ops, cursor) = opsEvent;
+        final (ops, _) = opsEvent;
 
-        // TODO: it seems like we shouldn't be setting the cursor until after persisting the ops???
-        localStore.cursor = cursor;
+        // The local store moves the cursor past these ops once it has stored
+        // and indexed them, so a stop before then pulls them again on
+        // restart (#42).
         for (final op in ops) {
           _logger?.log('Received op from remote, updating entry in _workingOps',
               opId: op.id);
@@ -1496,6 +1497,11 @@ class SyncClient {
       await _pull();
 
       await _push();
+
+      // sync() is the durability barrier: a restart on this store must start
+      // from fully stored local state, so the store cursor may only cover
+      // the ops above once they are actually stored and indexed (#42).
+      await localStore.settled();
     }
 
     _computeAndEmitUnsyncedState("sync");

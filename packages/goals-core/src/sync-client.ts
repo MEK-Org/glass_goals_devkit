@@ -136,15 +136,16 @@ export class SyncClient {
     if (this.persistenceService) {
       this.unsubscribePersistence = this.persistenceService.subscribeJSON(
         this.localStore.cursor,
-        (ops, cursor) => {
-          this.handleRemoteOps(ops, cursor).catch(this.onError);
+        (ops) => {
+          this.handleRemoteOps(ops).catch(this.onError);
         },
       );
     }
   }
 
-  private async handleRemoteOps(ops: AnyOp[], cursor: string): Promise<void> {
-    this.localStore.cursor = cursor;
+  // The local store moves the cursor past these ops once it has stored and
+  // indexed them, so a stop before then pulls them again on restart (#42).
+  private async handleRemoteOps(ops: AnyOp[]): Promise<void> {
     for (const op of ops) {
       this.workingOps.set(op.id, op);
     }
@@ -1208,6 +1209,11 @@ export class SyncClient {
       if (this.persistenceService != null) {
         await this.pull();
         await this.push();
+        // sync() is the durability barrier: a restart on this store must
+        // start from fully stored local state, so the store cursor may only
+        // cover the ops above once they are actually stored and indexed
+        // (#42).
+        await this.localStore.settled();
       }
       this.computeAndEmitUnsyncedState("sync");
     } finally {

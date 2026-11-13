@@ -47,6 +47,11 @@ abstract class LocalStore {
 
   Future<void> storeSyncedOps(Iterable<Op> ops);
 
+  /// Resolves once every op batch queued by [storeSyncedOps] so far has been
+  /// written to the repository, including batches queued while waiting. The
+  /// store cursor covers those ops from then on.
+  Future<void> settled();
+
   Set<String> getIndexGoalIds(String key);
   void setIndexGoalIds(String key, Set<String> goalIds);
 
@@ -202,8 +207,9 @@ class CachingLocalStore implements LocalStore {
     }
 
     // Check if any of the requested indices have been added to the cache
-    // between the time the request was made and now.
-    for (final goalId in _goalIndexLoadRequests.keys) {
+    // between the time the request was made and now. Iterate a copy: the
+    // loop removes answered requests (matches the TS store).
+    for (final goalId in _goalIndexLoadRequests.keys.toList()) {
       if (_goalOpsIndexCache.containsKey(goalId)) {
         final completer = _goalIndexLoadRequests.remove(goalId);
         completer?.complete(_goalOpsIndexCache[goalId]);
@@ -476,6 +482,13 @@ class CachingLocalStore implements LocalStore {
   }
 
   @override
+  Future<void> settled() async {
+    while (_opStorageQueue.remainingItemCount > 0) {
+      await _opStorageQueue.onComplete;
+    }
+  }
+
+  @override
   Future<Iterable<Op>> getAllOps() async {
     final opMap = <String, Op>{};
     final allOps = <Op>[
@@ -544,10 +557,6 @@ class CachingLocalStore implements LocalStore {
       } else {
         opsToWrite.add(op);
       }
-    }
-
-    if (maxHlc != null) {
-      repo.cursor = maxHlc;
     }
 
     await repo.storeStrings(stringsToWrite);
@@ -630,6 +639,12 @@ class CachingLocalStore implements LocalStore {
     }
 
     await repo.storeGoalIndexEntries(goalIndexEntriesToWrite);
+
+    // Only now that the ops are stored and indexed does the cursor cover
+    // them; a stop before this point pulls them again on restart (#42).
+    if (maxHlc != null) {
+      repo.cursor = maxHlc;
+    }
   }
 
   @override
