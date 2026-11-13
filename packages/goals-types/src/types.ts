@@ -3,6 +3,8 @@ export interface GoalLogEntry {
   creationTime: number;
   path?: string[];
   type: string;
+  /** Unmodelled wire fields, retained across local storage and sync. */
+  wireExtras?: Record<string, unknown>;
 }
 
 export interface TextGoalLogEntry extends GoalLogEntry {

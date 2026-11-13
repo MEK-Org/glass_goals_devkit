@@ -97,11 +97,13 @@ const LOG_ENTRY_REVERSE_TYPE_MAP = Object.fromEntries(
 
 export function compressLogEntry(pretty: LogEntry): WireGoalLogEntry {
   const compressed: any = {
+    ...pretty.wireExtras,
     i: pretty.id,
     cT: pretty.creationTime,
   };
   if (pretty.path) compressed.p = pretty.path;
-  if (pretty.type) compressed.t = LOG_ENTRY_TYPE_MAP[pretty.type] || pretty.type;
+  if (pretty.type) compressed.t = Object.hasOwn(LOG_ENTRY_TYPE_MAP, pretty.type)
+    ? LOG_ENTRY_TYPE_MAP[pretty.type] : pretty.type;
 
   // Type-specific fields
   switch (pretty.type) {
@@ -161,7 +163,8 @@ export function expandLogEntry(compressed: WireGoalLogEntry): LogEntry {
   const type =
     c.t === DOC_NOTE_ALIAS_ENTRY_TYPE
       ? "docNote"
-      : LOG_ENTRY_REVERSE_TYPE_MAP[c.t] || c.t || "unknown";
+      : Object.hasOwn(LOG_ENTRY_REVERSE_TYPE_MAP, c.t)
+        ? LOG_ENTRY_REVERSE_TYPE_MAP[c.t] : c.t || "unknown";
 
   const pretty: any = {
     id: c.i,
@@ -202,6 +205,12 @@ export function expandLogEntry(compressed: WireGoalLogEntry): LogEntry {
       if (c.dV !== undefined) pretty.displayValue = c.dV;
       break;
   }
+
+  // Keep fields the typed converter does not understand. Known fields stay
+  // in their pretty form so later edits (especially extracted text) win.
+  const extras = { ...c };
+  for (const key of Object.keys(compressLogEntry(pretty))) delete extras[key];
+  if (Object.keys(extras).length > 0) pretty.wireExtras = extras;
 
   return pretty as LogEntry;
 }
