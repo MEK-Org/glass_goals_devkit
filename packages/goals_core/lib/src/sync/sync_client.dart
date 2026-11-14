@@ -234,8 +234,8 @@ class SyncClient {
 
     final unsyncedOps = [...localStore.getUnsyncedOps(), ...opMap.values];
 
-    localStore.setUnsyncedOps(unsyncedOps);
-    _push();
+    await localStore.setUnsyncedOps(unsyncedOps);
+    await _push();
   }
 
   int get numUnsyncedOps => localStore.getUnsyncedOps().length;
@@ -541,7 +541,7 @@ class SyncClient {
 
     _logger?.log("Setting unsynced ops: ${newOps.map((e) => e.id)}");
 
-    localStore.setUnsyncedOps([...unsyncedOps, ...newOps]);
+    await localStore.setUnsyncedOps([...unsyncedOps, ...newOps]);
     _perfLog(
         'setUnsyncedOps ${_ms(phaseSw)} (existing=${unsyncedOps.length}, new=${newOps.length})');
 
@@ -1145,7 +1145,7 @@ class SyncClient {
 
     // The indexes now include the received ops, so they can leave the
     // unsynced ops without disappearing from any view.
-    _acknowledgeReceivedOps(newSyncedOps);
+    await _acknowledgeReceivedOps(newSyncedOps);
 
     // synchronously updates the caches and queues storage to hive
     // so we don't need to wait.
@@ -1393,7 +1393,7 @@ class SyncClient {
 
   /// An op is synced once the server sends it back, not when a push succeeds.
   /// Called by [_persistOps] after it has indexed [ops].
-  void _acknowledgeReceivedOps(Iterable<Op> ops) {
+  Future<void> _acknowledgeReceivedOps(Iterable<Op> ops) async {
     final receivedIds = ops.map((op) => op.id).toSet();
     final unsyncedOps = localStore.getUnsyncedOps().toList();
     final acknowledged =
@@ -1402,13 +1402,12 @@ class SyncClient {
       for (final op in acknowledged) {
         _logger?.log('Op received from remote, acknowledged', opId: op.id);
       }
-      localStore.setUnsyncedOps(
+      await localStore.setUnsyncedOps(
           unsyncedOps.where((op) => !receivedIds.contains(op.id)));
     }
     final ackedOpIds = localStore.getAckedOpIds();
     if (ackedOpIds.any(receivedIds.contains)) {
-      localStore.setAckedOpIds(
-          ackedOpIds.difference(receivedIds));
+      await localStore.setAckedOpIds(ackedOpIds.difference(receivedIds));
     }
   }
 

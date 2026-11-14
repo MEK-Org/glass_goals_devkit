@@ -185,17 +185,23 @@ class CachingLocalStore implements LocalStore {
   @override
   Future<void> setUnsyncedOps(Iterable<Op> ops) async {
     final opMap = <String, Op>{};
+    final stringsToWrite = <String, String>{};
     for (final op in ops) {
       opMap[op.id] = op;
-      // Eagerly store the text in the string box
+      // A text operation refers to its body by entry id. Write every body
+      // before publishing the operation in the independently persisted
+      // unsynced-op box, so a restart cannot observe the op without its text.
       if (op is DeltaOp) {
         final entry = op.delta.logEntry;
 
         if (entry is TextGoalLogEntry && entry.text != null) {
           _stringCache[entry.id] = entry.text!;
-          repo.storeString(entry.id, entry.text!);
+          stringsToWrite[entry.id] = entry.text!;
         }
       }
+    }
+    if (stringsToWrite.isNotEmpty) {
+      await repo.storeStrings(stringsToWrite);
     }
     await repo.setUnsyncedOps(opMap.values
         .sorted((a, b) => a.hlcTimestamp.compareTo(b.hlcTimestamp)));
@@ -540,7 +546,7 @@ class CachingLocalStore implements LocalStore {
         if (unsyncedOp.id == op.id) {
           opLogger.fine("Clearing unsyncedOp");
           unsyncedOps.remove(unsyncedOp);
-          setUnsyncedOps(unsyncedOps);
+          await setUnsyncedOps(unsyncedOps);
           break;
         }
       }
