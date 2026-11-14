@@ -36,6 +36,14 @@ abstract class LocalStore {
 
   Future<void> setUnsyncedOps(Iterable<Op> ops);
 
+  /// Applies [update] to the latest locally persisted unsynced operations.
+  ///
+  /// Mutations that overlap an asynchronous string write must read their base
+  /// only after that write completes, otherwise each replacement can discard
+  /// the other mutation.
+  Future<void> updateUnsyncedOps(
+      Iterable<Op> Function(Iterable<Op> ops) update);
+
   /// Returns the unsynced ops, which are ops that have not yet been synced to the server.
   /// These ops are guaranteed to be deduped and sorted by their HLC timestamp.
   Iterable<Op> getUnsyncedOps();
@@ -44,6 +52,8 @@ abstract class LocalStore {
   /// until the server sends them back, and are not pushed again.
   Set<String> getAckedOpIds();
   Future<void> setAckedOpIds(Iterable<String> opIds);
+  Future<void> updateAckedOpIds(
+      Iterable<String> Function(Iterable<String> opIds) update);
 
   Future<void> storeSyncedOps(Iterable<Op> ops);
 
@@ -103,6 +113,11 @@ class CachingLocalStore implements LocalStore {
   final _opCache = <String, Op>{};
 
   final _opStorageQueue = Queue();
+
+  // Unsynced operations and push acknowledgements are independently stored,
+  // but each is updated through read/modify/write. Keep those short local
+  // transactions ordered; never include a remote push in this queue.
+  Future<void>? _localSyncStateWriteQueue;
 
   final _opReadQueue = Queue();
 
@@ -174,8 +189,17 @@ class CachingLocalStore implements LocalStore {
   Set<String> getAckedOpIds() => repo.getAckedOpIds();
 
   @override
-  Future<void> setAckedOpIds(Iterable<String> opIds) =>
-      repo.setAckedOpIds(opIds);
+  Future<void> setAckedOpIds(Iterable<String> opIds) {
+    final copiedOpIds = opIds.toSet();
+    return _queueLocalSyncStateWrite(() => repo.setAckedOpIds(copiedOpIds));
+  }
+
+  @override
+  Future<void> updateAckedOpIds(
+      Iterable<String> Function(Iterable<String> opIds) update) {
+    return _queueLocalSyncStateWrite(
+        () => repo.setAckedOpIds(update(repo.getAckedOpIds())));
+  }
 
   @override
   Future<void> init() async {
@@ -183,7 +207,39 @@ class CachingLocalStore implements LocalStore {
   }
 
   @override
-  Future<void> setUnsyncedOps(Iterable<Op> ops) async {
+  Future<void> setUnsyncedOps(Iterable<Op> ops) {
+    final copiedOps = ops.toList();
+    return _queueLocalSyncStateWrite(() => _storeUnsyncedOps(copiedOps));
+  }
+
+  @override
+  Future<void> updateUnsyncedOps(
+      Iterable<Op> Function(Iterable<Op> ops) update) {
+    return _queueLocalSyncStateWrite(
+        () => _storeUnsyncedOps(update(repo.getUnsyncedOps())));
+  }
+
+  Future<void> _queueLocalSyncStateWrite(Future<void> Function() write) {
+    // Start an idle write immediately. Besides avoiding a needless microtask,
+    // this preserves the existing immediate visibility of a local edit. Once
+    // a string write is in flight, later writes begin only after it finishes.
+    final pendingWrite = _localSyncStateWriteQueue;
+    final queuedWrite =
+        pendingWrite == null ? write() : pendingWrite.then((_) => write());
+    final queueTail = queuedWrite.then<void>(
+      (_) {},
+      onError: (_, __) {},
+    );
+    _localSyncStateWriteQueue = queueTail;
+    queueTail.then<void>((_) {
+      if (identical(_localSyncStateWriteQueue, queueTail)) {
+        _localSyncStateWriteQueue = null;
+      }
+    });
+    return queuedWrite;
+  }
+
+  Future<void> _storeUnsyncedOps(Iterable<Op> ops) async {
     final opMap = <String, Op>{};
     final stringsToWrite = <String, String>{};
     for (final op in ops) {
@@ -541,15 +597,13 @@ class CachingLocalStore implements LocalStore {
       // Remove the op from unsyncedOps one at a time
       // to avoid clobbering other updates to unsyncedOps
       // that may have happened while this function was running.
-      final unsyncedOps = [...repo.getUnsyncedOps()];
-      for (final unsyncedOp in unsyncedOps) {
-        if (unsyncedOp.id == op.id) {
-          opLogger.fine("Clearing unsyncedOp");
-          unsyncedOps.remove(unsyncedOp);
-          await setUnsyncedOps(unsyncedOps);
-          break;
+      await updateUnsyncedOps((unsyncedOps) {
+        if (!unsyncedOps.any((unsyncedOp) => unsyncedOp.id == op.id)) {
+          return unsyncedOps;
         }
-      }
+        opLogger.fine("Clearing unsyncedOp");
+        return unsyncedOps.where((unsyncedOp) => unsyncedOp.id != op.id);
+      });
 
       final opJsonMap = op.toJsonMap();
 

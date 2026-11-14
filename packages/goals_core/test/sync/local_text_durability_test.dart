@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:goals_core/src/sync/local_store.dart' show CachingLocalStore;
 import 'package:goals_core/src/sync/sync_repository.dart'
     show MemorySyncRepository;
-import 'package:goals_core/sync.dart' show DeltaOp, GoalDelta;
+import 'package:goals_core/sync.dart' show DeltaOp, GoalDelta, SyncClient;
 import 'package:goals_types/goals_types.dart' show DocumentContentsEntry;
 import 'package:hlc/hlc.dart' show HLC;
 import 'package:test/test.dart';
@@ -74,5 +74,45 @@ void main() {
     expect(repository.getUnsyncedOps().map((stored) => stored.id), ['text-op']);
     expect(await reloadedStore.loadString('parent-document'),
         'parent continuation survives reload');
+  });
+
+  test(
+      'keeps an overlapping non-text edit while a document string is pending '
+      '(#336)', () async {
+    final repository = _GatedStringRepository();
+    final client = SyncClient(
+      localStore: CachingLocalStore(repo: repository),
+    );
+    addTearDown(repository.releaseStringWrite);
+    addTearDown(client.dispose);
+    await client.init();
+
+    final parentEdit = client.modifyGoal(GoalDelta(
+      id: 'parent',
+      logEntry: DocumentContentsEntry(
+        id: 'parent-document',
+        creationTime: DateTime.utc(2026, 11, 14),
+        text: 'parent continuation survives reload',
+      ),
+    ));
+    await repository.stringWriteStarted.future;
+
+    // This edit has no separate string write, so the old replace-style
+    // unsynced-op update can complete while the parent remains gated.
+    final childEdit = client.modifyGoal(const GoalDelta(
+      id: 'child',
+      text: 'renamed child',
+    ));
+    // Let the overlapping modify reach its local write. On the old
+    // replacement path it commits while the parent string transaction waits;
+    // the repaired path queues that local transaction until release.
+    await Future<void>.delayed(Duration.zero);
+
+    repository.releaseStringWrite();
+    await Future.wait([parentEdit, childEdit]);
+
+    expect(repository.getUnsyncedOps().map((op) => (op as DeltaOp).delta.id),
+        unorderedEquals(['parent', 'child']),
+        reason: 'a gated document write must not replace an overlapping edit');
   });
 }
