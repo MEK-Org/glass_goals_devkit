@@ -30,6 +30,14 @@ class NativeClipboardBridge {
   final void Function(NativeClipboardData) onPaste;
   bool _preferPlainText = false;
 
+  // Chrome's trusted Cmd/Ctrl+Shift+V event intentionally exposes only
+  // text/plain, even when the immediately preceding app copy published
+  // private representations. Keep that app-owned copy in this page only and
+  // restore it only for the matching plain-text special-paste event. The
+  // native event values take precedence, so ordinary paste and external text
+  // keep their browser-provided representations.
+  static NativeClipboardData? _lastAppCopy;
+
   /// Cmd/Ctrl+Shift+V is the explicit plain-paste route. ClipboardEvent does
   /// not expose modifiers, so remember it only until the matching paste.
   void _keyDown(html.Event rawEvent) {
@@ -49,10 +57,14 @@ class NativeClipboardBridge {
     if (!isActive()) return;
     final payload = onCopy();
     final clipboard = event.clipboardData;
-    if (payload == null || clipboard == null) return;
+    if (payload == null || clipboard == null) {
+      _lastAppCopy = null;
+      return;
+    }
     for (final entry in payload.representations.entries) {
       clipboard.setData(entry.key, entry.value);
     }
+    _lastAppCopy = payload;
     event.preventDefault();
   }
 
@@ -63,10 +75,14 @@ class NativeClipboardBridge {
     if (!isActive()) return;
     final payload = onCopy();
     final clipboard = event.clipboardData;
-    if (payload == null || clipboard == null) return;
+    if (payload == null || clipboard == null) {
+      _lastAppCopy = null;
+      return;
+    }
     for (final entry in payload.representations.entries) {
       clipboard.setData(entry.key, entry.value);
     }
+    _lastAppCopy = payload;
     event.preventDefault();
     onCut();
   }
@@ -79,15 +95,32 @@ class NativeClipboardBridge {
     final preferPlainText = _preferPlainText;
     _preferPlainText = false;
     event.preventDefault();
-    onPaste(
-      NativeClipboardData(
-        representations: {
-          for (final type in clipboard.types ?? const <String>[])
-            type: clipboard.getData(type),
-        },
+    final representations = {
+      for (final type in clipboard.types ?? const <String>[])
+        type: clipboard.getData(type),
+    };
+    onPaste(NativeClipboardData(
+      representations: _specialPasteRepresentations(
+        representations,
         preferPlainText: preferPlainText,
       ),
-    );
+      preferPlainText: preferPlainText,
+    ));
+  }
+
+  static Map<String, String> _specialPasteRepresentations(
+    Map<String, String> native, {
+    required bool preferPlainText,
+  }) {
+    if (!preferPlainText) return native;
+    final retained = _lastAppCopy;
+    final plainText = native['text/plain'];
+    if (retained == null ||
+        plainText == null ||
+        plainText != retained.read('text/plain')) {
+      return native;
+    }
+    return {...retained.representations, ...native};
   }
 
   void dispose() {
