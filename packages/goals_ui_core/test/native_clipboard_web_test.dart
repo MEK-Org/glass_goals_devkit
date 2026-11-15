@@ -47,8 +47,79 @@ void _dispatchSpecialPaste(String plainText) {
 }
 
 void main() {
-  test('restores app copy representations for stripped special paste only',
+  test(
+      'clipboard HTML restores private data after the source page loses ownership',
       () {
+    NativeClipboardData? received;
+    final bridge = NativeClipboardBridge(
+      isActive: () => true,
+      onCopy: () => const NativeClipboardData(representations: {
+        'application/x-example-private': 'source-record',
+        'text/html': '<strong>source</strong>',
+        'text/plain': 'source',
+      }),
+      onCut: () {},
+      onPaste: (data) => received = data,
+    );
+    addTearDown(bridge.dispose);
+    final copied = html.DataTransfer();
+    html.document.dispatchEvent(html.ClipboardEvent('copy', {
+      'clipboardData': copied,
+      'bubbles': true,
+      'cancelable': true,
+    }));
+    html.window.dispatchEvent(html.Event('blur'));
+    // A new page can receive HTML from the clipboard without having copied.
+    final incoming = html.DataTransfer()
+      ..setData('text/html', copied.getData('text/html'))
+      ..setData('text/plain', 'source');
+    html.document.dispatchEvent(html.ClipboardEvent('paste', {
+      'clipboardData': incoming,
+      'bubbles': true,
+      'cancelable': true,
+    }));
+    expect(received?.read('application/x-example-private'), 'source-record');
+    expect(received?.read('text/html'), '<strong>source</strong>');
+
+    incoming.setData('text/plain', 'different');
+    html.document.dispatchEvent(html.ClipboardEvent('paste', {
+      'clipboardData': incoming,
+      'bubbles': true,
+      'cancelable': true,
+    }));
+    expect(received?.read('application/x-example-private'), isEmpty);
+    expect(received?.read('text/plain'), 'different');
+  });
+
+  test('malformed clipboard HTML stays external data', () {
+    NativeClipboardData? received;
+    final bridge = NativeClipboardBridge(
+      isActive: () => true,
+      onCopy: () => null,
+      onCut: () {},
+      onPaste: (data) => received = data,
+    );
+    addTearDown(bridge.dispose);
+    for (final envelope in [
+      'not-base64!',
+      'W10=',
+      'eyJ0ZXh0L3BsYWluIjoxfQ=='
+    ]) {
+      final incoming = html.DataTransfer()
+        ..setData('text/html',
+            '<span data-goals-clipboard-v1="$envelope"></span>source')
+        ..setData('text/plain', 'source');
+      html.document.dispatchEvent(html.ClipboardEvent('paste', {
+        'clipboardData': incoming,
+        'bubbles': true,
+        'cancelable': true,
+      }));
+      expect(received?.read('application/x-example-private'), isEmpty);
+      expect(received?.read('text/plain'), 'source');
+    }
+  });
+
+  test('restores app copy representations for stripped special paste only', () {
     NativeClipboardData? received;
     final bridge = NativeClipboardBridge(
       isActive: () => true,
@@ -120,7 +191,8 @@ void main() {
     expect(consulted, 0);
   });
 
-  test('a copy handled outside the active bridge invalidates provenance '
+  test(
+      'a copy handled outside the active bridge invalidates provenance '
       'even when its text is identical', () {
     var active = true;
     NativeClipboardData? received;
@@ -181,8 +253,9 @@ void main() {
       addTearDown(bridge.dispose);
 
       _dispatchCopy(html.document);
-      final target =
-          transition == 'blur' ? html.window as html.EventTarget : html.document;
+      final target = transition == 'blur'
+          ? html.window as html.EventTarget
+          : html.document;
       target.dispatchEvent(html.Event(transition));
       _dispatchSpecialPaste('source');
 
