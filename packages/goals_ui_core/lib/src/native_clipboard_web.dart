@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:js_util' as js_util;
+import 'dart:js_interop';
 
 import 'native_clipboard_stub.dart' hide nativeClipboardEventsAvailable;
 
@@ -8,6 +8,22 @@ export 'native_clipboard_stub.dart' show NativeClipboardData;
 
 /// Browser clipboard events carry rich data while the event is trusted.
 const nativeClipboardEventsAvailable = true;
+
+@JS('navigator.clipboard')
+external _AsyncClipboard? get _asyncClipboard;
+
+extension type _AsyncClipboard(JSObject _) implements JSObject {
+  external JSPromise<JSArray<_ClipboardItem>> read();
+}
+
+extension type _ClipboardItem(JSObject _) implements JSObject {
+  external JSArray<JSString> get types;
+  external JSPromise<_ClipboardBlob> getType(String type);
+}
+
+extension type _ClipboardBlob(JSObject _) implements JSObject {
+  external JSPromise<JSString> text();
+}
 
 /// Bridges trusted browser clipboard events to the focused consumer.
 ///
@@ -198,22 +214,17 @@ class NativeClipboardBridge {
       // Read only in response to the user's trusted paste. This uses the
       // browser's normal clipboard permission/activation policy; denial keeps
       // the event's plain text. Never substitute a cross-window text cache.
-      final clipboard = html.window.navigator.clipboard;
-      if (clipboard != null && js_util.hasProperty(clipboard, 'read')) {
-        final items = await js_util.promiseToFuture<List<dynamic>>(
-          js_util.callMethod(clipboard, 'read', []),
-        );
-        for (final item in items) {
-          final types = List<String>.from(js_util.getProperty(item, 'types'));
-          if (!types.contains('text/html') || !types.contains('text/plain'))
+      final clipboard = _asyncClipboard;
+      if (clipboard != null) {
+        final items = await clipboard.read().toDart;
+        for (final item in items.toDart) {
+          final types = item.types.toDart.map((type) => type.toDart);
+          if (!types.contains('text/html') || !types.contains('text/plain')) {
             continue;
+          }
           Future<String> read(String type) async {
-            final blob = await js_util.promiseToFuture<Object>(
-              js_util.callMethod(item, 'getType', [type]),
-            );
-            return js_util.promiseToFuture<String>(
-              js_util.callMethod(blob, 'text', []),
-            );
+            final blob = await item.getType(type).toDart;
+            return (await blob.text().toDart).toDart;
           }
 
           final plain = await read('text/plain');
