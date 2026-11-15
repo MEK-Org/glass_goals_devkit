@@ -232,10 +232,9 @@ class SyncClient {
       opMap[parsedOp.hlcTimestamp] = parsedOp;
     }
 
-    final unsyncedOps = [...localStore.getUnsyncedOps(), ...opMap.values];
-
-    localStore.setUnsyncedOps(unsyncedOps);
-    _push();
+    await localStore
+        .updateUnsyncedOps((unsyncedOps) => [...unsyncedOps, ...opMap.values]);
+    await _push();
   }
 
   int get numUnsyncedOps => localStore.getUnsyncedOps().length;
@@ -538,12 +537,14 @@ class SyncClient {
 
     // update unsynced ops
     final unsyncedOps = localStore.getUnsyncedOps();
+    final newOpList = newOps.toList();
 
-    _logger?.log("Setting unsynced ops: ${newOps.map((e) => e.id)}");
+    _logger?.log("Setting unsynced ops: ${newOpList.map((e) => e.id)}");
 
-    localStore.setUnsyncedOps([...unsyncedOps, ...newOps]);
+    await localStore
+        .updateUnsyncedOps((currentOps) => [...currentOps, ...newOpList]);
     _perfLog(
-        'setUnsyncedOps ${_ms(phaseSw)} (existing=${unsyncedOps.length}, new=${newOps.length})');
+        'setUnsyncedOps ${_ms(phaseSw)} (existing=${unsyncedOps.length}, new=${newOpList.length})');
 
     // Emission is async: there is a single emit below, after the affected
     // goals are loaded. Callers that need to render the result in the same
@@ -560,7 +561,7 @@ class SyncClient {
     phaseSw
       ..reset()
       ..start();
-    final affectedGoalIds = await _computeAffectedGoalIds(newOps);
+    final affectedGoalIds = await _computeAffectedGoalIds(newOpList);
     _perfLog(
         'computeAffectedGoalIds ${_ms(phaseSw)} (affected=${affectedGoalIds.length})');
 
@@ -1145,7 +1146,7 @@ class SyncClient {
 
     // The indexes now include the received ops, so they can leave the
     // unsynced ops without disappearing from any view.
-    _acknowledgeReceivedOps(newSyncedOps);
+    await _acknowledgeReceivedOps(newSyncedOps);
 
     // synchronously updates the caches and queues storage to hive
     // so we don't need to wait.
@@ -1393,23 +1394,19 @@ class SyncClient {
 
   /// An op is synced once the server sends it back, not when a push succeeds.
   /// Called by [_persistOps] after it has indexed [ops].
-  void _acknowledgeReceivedOps(Iterable<Op> ops) {
+  Future<void> _acknowledgeReceivedOps(Iterable<Op> ops) async {
     final receivedIds = ops.map((op) => op.id).toSet();
-    final unsyncedOps = localStore.getUnsyncedOps().toList();
-    final acknowledged =
-        unsyncedOps.where((op) => receivedIds.contains(op.id)).toList();
-    if (acknowledged.isNotEmpty) {
-      for (final op in acknowledged) {
-        _logger?.log('Op received from remote, acknowledged', opId: op.id);
-      }
-      localStore.setUnsyncedOps(
-          unsyncedOps.where((op) => !receivedIds.contains(op.id)));
+    final acknowledged = <Op>[];
+    await localStore.updateUnsyncedOps((unsyncedOps) {
+      acknowledged
+          .addAll(unsyncedOps.where((op) => receivedIds.contains(op.id)));
+      return unsyncedOps.where((op) => !receivedIds.contains(op.id));
+    });
+    for (final op in acknowledged) {
+      _logger?.log('Op received from remote, acknowledged', opId: op.id);
     }
-    final ackedOpIds = localStore.getAckedOpIds();
-    if (ackedOpIds.any(receivedIds.contains)) {
-      localStore.setAckedOpIds(
-          ackedOpIds.difference(receivedIds));
-    }
+    await localStore.updateAckedOpIds(
+        (ackedOpIds) => ackedOpIds.where((id) => !receivedIds.contains(id)));
   }
 
   Future<void> _push() async {
@@ -1454,26 +1451,24 @@ class SyncClient {
           // Keep each op pending, as pushed, until it is received. An op the
           // listener already received is no longer unsynced.
           final pushedOps = {for (final op in mappedOps) op.id: op};
-          final unsyncedOps = localStore.getUnsyncedOps().toList();
-          final unsyncedIds = unsyncedOps.map((op) => op.id).toSet();
-          final ackedIds = pushedOps.keys.where(unsyncedIds.contains);
+          final ackedIds = <String>{};
+          // Mark first, then replace HLCs. Both callbacks run against the
+          // latest local state, so a text edit or a receipt that arrives
+          // across the string-write await is retained rather than overwritten.
+          await localStore.updateAckedOpIds((currentAckedIds) {
+            final currentUnsyncedIds =
+                localStore.getUnsyncedOps().map((op) => op.id).toSet();
+            ackedIds.addAll(pushedOps.keys.where(currentUnsyncedIds.contains));
+            return {
+              ...currentAckedIds.where(currentUnsyncedIds.contains),
+              ...ackedIds,
+            };
+          });
           for (final opId in ackedIds) {
             _logger?.log('Op pushed to remote, acked', opId: opId);
           }
-          // Both writes start from this snapshot before yielding, so no op
-          // added or received meanwhile is clobbered. Mark first: if we stop
-          // before replacing the ops, the marked originals are still not
-          // resent, and the pushed copies sort after them for the pull.
-          await Future.wait([
-            localStore.setAckedOpIds({
-              ...localStore
-                  .getAckedOpIds()
-                  .where(unsyncedIds.contains),
-              ...ackedIds,
-            }),
-            localStore.setUnsyncedOps(
-                unsyncedOps.map((op) => pushedOps[op.id] ?? op)),
-          ]);
+          await localStore.updateUnsyncedOps(
+              (unsyncedOps) => unsyncedOps.map((op) => pushedOps[op.id] ?? op));
         }
       } catch (e, stackTrace) {
         print('[SYNC-DIAG] _push: SAVE FAILED error=$e');
