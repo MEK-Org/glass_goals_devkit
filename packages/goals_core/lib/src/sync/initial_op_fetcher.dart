@@ -71,7 +71,7 @@ class InitialOpFetcher {
       } else if (op is EnableOp) {
         final opToEnable = disabledOpMap.remove(op.opId);
         if (opToEnable != null) {
-          opMap[op.hlcTimestamp] = opToEnable;
+          opMap[opToEnable.id] = opToEnable;
         }
       }
     }

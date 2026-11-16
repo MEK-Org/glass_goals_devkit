@@ -136,15 +136,16 @@ export class SyncClient {
     if (this.persistenceService) {
       this.unsubscribePersistence = this.persistenceService.subscribeJSON(
         this.localStore.cursor,
-        (ops, cursor) => {
-          this.handleRemoteOps(ops, cursor).catch(this.onError);
+        (ops) => {
+          this.handleRemoteOps(ops).catch(this.onError);
         },
       );
     }
   }
 
-  private async handleRemoteOps(ops: AnyOp[], cursor: string): Promise<void> {
-    this.localStore.cursor = cursor;
+  // The local store moves the cursor past these ops once it has stored and
+  // indexed them, so a stop before then pulls them again on restart (#42).
+  private async handleRemoteOps(ops: AnyOp[]): Promise<void> {
     for (const op of ops) {
       this.workingOps.set(op.id, op);
     }
@@ -1056,8 +1057,8 @@ export class SyncClient {
   }
 
   /**
-   * Drops disabled ops. Note the Dart keys a re-enabled op by the Enable op's
-   * HLC, so an op that is disabled and enabled again is applied once more.
+   * Drops disabled ops. Like the Dart, a re-enabled op is keyed by its own id,
+   * so a later disable finds it and enable ops sharing an HLC both apply.
    */
   private applyEnableAndDisableOps(ops: Iterable<AnyOp>): AnyOp[] {
     const opMap = new Map<string, AnyOp>();
@@ -1074,7 +1075,7 @@ export class SyncClient {
         const opToEnable = disabledOpMap.get(op.opId);
         if (opToEnable != null) {
           disabledOpMap.delete(op.opId);
-          opMap.set(op.hlcTimestamp, opToEnable);
+          opMap.set(opToEnable.id, opToEnable);
         }
       }
     }
@@ -1208,6 +1209,11 @@ export class SyncClient {
       if (this.persistenceService != null) {
         await this.pull();
         await this.push();
+        // sync() is the durability barrier: a restart on this store must
+        // start from fully stored local state, so the store cursor may only
+        // cover the ops above once they are actually stored and indexed
+        // (#42).
+        await this.localStore.settled();
       }
       this.computeAndEmitUnsyncedState("sync");
     } finally {

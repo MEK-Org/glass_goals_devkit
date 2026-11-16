@@ -724,6 +724,9 @@ void main() {
     // flush any outstanding notifications
     // from persistenceService
     await persistenceService.settled;
+    // client1 moves the cursor only once it has stored the echoed ops
+    // (#42); sync so client2 starts from fully stored local state.
+    await client1.sync();
 
     final logger2 = MemoryEventLogger();
     final client2 = SyncClient(
@@ -789,6 +792,9 @@ void main() {
     // flush any outstanding notifications
     // from persistenceService
     await persistenceService.settled;
+    // client1 moves the cursor only once it has stored the echoed ops
+    // (#42); sync so client2 starts from fully stored local state.
+    await client1.sync();
 
     final logger2 = MemoryEventLogger();
     final client2 = SyncClient(

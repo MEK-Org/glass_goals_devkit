@@ -3,6 +3,8 @@ export interface GoalLogEntry {
   creationTime: number;
   path?: string[];
   type: string;
+  /** Unmodelled wire fields, retained across local storage and sync. */
+  wireExtras?: Record<string, unknown>;
 }
 
 export interface TextGoalLogEntry extends GoalLogEntry {
@@ -75,6 +77,18 @@ export interface ClearDocumentContentsLogEntry extends GoalLogEntry {
   type: "clearDocumentContents";
 }
 
+/**
+ * Document-note configuration (Dart `DocNoteLogEntry`, wire `t: "docNote"`).
+ * `displayValue` is exact: "" for a blank chip, "#" for automatic numbering,
+ * anything else is a literal label. A goal with no such entry is
+ * unconfigured, and consumers fall back to their legacy behaviour.
+ */
+export interface DocNoteLogEntry extends GoalLogEntry {
+  type: "docNote";
+  kind: "footnote" | "endnote" | "omittedFromExport" | "omit";
+  displayValue: string;
+}
+
 export type LogEntry =
   | NoteLogEntry
   | PriorityLogEntry
@@ -90,6 +104,7 @@ export type LogEntry =
   | CreateInstanceLogEntry
   | DocumentContentsLogEntry
   | ClearDocumentContentsLogEntry
+  | DocNoteLogEntry
   | GoalLogEntry;
 
 export interface Op {

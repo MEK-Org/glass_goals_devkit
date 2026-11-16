@@ -12,13 +12,14 @@ npm install typescript @types/node --save-dev
 npm install ../$TGZ
 
 cat << 'INNER_EOF' > test.ts
-import { WireLongRunningOperationEntry, WireCourseMetadataLogEntry, WireReadingAssignmentLogEntry, WireSyllabusParseResultLogEntry, WireClassMapping } from "@thkp-eng/goals-types";
+import { WireLongRunningOperationEntry, WireCourseMetadataLogEntry, WireReadingAssignmentLogEntry, WireSyllabusParseResultLogEntry, WireClassMapping, WireDocNoteLogEntry } from "@thkp-eng/goals-types";
 
 let a: WireLongRunningOperationEntry | undefined;
 let b: WireCourseMetadataLogEntry | undefined;
 let c: WireReadingAssignmentLogEntry | undefined;
 let d: WireSyllabusParseResultLogEntry | undefined;
 let e: WireClassMapping | undefined;
+let f: WireDocNoteLogEntry | undefined;
 INNER_EOF
 
 cat << 'INNER_EOF' > tsconfig.json

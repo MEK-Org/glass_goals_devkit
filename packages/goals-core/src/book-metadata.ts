@@ -52,8 +52,8 @@ export function bookSectionLogEntryFromWire(
   if (wire?.t === BOOK_SECTION_ENTRY_TYPE || wire?.type === BOOK_SECTION_ENTRY_TYPE) {
     const sP = wire[START_PAGE_JSON_KEY] ?? wire.sP;
     return {
-      id: wire.i || wire.id,
-      creationTime: wire.cT || wire.creationTime,
+      id: wire.i ?? wire.id,
+      creationTime: wire.cT ?? wire.creationTime,
       path: wire.p || wire.path,
       type: BOOK_SECTION_ENTRY_TYPE,
       startPage: typeof sP === "number" ? sP : parseInt(sP, 10),

@@ -179,6 +179,19 @@ void main() {
       await _expectIndexes(log.ops, roots: {'b'});
     });
 
+    // #38: the re-enabled op keeps its own id, so a second disable finds it.
+    test('a re-enabled parent link can be disabled again', () async {
+      final log = _Log()
+        ..create('a')
+        ..create('b');
+      final link = log.addParent('b', 'a');
+      log.disable(link);
+      log.enable(link);
+      await _expectIndexes(log.ops, roots: {'a'});
+      log.disable(link);
+      await _expectIndexes(log.ops, roots: {'a', 'b'});
+    });
+
     test('a slice link is checked with the slice id, not the goal id',
         () async {
       final log = _Log()
@@ -272,6 +285,17 @@ void main() {
       log.disable(clear);
       log.enable(clear);
       await _expectIndexes(log.ops, status: {});
+    });
+
+    // #38: the re-enabled op keeps its own id, so a second disable finds it.
+    test('a re-enabled clearStatus can be disabled again', () async {
+      final log = _Log()..create('a');
+      log.active('a');
+      final clear = log.clearStatus('a');
+      log.disable(clear);
+      log.enable(clear);
+      log.disable(clear);
+      await _expectIndexes(log.ops, status: {'a'});
     });
 
     test('status ops read out of HLC order give the same result', () async {
