@@ -652,6 +652,190 @@
       ]
     },
     {
+      "name": "reenabled_op_identity",
+      "seed": [
+        {
+          "h": "000000000001000:00000:srv",
+          "i": "z1",
+          "v": 6,
+          "t": "d",
+          "d": {
+            "i": "g",
+            "t": "zero"
+          }
+        }
+      ],
+      "steps": [
+        {
+          "op": "start"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000002000:00000:srv",
+              "i": "o1",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "g",
+                "t": "one"
+              }
+            }
+          ]
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000003000:00000:srv",
+              "i": "o2",
+              "v": 6,
+              "t": "d",
+              "d": {
+                "i": "g",
+                "t": "two"
+              }
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "two working text ops"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000004000:00000:srv",
+              "i": "d1",
+              "v": 6,
+              "t": "dO",
+              "oI": "o1"
+            }
+          ]
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000005000:00000:srv",
+              "i": "e1",
+              "v": 6,
+              "t": "eO",
+              "oI": "o1"
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "older op re-enabled under a newer one"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000006000:00000:srv",
+              "i": "d2",
+              "v": 6,
+              "t": "dO",
+              "oI": "o2"
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "newer op disabled"
+        },
+        {
+          "op": "remote",
+          "ops": [
+            {
+              "h": "000000000007000:00000:srv",
+              "i": "d3",
+              "v": 6,
+              "t": "dO",
+              "oI": "o1"
+            }
+          ]
+        },
+        {
+          "op": "snapshot",
+          "label": "re-enabled op disabled again"
+        },
+        {
+          "op": "modify",
+          "deltas": [
+            {
+              "i": "g",
+              "t": "local"
+            }
+          ]
+        },
+        {
+          "op": "undo"
+        },
+        {
+          "op": "redo"
+        },
+        {
+          "op": "undo"
+        },
+        {
+          "op": "snapshot",
+          "label": "local undo after redo"
+        },
+        {
+          "op": "modify",
+          "deltas": [
+            {
+              "i": "g",
+              "lE": {
+                "t": "n",
+                "i": "m-n",
+                "cT": 8000,
+                "te": "local note"
+              }
+            }
+          ]
+        },
+        {
+          "op": "undo"
+        },
+        {
+          "op": "redo"
+        },
+        {
+          "op": "undo"
+        },
+        {
+          "op": "redo"
+        },
+        {
+          "op": "snapshot",
+          "label": "note redone after two cycles"
+        },
+        {
+          "op": "undo"
+        },
+        {
+          "op": "snapshot",
+          "label": "note undone again"
+        },
+        {
+          "op": "restart"
+        },
+        {
+          "op": "load",
+          "id": "g"
+        },
+        {
+          "op": "snapshot",
+          "label": "after restart"
+        }
+      ]
+    },
+    {
       "name": "root_index",
       "seed": [
         {

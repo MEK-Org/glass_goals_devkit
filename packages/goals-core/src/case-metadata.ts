@@ -43,8 +43,8 @@ export function caseGoalLogEntryFromWire(
       year = isNaN(parsed) ? null : parsed;
     }
     return {
-      id: wire.i || wire.id,
-      creationTime: wire.cT || wire.creationTime,
+      id: wire.i ?? wire.id,
+      creationTime: wire.cT ?? wire.creationTime,
       path: wire.p || wire.path,
       type: CASE_ENTRY_TYPE,
       name: wire[CASE_NAME_JSON_KEY] ?? wire.n ?? wire.name ?? "",
@@ -96,8 +96,8 @@ export function reporterGoalLogEntryFromWire(
     const rawStartPage = wire[REPORTER_START_PAGE_JSON_KEY] ?? wire.sP ?? wire.startPage;
     const rawReporterIndex = wire[REPORTER_INDEX_JSON_KEY] ?? wire.rI ?? wire.reporterIndex;
     return {
-      id: wire.i || wire.id,
-      creationTime: wire.cT || wire.creationTime,
+      id: wire.i ?? wire.id,
+      creationTime: wire.cT ?? wire.creationTime,
       path: wire.p || wire.path,
       type: REPORTER_ENTRY_TYPE,
       reporter: wire[REPORTER_NAME_JSON_KEY] ?? wire.r ?? wire.reporter ?? "",

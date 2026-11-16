@@ -190,6 +190,32 @@ void main() {
     await expectValidOpJson(jsonObj, ref: 'WireReporterGoalLogEntry');
   });
 
+  test('WireDocNoteLogEntry validation', () async {
+    final jsonObj = {
+      'i': 'note-1',
+      'cT': 12345,
+      't': 'docNote',
+      'k': 'footnote',
+      'dV': '#',
+    };
+    await expectValidOpJson(jsonObj, ref: 'WireDocNoteLogEntry');
+  });
+
+  test('WireDocNoteLogEntry validation for all kinds and display values', () async {
+    for (final kind in ['footnote', 'endnote', 'omittedFromExport', 'omit']) {
+      for (final dV in ['', '#', 'custom label', '[1]']) {
+        final jsonObj = {
+          'i': 'note-1',
+          'cT': 12345,
+          't': 'docNote',
+          'k': kind,
+          'dV': dV,
+        };
+        await expectValidOpJson(jsonObj, ref: 'WireDocNoteLogEntry');
+      }
+    }
+  });
+
   test('ops.ts has no digit-suffixed exports', () async {
     final file = File('../goals-types/src/ops.ts');
     final contents = await file.readAsString();

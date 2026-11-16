@@ -46,6 +46,13 @@ export interface LocalStore {
 
   storeSyncedOps(ops: Iterable<AnyOp>): Promise<void>;
 
+  /**
+   * Resolves once every op batch queued by `storeSyncedOps` so far has been
+   * written to the repository, including batches queued while waiting. The
+   * store cursor covers those ops from then on.
+   */
+  settled(): Promise<void>;
+
   getIndexGoalIds(key: string): Set<string>;
   setIndexGoalIds(key: string, goalIds: Set<string>): void;
 
@@ -521,9 +528,8 @@ export class CachingLocalStore implements LocalStore {
   }
 
   /**
-   * TS only: resolves once every op batch queued by [storeSyncedOps] so far
-   * has been written to the repository, including batches queued while
-   * waiting. The Dart has no equivalent; `SyncClient` does not await storage.
+   * Resolves once every op batch queued by `storeSyncedOps` so far has been
+   * written to the repository, including batches queued while waiting.
    */
   async settled(): Promise<void> {
     let queue: Promise<void>;
@@ -561,10 +567,6 @@ export class CachingLocalStore implements LocalStore {
       } else {
         opsToWrite.push(op);
       }
-    }
-
-    if (maxHlc != null) {
-      this.repo.cursor = maxHlc;
     }
 
     await this.repo.storeStrings(stringsToWrite);
@@ -631,6 +633,12 @@ export class CachingLocalStore implements LocalStore {
     }
 
     await this.repo.storeGoalIndexEntries(goalIndexEntriesToWrite);
+
+    // Only now that the ops are stored and indexed does the cursor cover
+    // them; a stop before this point pulls them again on restart (#42).
+    if (maxHlc != null) {
+      this.repo.cursor = maxHlc;
+    }
   }
 
   async clear(): Promise<void> {

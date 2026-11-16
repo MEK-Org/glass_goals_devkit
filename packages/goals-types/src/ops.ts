@@ -380,6 +380,24 @@ export type WireReporterGoalLogEntry = WireGoalLogEntry & {
 };
 /**
  * This interface was referenced by `OpSchema`'s JSON-Schema
+ * via the `definition` "WireDocNoteLogEntry".
+ */
+export type WireDocNoteLogEntry = WireGoalLogEntry & {
+  /**
+   * Entry type: document note configuration metadata (DOC_NOTE_ENTRY_TYPE in Dart)
+   */
+  t: "docNote";
+  /**
+   * Note kind: footnote, endnote, or omittedFromExport (DocNoteKind in Dart)
+   */
+  k: "footnote" | "endnote" | "omittedFromExport" | "omit";
+  /**
+   * Display value: empty for blank chip, # for auto-numbering, or literal label (DocNoteLogEntry.displayValue in Dart)
+   */
+  dV: string;
+};
+/**
+ * This interface was referenced by `OpSchema`'s JSON-Schema
  * via the `definition` "WireDeltaOp".
  */
 export type WireDeltaOp = WireOp & {

@@ -6,6 +6,7 @@ import 'package:goals_types/goals_types.dart';
 export 'book_metadata.dart';
 export 'case_metadata.dart';
 export 'course_metadata.dart';
+export 'doc_note_metadata.dart';
 
 const GOAL_PREFIX = 'gg://';
 
