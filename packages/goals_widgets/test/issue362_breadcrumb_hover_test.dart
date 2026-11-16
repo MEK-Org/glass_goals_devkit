@@ -107,6 +107,33 @@ void main() {
     return gesture;
   }
 
+  void expectVerticalPopoverCrumbs(WidgetTester tester, List<String> titles) {
+    Column? sharedColumn;
+    double? previousDy;
+    for (final title in titles) {
+      final breadcrumbFinder = find.ancestor(
+        of: find.text(title),
+        matching: find.byType(Breadcrumb),
+      );
+      expect(breadcrumbFinder, findsOneWidget);
+      final columnFinder = find.ancestor(
+        of: breadcrumbFinder,
+        matching: find.byType(Column),
+      );
+      expect(columnFinder, findsOneWidget);
+      final column = tester.widget<Column>(columnFinder);
+      expect(column.mainAxisSize, MainAxisSize.min);
+      expect(column.crossAxisAlignment, CrossAxisAlignment.start);
+      sharedColumn ??= column;
+      expect(column, same(sharedColumn));
+      final dy = tester.getTopLeft(find.text(title)).dy;
+      if (previousDy != null) {
+        expect(dy, greaterThan(previousDy));
+      }
+      previousDy = dy;
+    }
+  }
+
   testWidgets(
       'PathBreadcrumb middle omission shows clickable vertical popover on … and navigates on tap',
       (tester) async {
@@ -142,18 +169,7 @@ void main() {
     expect(find.byType(Tooltip), findsNothing);
     expect(find.text('Part One'), findsOneWidget);
     expect(find.text('Part Two'), findsOneWidget);
-    expect(
-      find.ancestor(of: find.text('Part One'), matching: find.byType(Breadcrumb)),
-      findsOneWidget,
-    );
-    expect(
-      find.ancestor(of: find.text('Part Two'), matching: find.byType(Breadcrumb)),
-      findsOneWidget,
-    );
-    expect(
-      tester.getTopLeft(find.text('Part Two')).dy,
-      greaterThan(tester.getTopLeft(find.text('Part One')).dy),
-    );
+    expectVerticalPopoverCrumbs(tester, ['Part One', 'Part Two']);
 
     // Moving the mouse from … into the popover keeps it open past the grace timer.
     await gesture.moveTo(tester.getCenter(find.text('Part Two')));
@@ -202,14 +218,7 @@ void main() {
     expect(find.text('Root'), findsOneWidget);
     expect(find.text('Part One'), findsOneWidget);
     expect(find.text('Part Two'), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.text('Part One')).dy,
-      greaterThan(tester.getTopLeft(find.text('Root')).dy),
-    );
-    expect(
-      tester.getTopLeft(find.text('Part Two')).dy,
-      greaterThan(tester.getTopLeft(find.text('Part One')).dy),
-    );
+    expectVerticalPopoverCrumbs(tester, ['Root', 'Part One', 'Part Two']);
 
     // Leaving both … and the popover closes it after the grace timer.
     await gesture.moveTo(Offset.zero);
@@ -300,10 +309,7 @@ void main() {
 
     expect(find.text('Very Long Ancestor Title'), findsOneWidget);
     expect(find.text('Mid'), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.text('Mid')).dy,
-      greaterThan(tester.getTopLeft(find.text('Very Long Ancestor Title')).dy),
-    );
+    expectVerticalPopoverCrumbs(tester, ['Very Long Ancestor Title', 'Mid']);
 
     await gesture.moveTo(tester.getCenter(find.text('Mid')));
     await tester.pump(const Duration(milliseconds: 250));
@@ -469,9 +475,9 @@ void main() {
     );
     expect(find.text('Hidden Section'), findsOneWidget);
     expect(find.text('Very Long Suffix'), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.text('Very Long Suffix')).dy,
-      greaterThan(tester.getTopLeft(find.text('Hidden Section')).dy),
+    expectVerticalPopoverCrumbs(
+      tester,
+      ['Hidden Section', 'Very Long Suffix'],
     );
 
     // Tapping the overlaid hover toolbar button must still succeed.

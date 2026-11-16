@@ -1,12 +1,23 @@
-import 'dart:async' show StreamSubscription;
+import 'dart:async' show StreamSubscription, Timer;
 import 'dart:ui' show Color;
 
 import 'package:fade_shimmer/fade_shimmer.dart' show FadeShimmer;
 import 'package:flutter/material.dart'
-    show Colors, IconButton, Icons, Ink, Theme, Tooltip;
+    show
+        Colors,
+        IconButton,
+        Icons,
+        Ink,
+        Material,
+        RoundedRectangleBorder,
+        Theme;
 import 'package:flutter/painting.dart'
     show
+        Alignment,
+        BorderRadius,
+        BorderSide,
         CircleBorder,
+        Clip,
         EdgeInsets,
         ShapeDecoration,
         TextDecoration,
@@ -15,12 +26,18 @@ import 'package:flutter/painting.dart'
         TextSpan,
         TextStyle,
         VoidCallback;
+import 'package:flutter/rendering.dart' show LayerLink;
 import 'package:flutter/services.dart' show SystemMouseCursors;
 import 'package:flutter/widgets.dart'
     show
+        Align,
         BoxConstraints,
         BuildContext,
+        Column,
+        CompositedTransformFollower,
+        CompositedTransformTarget,
         ConstrainedBox,
+        CrossAxisAlignment,
         DefaultTextStyle,
         Directionality,
         GestureDetector,
@@ -29,13 +46,16 @@ import 'package:flutter/widgets.dart'
         MainAxisSize,
         MediaQuery,
         MouseRegion,
+        OverlayPortal,
+        OverlayPortalController,
         Padding,
         Row,
         SizedBox,
         State,
         StatefulWidget,
         Text,
-        Widget;
+        Widget,
+        WidgetsBinding;
 import 'package:goals_core/model.dart' show Goal, GoalPath, isAnchor;
 import 'package:goals_core/sync.dart' show SyncClient, WatchedGoalSet;
 import 'package:goals_ui_core/core.dart'
@@ -101,6 +121,7 @@ class Breadcrumb extends StatefulWidget {
   final bool allowTapping;
   final bool abbreviateGoalName;
   final double? maxWidth;
+  final VoidCallback? onTap;
   const Breadcrumb({
     super.key,
     this.style,
@@ -108,6 +129,7 @@ class Breadcrumb extends StatefulWidget {
     this.allowTapping = true,
     this.abbreviateGoalName = false,
     this.maxWidth,
+    this.onTap,
   });
 
   @override
@@ -192,6 +214,7 @@ class _BreadcrumbState extends State<Breadcrumb> {
           onTap: widget.allowTapping
               ? () {
                   GoalActionsContext.of(context).onFocused(widget.path);
+                  widget.onTap?.call();
                 }
               : null,
         ),
@@ -317,8 +340,6 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
         onExit: (_) => setState(() => _hovered = false),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final goalMap =
-                GoalWidgetsContext.of(context).syncClient.stateSubject.value;
             final availableWidth = constraints.hasBoundedWidth
                 ? constraints.maxWidth
                 : (widget.maxWidth ?? _maxBreadcrumbWidth);
@@ -356,24 +377,20 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
             }
 
             void addOmission(List<int> omittedIndices) {
-              final omittedTitles = [
-                for (final index in omittedIndices)
-                  if ((goalMap[widget.renderedPath[index]]?.text ?? '')
-                      .isNotEmpty)
-                    goalMap[widget.renderedPath[index]]!.text,
-              ];
-              const ellipsis = SizedBox(
-                width: _omissionWidth,
-                child: Text('…', maxLines: 1),
-              );
-              if (omittedTitles.isEmpty) {
-                widgets.add(ellipsis);
+              if (omittedIndices.isEmpty) {
+                widgets.add(const SizedBox(
+                  width: _omissionWidth,
+                  child: Text('…', maxLines: 1),
+                ));
                 return;
               }
-              widgets.add(Tooltip(
-                message: omittedTitles.join(' > '),
-                waitDuration: const Duration(milliseconds: 150),
-                child: ellipsis,
+              widgets.add(_OmittedBreadcrumbsEllipsis(
+                key: const ValueKey('omitted-breadcrumbs-ellipsis'),
+                omittedIndices: omittedIndices,
+                contextPath: widget.contextPath,
+                renderedPath: widget.renderedPath,
+                allowTappingCrumbs: widget.allowTappingCrumbs,
+                style: widget.style,
               ));
             }
 
@@ -583,6 +600,197 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
       );
     }
     return content;
+  }
+}
+
+class _OmittedBreadcrumbsEllipsis extends StatefulWidget {
+  final List<int> omittedIndices;
+  final GoalPath contextPath;
+  final GoalPath renderedPath;
+  final bool allowTappingCrumbs;
+  final TextStyle? style;
+
+  const _OmittedBreadcrumbsEllipsis({
+    super.key,
+    required this.omittedIndices,
+    required this.contextPath,
+    required this.renderedPath,
+    required this.allowTappingCrumbs,
+    this.style,
+  });
+
+  @override
+  State<_OmittedBreadcrumbsEllipsis> createState() =>
+      _OmittedBreadcrumbsEllipsisState();
+}
+
+class _OmittedBreadcrumbsEllipsisState
+    extends State<_OmittedBreadcrumbsEllipsis> {
+  static const _hoverShowDelay = Duration(milliseconds: 150);
+  static const _hoverDismissGrace = Duration(milliseconds: 180);
+  static const _maxPopoverWidth = 360.0;
+
+  final _layerLink = LayerLink();
+  final _overlayController = OverlayPortalController();
+  Timer? _showTimer;
+  Timer? _hideTimer;
+  bool _targetHovered = false;
+  bool _popoverHovered = false;
+
+  @override
+  void didUpdateWidget(_OmittedBreadcrumbsEllipsis oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.omittedIndices.isEmpty) {
+      _showTimer?.cancel();
+      _hideTimer?.cancel();
+      _popoverHovered = false;
+      if (_overlayController.isShowing) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted &&
+              widget.omittedIndices.isEmpty &&
+              _overlayController.isShowing) {
+            _overlayController.hide();
+          }
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _showTimer?.cancel();
+    _hideTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onTargetEnter() {
+    _targetHovered = true;
+    _hideTimer?.cancel();
+    if (_overlayController.isShowing || (_showTimer?.isActive ?? false)) {
+      return;
+    }
+    _showTimer = Timer(_hoverShowDelay, () {
+      if (!mounted || !_targetHovered || widget.omittedIndices.isEmpty) return;
+      _overlayController.show();
+    });
+  }
+
+  void _onTargetExit() {
+    _targetHovered = false;
+    _showTimer?.cancel();
+    _scheduleHide();
+  }
+
+  void _onPopoverEnter() {
+    _popoverHovered = true;
+    _hideTimer?.cancel();
+  }
+
+  void _onPopoverExit() {
+    _popoverHovered = false;
+    _scheduleHide();
+  }
+
+  void _scheduleHide() {
+    if (_targetHovered || _popoverHovered) return;
+    _hideTimer?.cancel();
+    _hideTimer = Timer(_hoverDismissGrace, () {
+      if (!mounted || _targetHovered || _popoverHovered) return;
+      _dismissPopover();
+    });
+  }
+
+  void _dismissPopover() {
+    _showTimer?.cancel();
+    _hideTimer?.cancel();
+    _popoverHovered = false;
+    if (mounted && _overlayController.isShowing) {
+      _overlayController.hide();
+    }
+  }
+
+  Widget _buildPopover(BuildContext context) {
+    if (widget.omittedIndices.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final theme = Theme.of(context);
+    return Align(
+      alignment: Alignment.topLeft,
+      child: CompositedTransformFollower(
+        link: _layerLink,
+        showWhenUnlinked: false,
+        targetAnchor: Alignment.bottomLeft,
+        followerAnchor: Alignment.topLeft,
+        child: MouseRegion(
+          onEnter: (_) => _onPopoverEnter(),
+          onExit: (_) => _onPopoverExit(),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: _maxPopoverWidth),
+              child: Material(
+                color: theme.colorScheme.surface,
+                elevation: 6,
+                shadowColor: Colors.black26,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: theme.dividerColor),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var i = 0; i < widget.omittedIndices.length; i++)
+                        Padding(
+                          padding: EdgeInsets.only(top: i == 0 ? 0 : 4),
+                          child: Breadcrumb(
+                            path: GoalPath([
+                              ...widget.contextPath,
+                              ...widget.renderedPath.sublist(
+                                0,
+                                widget.omittedIndices[i] + 1,
+                              ),
+                            ]),
+                            allowTapping: widget.allowTappingCrumbs,
+                            abbreviateGoalName: false,
+                            style: widget.style,
+                            onTap: _dismissPopover,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: OverlayPortal(
+        controller: _overlayController,
+        overlayChildBuilder: _buildPopover,
+        child: MouseRegion(
+          onEnter: (_) => _onTargetEnter(),
+          onExit: (_) => _onTargetExit(),
+          child: const SizedBox(
+            width: _PathBreadcrumbState._omissionWidth,
+            child: Text('…', maxLines: 1),
+          ),
+        ),
+      ),
+    );
   }
 }
 
