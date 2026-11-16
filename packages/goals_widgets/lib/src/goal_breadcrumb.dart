@@ -54,6 +54,7 @@ import 'package:flutter/widgets.dart'
         State,
         StatefulWidget,
         Text,
+        ValueKey,
         Widget,
         WidgetsBinding;
 import 'package:goals_core/model.dart' show Goal, GoalPath, isAnchor;
