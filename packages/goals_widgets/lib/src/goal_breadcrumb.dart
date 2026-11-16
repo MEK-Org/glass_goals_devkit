@@ -3,7 +3,7 @@ import 'dart:ui' show Color;
 
 import 'package:fade_shimmer/fade_shimmer.dart' show FadeShimmer;
 import 'package:flutter/material.dart'
-    show Colors, IconButton, Icons, Ink, Theme;
+    show Colors, IconButton, Icons, Ink, Theme, Tooltip;
 import 'package:flutter/painting.dart'
     show
         CircleBorder,
@@ -317,6 +317,8 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
         onExit: (_) => setState(() => _hovered = false),
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final goalMap =
+                GoalWidgetsContext.of(context).syncClient.stateSubject.value;
             final availableWidth = constraints.hasBoundedWidth
                 ? constraints.maxWidth
                 : (widget.maxWidth ?? _maxBreadcrumbWidth);
@@ -353,10 +355,25 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
               ));
             }
 
-            void addOmission() {
-              widgets.add(const SizedBox(
+            void addOmission(List<int> omittedIndices) {
+              final omittedTitles = [
+                for (final index in omittedIndices)
+                  if ((goalMap[widget.renderedPath[index]]?.text ?? '')
+                      .isNotEmpty)
+                    goalMap[widget.renderedPath[index]]!.text,
+              ];
+              const ellipsis = SizedBox(
                 width: _omissionWidth,
                 child: Text('…', maxLines: 1),
+              );
+              if (omittedTitles.isEmpty) {
+                widgets.add(ellipsis);
+                return;
+              }
+              widgets.add(Tooltip(
+                message: omittedTitles.join(' > '),
+                waitDuration: const Duration(milliseconds: 150),
+                child: ellipsis,
               ));
             }
 
@@ -387,7 +404,7 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                 } else {
                   final startOverhead = _omissionWidth + _chevronWidth;
                   if (availableCrumbWidth > startOverhead) {
-                    addOmission();
+                    addOmission(const [0]);
                     addChevron();
                     addBreadcrumb(1, availableCrumbWidth - startOverhead);
                   } else {
@@ -461,7 +478,9 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                     addChevron();
                   }
 
-                  addOmission();
+                  addOmission([
+                    for (var i = prefixEnd + 1; i < suffixStart; i++) i,
+                  ]);
                   addChevron();
 
                   for (var i = suffixStart; i < pathLength; i++) {
@@ -475,7 +494,9 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                   // Ultra-narrow fallback where index 0 + chevrons + omission leaves no room for leaf.
                   final startOverhead = _omissionWidth + _chevronWidth;
                   if (availableCrumbWidth > startOverhead) {
-                    addOmission();
+                    addOmission([
+                      for (var i = 0; i < pathLength - 1; i++) i,
+                    ]);
                     addChevron();
                     addBreadcrumb(
                         pathLength - 1, availableCrumbWidth - startOverhead);
@@ -507,7 +528,9 @@ class _PathBreadcrumbState extends State<PathBreadcrumb> {
                   .clamp(0.0, availableCrumbWidth);
 
               if (hasOmission) {
-                addOmission();
+                addOmission([
+                  for (var i = 0; i < firstVisible; i++) i,
+                ]);
                 addChevron();
               }
 
