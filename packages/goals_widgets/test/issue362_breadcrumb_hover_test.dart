@@ -22,6 +22,7 @@ import 'package:goals_ui_core/core.dart'
         worldContextProvider;
 import 'package:goals_widgets/goals_widgets.dart'
     show
+        Breadcrumb,
         CrumbAbbreviationStrategy,
         GoalItemWidget,
         PathBreadcrumb,
@@ -66,46 +67,67 @@ void main() {
     client.dispose();
   });
 
-  Widget wrapWithContext(Widget child) {
+  Widget wrapWithContext(
+    Widget child, {
+    void Function(GoalPath)? onFocused,
+  }) {
     return MaterialApp(
       home: Scaffold(
         body: GoalWidgetsContext(
           syncClient: client,
           child: GoalActionsContext.empty(
-            child: child,
+            child: Builder(
+              builder: (context) => GoalActionsContext.overrideWith(
+                context,
+                onFocused: onFocused == null
+                    ? null
+                    : (path, {bool? inPlace}) => onFocused(path),
+                child: child,
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Future<void> hoverFinder(WidgetTester tester, Finder finder) async {
+  Future<TestGesture> createMouse(WidgetTester tester) async {
     final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
     await gesture.addPointer(location: Offset.zero);
     addTearDown(gesture.removePointer);
     await tester.pump();
+    return gesture;
+  }
+
+  Future<TestGesture> hoverFinder(WidgetTester tester, Finder finder) async {
+    final gesture = await createMouse(tester);
     await gesture.moveTo(tester.getCenter(finder));
     await tester.pump(const Duration(milliseconds: 250));
     await tester.pumpAndSettle();
+    return gesture;
   }
 
   testWidgets(
-      'PathBreadcrumb middle omission shows collapsed sections in hover tooltip on …',
+      'PathBreadcrumb middle omission shows clickable vertical popover on … and navigates on tap',
       (tester) async {
     tester.view.physicalSize = const Size(800, 300);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final focused = <GoalPath>[];
+
     await tester.pumpWidget(wrapWithContext(
       const SizedBox(
         width: 280,
         child: PathBreadcrumb(
+          contextPath: GoalPath(['ctx']),
           renderedPath: GoalPath(['g0', 'g1', 'g2', 'g3']),
           omissionStrategy: PathOmissionStrategy.middle,
           maxWidth: null,
         ),
       ),
+      onFocused: focused.add,
     ));
     await tester.pumpAndSettle();
 
@@ -114,24 +136,49 @@ void main() {
     expect(find.text('Leaf Goal'), findsOneWidget);
     expect(find.text('Part One'), findsNothing);
     expect(find.text('Part Two'), findsNothing);
-    expect(find.text('Part One > Part Two'), findsNothing);
 
-    await hoverFinder(tester, find.text('…'));
+    final gesture = await hoverFinder(tester, find.text('…'));
 
+    expect(find.byType(Tooltip), findsNothing);
+    expect(find.text('Part One'), findsOneWidget);
+    expect(find.text('Part Two'), findsOneWidget);
     expect(
-      find.ancestor(of: find.text('…'), matching: find.byType(Tooltip)),
+      find.ancestor(of: find.text('Part One'), matching: find.byType(Breadcrumb)),
       findsOneWidget,
     );
-    expect(find.text('Part One > Part Two'), findsOneWidget);
+    expect(
+      find.ancestor(of: find.text('Part Two'), matching: find.byType(Breadcrumb)),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(find.text('Part Two')).dy,
+      greaterThan(tester.getTopLeft(find.text('Part One')).dy),
+    );
+
+    // Moving the mouse from … into the popover keeps it open past the grace timer.
+    await gesture.moveTo(tester.getCenter(find.text('Part Two')));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    expect(find.text('Part One'), findsOneWidget);
+    expect(find.text('Part Two'), findsOneWidget);
+
+    await tester.tap(find.text('Part Two'));
+    await tester.pumpAndSettle();
+
+    expect(focused, [const GoalPath(['ctx', 'g0', 'g1', 'g2'])]);
+    expect(find.text('Part One'), findsNothing);
+    expect(find.text('Part Two'), findsNothing);
   });
 
   testWidgets(
-      'PathBreadcrumb start omission shows omitted leading sections in hover tooltip on …',
+      'PathBreadcrumb start omission shows clickable omitted leading crumbs vertically and closes on pointer exit',
       (tester) async {
     tester.view.physicalSize = const Size(800, 300);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+
+    final focused = <GoalPath>[];
 
     await tester.pumpWidget(wrapWithContext(
       const SizedBox(
@@ -142,26 +189,56 @@ void main() {
           maxWidth: 280,
         ),
       ),
+      onFocused: focused.add,
     ));
     await tester.pumpAndSettle();
 
     expect(find.text('…'), findsOneWidget);
     expect(find.text('Leaf Goal'), findsOneWidget);
     expect(find.text('Root'), findsNothing);
-    expect(find.text('Root > Part One > Part Two'), findsNothing);
 
-    await hoverFinder(tester, find.text('…'));
+    final gesture = await hoverFinder(tester, find.text('…'));
 
-    expect(find.text('Root > Part One > Part Two'), findsOneWidget);
+    expect(find.text('Root'), findsOneWidget);
+    expect(find.text('Part One'), findsOneWidget);
+    expect(find.text('Part Two'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Part One')).dy,
+      greaterThan(tester.getTopLeft(find.text('Root')).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('Part Two')).dy,
+      greaterThan(tester.getTopLeft(find.text('Part One')).dy),
+    );
+
+    // Leaving both … and the popover closes it after the grace timer.
+    await gesture.moveTo(Offset.zero);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    expect(find.text('Root'), findsNothing);
+    expect(find.text('Part One'), findsNothing);
+
+    // Re-hover … and click Root inside the popover.
+    await gesture.moveTo(tester.getCenter(find.text('…')));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    await gesture.moveTo(tester.getCenter(find.text('Root')));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.text('Root'));
+    await tester.pumpAndSettle();
+
+    expect(focused, [const GoalPath(['g0'])]);
   });
 
   testWidgets(
-      'PathBreadcrumb 2-crumb narrow fallback shows omitted first crumb in hover tooltip on …',
+      'PathBreadcrumb 2-crumb narrow fallback shows clickable omitted first crumb on …',
       (tester) async {
     tester.view.physicalSize = const Size(800, 300);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+
+    final focused = <GoalPath>[];
 
     await tester.pumpWidget(wrapWithContext(
       const SizedBox(
@@ -172,6 +249,7 @@ void main() {
           maxWidth: null,
         ),
       ),
+      onFocused: focused.add,
     ));
     await tester.pumpAndSettle();
 
@@ -179,18 +257,26 @@ void main() {
     expect(find.text('Leaf'), findsOneWidget);
     expect(find.text('Very Long Ancestor Title'), findsNothing);
 
-    await hoverFinder(tester, find.text('…'));
+    final gesture = await hoverFinder(tester, find.text('…'));
 
     expect(find.text('Very Long Ancestor Title'), findsOneWidget);
+    await gesture.moveTo(tester.getCenter(find.text('Very Long Ancestor Title')));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.text('Very Long Ancestor Title'));
+    await tester.pumpAndSettle();
+
+    expect(focused, [const GoalPath(['long_ancestor'])]);
   });
 
   testWidgets(
-      'PathBreadcrumb >2-crumb ultra-narrow fallback shows all leading omitted crumbs in hover tooltip on …',
+      'PathBreadcrumb >2-crumb ultra-narrow fallback shows clickable leading omitted crumbs vertically on …',
       (tester) async {
     tester.view.physicalSize = const Size(800, 300);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+
+    final focused = <GoalPath>[];
 
     await tester.pumpWidget(wrapWithContext(
       const SizedBox(
@@ -201,20 +287,34 @@ void main() {
           maxWidth: null,
         ),
       ),
+      onFocused: focused.add,
     ));
     await tester.pumpAndSettle();
 
     expect(find.text('…'), findsOneWidget);
     expect(find.text('Leaf'), findsOneWidget);
-    expect(find.text('Very Long Ancestor Title > Mid'), findsNothing);
+    expect(find.text('Very Long Ancestor Title'), findsNothing);
+    expect(find.text('Mid'), findsNothing);
 
-    await hoverFinder(tester, find.text('…'));
+    final gesture = await hoverFinder(tester, find.text('…'));
 
-    expect(find.text('Very Long Ancestor Title > Mid'), findsOneWidget);
+    expect(find.text('Very Long Ancestor Title'), findsOneWidget);
+    expect(find.text('Mid'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Mid')).dy,
+      greaterThan(tester.getTopLeft(find.text('Very Long Ancestor Title')).dy),
+    );
+
+    await gesture.moveTo(tester.getCenter(find.text('Mid')));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.text('Mid'));
+    await tester.pumpAndSettle();
+
+    expect(focused, [const GoalPath(['long_ancestor', 'mid'])]);
   });
 
   testWidgets(
-      'PathBreadcrumb tooltip shows full goal names even when abbreviationStrategy abbreviates crumbs',
+      'PathBreadcrumb popover shows full goal names and allows navigation even when abbreviationStrategy abbreviates crumbs',
       (tester) async {
     tester.view.physicalSize = const Size(800, 300);
     tester.view.devicePixelRatio = 1;
@@ -226,6 +326,8 @@ void main() {
       text: 'Section 4 - Commerce Power Details',
     ));
 
+    final focused = <GoalPath>[];
+
     await tester.pumpWidget(wrapWithContext(
       const SizedBox(
         width: 240,
@@ -236,19 +338,70 @@ void main() {
           maxWidth: null,
         ),
       ),
+      onFocused: focused.add,
     ));
     await tester.pumpAndSettle();
 
     expect(find.text('…'), findsOneWidget);
     expect(find.text('Section 4 - Commerce Power Details'), findsNothing);
 
-    await hoverFinder(tester, find.text('…'));
+    final gesture = await hoverFinder(tester, find.text('…'));
 
     expect(find.text('Section 4 - Commerce Power Details'), findsOneWidget);
+    await gesture.moveTo(
+      tester.getCenter(find.text('Section 4 - Commerce Power Details')),
+    );
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.text('Section 4 - Commerce Power Details'));
+    await tester.pumpAndSettle();
+
+    expect(focused, [const GoalPath(['g0', 'abbr_mid'])]);
   });
 
   testWidgets(
-      'GoalItemWidget hover toolbar does not reflow PathBreadcrumb or shift … position, and tooltip + toolbar clicks work',
+      'PathBreadcrumb popover respects allowTappingCrumbs: false and closes when omittedIndices becomes empty',
+      (tester) async {
+    tester.view.physicalSize = const Size(800, 300);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final focused = <GoalPath>[];
+
+    Widget buildAtWidth(double width) => wrapWithContext(
+          SizedBox(
+            width: width,
+            child: const PathBreadcrumb(
+              renderedPath: GoalPath(['g0', 'g1', 'g2', 'g3']),
+              omissionStrategy: PathOmissionStrategy.middle,
+              allowTappingCrumbs: false,
+              maxWidth: null,
+            ),
+          ),
+          onFocused: focused.add,
+        );
+
+    await tester.pumpWidget(buildAtWidth(280));
+    await tester.pumpAndSettle();
+
+    final gesture = await hoverFinder(tester, find.text('…'));
+    expect(find.text('Part One'), findsOneWidget);
+    await gesture.moveTo(tester.getCenter(find.text('Part One')));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.text('Part One'));
+    await tester.pumpAndSettle();
+    expect(focused, isEmpty);
+
+    // Widen so no crumbs are omitted: popover closes cleanly.
+    await tester.pumpWidget(buildAtWidth(600));
+    await tester.pumpAndSettle();
+    expect(find.text('…'), findsNothing);
+    expect(find.text('Part One'), findsOneWidget);
+    expect(find.text('Part Two'), findsOneWidget);
+  });
+
+  testWidgets(
+      'GoalItemWidget hover toolbar does not reflow PathBreadcrumb or shift … position, and popover + toolbar clicks work',
       (tester) async {
     tester.view.physicalSize = const Size(900, 300);
     tester.view.devicePixelRatio = 1;
@@ -256,6 +409,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     var toolbarButtonTaps = 0;
+    final focused = <GoalPath>[];
 
     await tester.pumpWidget(wrapWithContext(
       SizedBox(
@@ -283,6 +437,7 @@ void main() {
           ),
         ),
       ),
+      onFocused: focused.add,
     ));
     await tester.pumpAndSettle();
 
@@ -297,7 +452,7 @@ void main() {
     final ellipsisPosBefore = tester.getTopLeft(find.text('…'));
 
     // Hover over the … marker inside GoalItemWidget.
-    await hoverFinder(tester, find.text('…'));
+    final gesture = await hoverFinder(tester, find.text('…'));
 
     expect(tester.takeException(), isNull);
     expect(find.byKey(const ValueKey('wide-hover-toolbar')), findsOneWidget);
@@ -312,11 +467,27 @@ void main() {
       equals(ellipsisPosBefore),
       reason: 'Hovering GoalItemWidget must not shift the … marker.',
     );
-    expect(find.text('Hidden Section > Very Long Suffix'), findsOneWidget);
+    expect(find.text('Hidden Section'), findsOneWidget);
+    expect(find.text('Very Long Suffix'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Very Long Suffix')).dy,
+      greaterThan(tester.getTopLeft(find.text('Hidden Section')).dy),
+    );
 
     // Tapping the overlaid hover toolbar button must still succeed.
     await tester.tap(find.text('Act'));
     await tester.pump();
     expect(toolbarButtonTaps, 1);
+
+    // Re-hover … and click an omitted crumb in the popover.
+    await gesture.moveTo(tester.getCenter(find.text('…')));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    await gesture.moveTo(tester.getCenter(find.text('Hidden Section')));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(find.text('Hidden Section'));
+    await tester.pumpAndSettle();
+
+    expect(focused, [const GoalPath(['short_leaf', 'g0', 'mid', 'hidden'])]);
   });
 }
