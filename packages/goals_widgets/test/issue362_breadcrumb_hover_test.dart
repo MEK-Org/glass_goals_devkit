@@ -259,7 +259,7 @@ void main() {
 
     await tester.pumpWidget(wrapWithContext(
       SizedBox(
-        width: 360,
+        width: 450,
         child: GoalItemWidget(
           path: const GoalPath(['short_leaf']),
           renderedPath: const GoalPath(
