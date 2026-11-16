@@ -4,7 +4,7 @@ import 'package:flutter_dropzone/flutter_dropzone.dart'
     show DropzoneViewController;
 import 'package:flutter/material.dart'
     show Colors, IconButton, Icons, TextField, Theme;
-import 'dart:ui' show FontWeight;
+import 'dart:ui' show Color, FontWeight;
 import 'package:flutter/painting.dart'
     show
         Border,
@@ -17,15 +17,17 @@ import 'package:flutter/painting.dart'
         TextOverflow,
         TextStyle;
 import 'package:flutter/rendering.dart'
-    show HitTestBehavior, MainAxisAlignment, MainAxisSize;
+    show HitTestBehavior, MainAxisSize;
 import 'package:flutter/services.dart'
     show HardwareKeyboard, KeyEvent, SystemMouseCursors, TextSelection;
 import 'package:flutter/widgets.dart'
     show
         Actions,
+        Alignment,
         BuildContext,
         CallbackAction,
         Center,
+        ColoredBox,
         Container,
         DragTarget,
         Draggable,
@@ -40,8 +42,10 @@ import 'package:flutter/widgets.dart'
         MediaQuery,
         MouseRegion,
         Padding,
+        Positioned,
         Row,
         SizedBox,
+        Stack,
         State,
         StatefulWidget,
         StreamBuilder,
@@ -464,113 +468,136 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
           ),
           child: Padding(
             padding: widget.padding,
-            child: Row(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Overlay hover actions in a Stack so showing/hiding them never
+            // changes the Row constraints or reflows PathBreadcrumb.
+            child: Stack(
+              alignment: Alignment.centerRight,
               children: [
-                Flexible(
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    widget.dragHandle == GoalItemDragHandle.bullet &&
-                            !this._editing
-                        ? _dragWrapWidget(
-                            child: bullet,
-                            isSelected: isSelected,
-                            selectedGoals: selectedGoals,
-                          )
-                        : bullet,
-                    goal == null
-                        ? FadeShimmer(
-                            width: uiUnit(30),
-                            height: uiUnit(10),
-                            fadeTheme: FadeTheme.light,
-                          )
-                        : _editing
-                            ? IntrinsicWidth(
-                                child: TextField(
-                                  autocorrect: false,
-                                  controller: _textController,
-                                  decoration: null,
-
-                                  // NOTE: this is a workaround so that the text field doesn't
-                                  // auto-highlight when switching between windows.
-                                  maxLines: hasMouse ? null : 1,
-                                  style: mainTextStyle,
-                                  onChanged: (_) => _editRevision++,
-                                  onEditingComplete: _updateGoal,
-                                  onTapOutside: (_) {
-                                    _updateGoal();
-                                  },
-                                  focusNode: _focusNode,
-                                ),
+                Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Flexible(
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        widget.dragHandle == GoalItemDragHandle.bullet &&
+                                !this._editing
+                            ? _dragWrapWidget(
+                                child: bullet,
+                                isSelected: isSelected,
+                                selectedGoals: selectedGoals,
                               )
-                            : (widget.renderedPath?.length ?? 1) > 1
-                                ? Flexible(
-                                    child: PathBreadcrumb(
-                                      renderedPath: widget.renderedPath!,
+                            : bullet,
+                        goal == null
+                            ? FadeShimmer(
+                                width: uiUnit(30),
+                                height: uiUnit(10),
+                                fadeTheme: FadeTheme.light,
+                              )
+                            : _editing
+                                ? IntrinsicWidth(
+                                    child: TextField(
+                                      autocorrect: false,
+                                      controller: _textController,
+                                      decoration: null,
+
+                                      // NOTE: this is a workaround so that the text field doesn't
+                                      // auto-highlight when switching between windows.
+                                      maxLines: hasMouse ? null : 1,
                                       style: mainTextStyle,
-                                      contextPath: widget.path,
-                                      maxWidth: null,
-                                      omissionStrategy:
-                                          PathOmissionStrategy.middle,
-                                      abbreviationStrategy:
-                                          CrumbAbbreviationStrategy.show_last,
+                                      onChanged: (_) => _editRevision++,
+                                      onEditingComplete: _updateGoal,
+                                      onTapOutside: (_) {
+                                        _updateGoal();
+                                      },
+                                      focusNode: _focusNode,
                                     ),
                                   )
-                                : Flexible(
-                                    child: Focus(
-                                      focusNode: _focusNode,
-                                      child: MouseRegion(
-                                        cursor: SystemMouseCursors.text,
-                                        child: GestureDetector(
-                                          onTap:
-                                              hasMouse ? _startEditing : null,
-                                          onLongPress:
-                                              !hasMouse ? _startEditing : null,
-                                          child: Text(
-                                              goal?.text.length == 0
-                                                  ? " "
-                                                  : goal?.text ?? " ",
-                                              style: (isSelected
-                                                      ? mainTextStyle.merge(
-                                                          focusedFontStyle)
-                                                      : mainTextStyle)
-                                                  .copyWith(
-                                                decoration:
-                                                    TextDecoration.underline,
-                                                overflow: TextOverflow.ellipsis,
-                                              )),
+                                : (widget.renderedPath?.length ?? 1) > 1
+                                    ? Flexible(
+                                        child: PathBreadcrumb(
+                                          renderedPath: widget.renderedPath!,
+                                          style: mainTextStyle,
+                                          contextPath: widget.path,
+                                          maxWidth: null,
+                                          omissionStrategy:
+                                              PathOmissionStrategy.middle,
+                                          abbreviationStrategy:
+                                              CrumbAbbreviationStrategy
+                                                  .show_last,
+                                        ),
+                                      )
+                                    : Flexible(
+                                        child: Focus(
+                                          focusNode: _focusNode,
+                                          child: MouseRegion(
+                                            cursor: SystemMouseCursors.text,
+                                            child: GestureDetector(
+                                              onTap: hasMouse
+                                                  ? _startEditing
+                                                  : null,
+                                              onLongPress: !hasMouse
+                                                  ? _startEditing
+                                                  : null,
+                                              child: Text(
+                                                  goal?.text.length == 0
+                                                      ? " "
+                                                      : goal?.text ?? " ",
+                                                  style: (isSelected
+                                                          ? mainTextStyle.merge(
+                                                              focusedFontStyle)
+                                                          : mainTextStyle)
+                                                      .copyWith(
+                                                    decoration: TextDecoration
+                                                        .underline,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  )),
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                    // chip-like container widget around text status widget:
-                    if (goal != null)
-                      CurrentStatusChip(
-                        goal: goal!,
-                        padding: EdgeInsets.only(left: uiUnit(2)),
-                        path: widget.path,
-                      ),
-                    if (this.widget.showExpansionArrow &&
-                        widget.hasRenderableChildren)
-                      SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: IconButton(
-                            padding: EdgeInsets.zero,
-                            onPressed: () => onExpanded(widget.path),
-                            icon: Icon(
-                                size: 24,
-                                isExpanded
-                                    ? Icons.arrow_drop_down
-                                    : Icons.arrow_right)),
-                      ),
-                  ]),
+                        // chip-like container widget around text status widget:
+                        if (goal != null)
+                          CurrentStatusChip(
+                            goal: goal!,
+                            padding: EdgeInsets.only(left: uiUnit(2)),
+                            path: widget.path,
+                          ),
+                        if (this.widget.showExpansionArrow &&
+                            widget.hasRenderableChildren)
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: IconButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => onExpanded(widget.path),
+                                icon: Icon(
+                                    size: 24,
+                                    isExpanded
+                                        ? Icons.arrow_drop_down
+                                        : Icons.arrow_right)),
+                          ),
+                      ]),
+                    ),
+                  ],
                 ),
                 if (!isNarrow && !_editing && _hovering)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: widget.hoverActionsBuilder(this.widget.path),
-                  )
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: ColoredBox(
+                      color: Color.alphaBlend(
+                        emphasizedLightBackground,
+                        theme.scaffoldBackgroundColor,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 8.0, right: 16.0),
+                        child: Center(
+                          child: widget.hoverActionsBuilder(this.widget.path),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
