@@ -636,7 +636,11 @@ export class CachingLocalStore implements LocalStore {
 
     // Only now that the ops are stored and indexed does the cursor cover
     // them; a stop before this point pulls them again on restart (#42).
-    if (maxHlc != null) {
+    // Keep the cursor monotonic so a late older-HLC batch never rewinds it.
+    if (
+      maxHlc != null &&
+      (this.repo.cursor == null || compareHlc(maxHlc, this.repo.cursor) > 0)
+    ) {
       this.repo.cursor = maxHlc;
     }
   }

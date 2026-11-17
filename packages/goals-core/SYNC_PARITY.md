@@ -141,18 +141,15 @@ belongs in the Dart first, with the fixture regenerated.
 2. **Enable/Disable of an op at or before the base cursor.** The target is in
    the base, not the working set, so in session the Enable/Disable has no
    effect. It applies after a restart. See `disable_enable_across_cursor`.
-3. **The cursor can move backward.** A remote batch sets the cursor to the
-   server cursor. The store then sets it to the batch's highest HLC when it
-   writes the batch.
-4. **An edge to a parent created later in HLC order stays one-sided.** The
+3. **An edge to a parent created later in HLC order stays one-sided.** The
    child records the parent, but the parent gets no child. This holds in
    session and after a restart. See `remote_edges_in_session`. An earlier TS
    port deferred such down edges; that was removed for parity.
-5. **The cycle guard rejects both sides of a cycle-closing edge.** It fails
+4. **The cycle guard rejects both sides of a cycle-closing edge.** It fails
    open when a frontier parent is not loaded. A partial load can therefore
    admit an edge the full graph would reject, and the result can depend on load
    order. See `cycle_guard`.
-6. **The memory test double keeps only the latest batch.**
+5. **The memory test double keeps only the latest batch.**
    `MemoryPersistenceService.save` rebuilds its op list from the batch being
    saved. Both test doubles do this.
 

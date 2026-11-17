@@ -143,6 +143,9 @@ class SyncClient {
     print('[SYNC-DIAG] SyncClient.init: start');
     await localStore.init();
     hlc = HLC.now(localStore.clientId);
+    if (localStore.cursor != null) {
+      hlc = hlc.receive(HLC.unpack(localStore.cursor!));
+    }
 
     _indexers["rootGoals"] = _isRootGoal;
     _indexers["statusGoals"] = _isStatusGoal;
@@ -1091,6 +1094,11 @@ class SyncClient {
     );
     if (asBase) {
       _baseState = state;
+      for (final op in newSyncedOps) {
+        if (!_emittedWorkingStateOpIds.contains(op.id)) {
+          _emittedBaseStateOpIds.add(op.id);
+        }
+      }
     }
 
     final newIndexValues = <String, Set<String>>{};

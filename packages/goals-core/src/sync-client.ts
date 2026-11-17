@@ -119,6 +119,9 @@ export class SyncClient {
   async init(): Promise<void> {
     await this.localStore.init();
     this.hlc = HLC.now(this.localStore.clientId);
+    if (this.localStore.cursor != null) {
+      this.hlc = this.hlc.receive(HLC.unpack(this.localStore.cursor));
+    }
 
     this.indexers.set("rootGoals", (goal) => this.isRootGoal(goal));
     this.indexers.set("statusGoals", (goal) => this.isStatusGoal(goal));
@@ -897,7 +900,14 @@ export class SyncClient {
         ? newSyncedOps
         : [...this.workingOps.values(), ...newSyncedOps],
     );
-    if (asBase) this.baseState = state;
+    if (asBase) {
+      this.baseState = state;
+      for (const op of newSyncedOps) {
+        if (!this.emittedWorkingStateOpIds.has(op.id)) {
+          this.emittedBaseStateOpIds.add(op.id);
+        }
+      }
+    }
 
     const newIndexValues = new Map<string, Set<string>>();
     for (const indexKey of this.indexers.keys()) {

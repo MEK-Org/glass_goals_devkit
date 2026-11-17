@@ -309,7 +309,7 @@
       "getAllOps": 0,
       "refs": {},
       "watches": {},
-      "cursor": "000000000002500:00000:srv"
+      "cursor": "000000000003000:00000:srv"
     },
     {
       "label": "after restart",
@@ -346,7 +346,7 @@
       "getAllOps": 0,
       "refs": {},
       "watches": {},
-      "cursor": "000000000002500:00000:srv"
+      "cursor": "000000000003000:00000:srv"
     }
   ],
   "exact_op_redelivery": [
