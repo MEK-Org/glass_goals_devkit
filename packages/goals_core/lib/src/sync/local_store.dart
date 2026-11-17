@@ -95,6 +95,7 @@ class MemoryLocalStore extends CachingLocalStore {
 
 class CachingLocalStore implements LocalStore {
   final Map<String, Map<String, dynamic>> _goalOpsIndexCache = {};
+  Future<void> _goalIndexWriteChain = Future<void>.value();
 
   final SyncRepository repo;
 
@@ -228,6 +229,14 @@ class CachingLocalStore implements LocalStore {
 
     for (final goalId in goalIdsToLoad) {
       final entry = entries[goalId];
+      // Prefer an entry indexed while the read was pending; the repository
+      // copy may predate it (matches the TypeScript store).
+      final current = _goalOpsIndexCache[goalId];
+      if (current != null) {
+        final completer = _goalIndexLoadRequests.remove(goalId);
+        completer?.complete(current);
+        continue;
+      }
       if (entry != null) {
         _goalOpsIndexCache[goalId] = entry;
       }
@@ -257,10 +266,28 @@ class CachingLocalStore implements LocalStore {
     }
 
     entry = await _queuedGoalIndexGet(goalId);
+    // Another store may have indexed this goal while the read was pending;
+    // prefer the fresher cached entry over the repository snapshot.
+    final current = _goalOpsIndexCache[goalId];
+    if (current != null) {
+      return current;
+    }
     if (entry != null) {
       _goalOpsIndexCache[goalId] = entry;
     }
     return entry;
+  }
+
+  /// Serializes read-modify-writes of goal index entries (the missing-op
+  /// prune in [loadOpsForGoal] and the merged batch write in [_doOpStorage])
+  /// so a repair can never overwrite references that were indexed after the
+  /// snapshot its read started from (#375).
+  Future<void> _synchronizedGoalIndexWrite(Future<void> Function() action) {
+    final run = _goalIndexWriteChain.then((_) => action());
+    // The chain itself must stay error-free; callers observe the outcome
+    // through [run].
+    _goalIndexWriteChain = run.then<void>((_) {}, onError: (_) {});
+    return run;
   }
 
   Future<Map<String, dynamic>?> _computeNewGoalIndexEntry(
@@ -297,7 +324,7 @@ class CachingLocalStore implements LocalStore {
     required String parentId,
     required String childId,
     required String afterHlc,
-    required Map<String, Map<String, dynamic>> goalIndexEntriesToWrite,
+    required Map<String, Set<String>> addedOpIds,
   }) async {
     final childOps = await loadOpsForGoal(childId);
     final laterSetParentOps = <DeltaOp>[];
@@ -328,7 +355,7 @@ class CachingLocalStore implements LocalStore {
       final newEntry = await _computeNewGoalIndexEntry(parentId, opToIndex);
       if (newEntry != null) {
         _goalOpsIndexCache[parentId] = newEntry;
-        goalIndexEntriesToWrite[parentId] = newEntry;
+        (addedOpIds[parentId] ??= <String>{}).add(opToIndex.id);
       }
     }
   }
@@ -358,7 +385,7 @@ class CachingLocalStore implements LocalStore {
 
   @override
   Future<Iterable<Op>> loadOpsForGoal(String goalId) async {
-    Map<String, dynamic>? cachedEntry = await _getGoalIndexEntry(goalId);
+    final cachedEntry = await _getGoalIndexEntry(goalId);
 
     final indexedOpIds =
         (cachedEntry?["opIds"] as List<dynamic>?)?.cast<String>() ?? [];
@@ -374,28 +401,57 @@ class CachingLocalStore implements LocalStore {
 
     final loadedOps = await Future.wait(ops);
     final result = <Op>[];
-    final validOpIds = <String>[];
-    var hasMissing = false;
+    final missingOpIds = <String>[];
     for (var i = 0; i < loadedOps.length; i++) {
       final op = loadedOps[i];
       if (op == null) {
-        hasMissing = true;
+        missingOpIds.add(indexedOpIds[i]);
       } else {
         result.add(op);
-        validOpIds.add(indexedOpIds[i]);
       }
     }
-    if (hasMissing) {
-      // Only a post-cursor / incomplete-batch op can be missing from
-      // syncedOps while still referenced in goalOpsIndex; prune the dangling
-      // reference so future loads don't repeatedly miss it.
-      final cleanedEntry = {
-        ...?cachedEntry,
-        "opIds": validOpIds,
-      };
+    if (missingOpIds.isEmpty) {
+      return result;
+    }
+
+    // Only a post-cursor / incomplete-batch op can be missing from syncedOps
+    // while still referenced in goalOpsIndex. The read above awaited
+    // repository I/O, though: ops may have been stored and references indexed
+    // while it was pending. Recheck under the index-write lock against the
+    // freshest entry, and prune only references that are still missing, so a
+    // repair can never drop concurrently indexed ops (#375).
+    await _synchronizedGoalIndexWrite(() async {
+      final stillMissing = <String>[];
+      for (final opId in missingOpIds) {
+        var op = _opCache[opId];
+        op ??= (await repo.loadOps([opId])).firstOrNull;
+        if (op == null) {
+          stillMissing.add(opId);
+        } else {
+          _opCache[opId] = op;
+          result.add(op);
+        }
+      }
+      if (stillMissing.isEmpty) {
+        return;
+      }
+      final currentEntry = _goalOpsIndexCache[goalId] ??
+          await repo.loadGoalIndexEntry(goalId);
+      if (currentEntry == null) {
+        return;
+      }
+      final currentOpIds =
+          (currentEntry["opIds"] as List<dynamic>?)?.cast<String>() ?? [];
+      final stillMissingSet = stillMissing.toSet();
+      final prunedOpIds =
+          currentOpIds.where((opId) => !stillMissingSet.contains(opId)).toList();
+      if (prunedOpIds.length == currentOpIds.length) {
+        return;
+      }
+      final cleanedEntry = {...currentEntry, "opIds": prunedOpIds};
       _goalOpsIndexCache[goalId] = cleanedEntry;
       await repo.storeGoalIndexEntry(goalId, cleanedEntry);
-    }
+    });
     return result;
   }
 
@@ -546,7 +602,7 @@ class CachingLocalStore implements LocalStore {
     final sortedOps = ops.toList()
       ..sort((a, b) => a.hlcTimestamp.compareTo(b.hlcTimestamp));
     final stringsToWrite = <String, String>{};
-    final goalIndexEntriesToWrite = <String, Map<String, dynamic>>{};
+    final addedOpIds = <String, Set<String>>{};
     final opsToWrite = <Op>[];
     String? maxHlc;
     for (final op in sortedOps) {
@@ -611,7 +667,7 @@ class CachingLocalStore implements LocalStore {
 
             if (newEntry != null) {
               _goalOpsIndexCache[goalId] = newEntry;
-              goalIndexEntriesToWrite[goalId] = newEntry;
+              (addedOpIds[goalId] ??= <String>{}).add(op.id);
             }
           }
 
@@ -629,7 +685,7 @@ class CachingLocalStore implements LocalStore {
               parentId: introducedParentId,
               childId: op.delta.id,
               afterHlc: op.hlcTimestamp,
-              goalIndexEntriesToWrite: goalIndexEntriesToWrite,
+              addedOpIds: addedOpIds,
             );
           }
         case EnableOp(opId: final opId) || DisableOp(opId: final opId):
@@ -653,7 +709,7 @@ class CachingLocalStore implements LocalStore {
 
             if (newEntry != null) {
               _goalOpsIndexCache[goalId] = newEntry;
-              goalIndexEntriesToWrite[goalId] = newEntry;
+              (addedOpIds[goalId] ??= <String>{}).add(op.id);
             }
           }
           opLogger.fine("op is Enable/Disable Op, indexing");
@@ -662,7 +718,37 @@ class CachingLocalStore implements LocalStore {
       }
     }
 
-    await repo.storeGoalIndexEntries(goalIndexEntriesToWrite);
+    if (addedOpIds.isNotEmpty) {
+      // Merge into the durable entries under the index-write lock: the
+      // computed entries were read before any awaited repository call, and a
+      // concurrent loadOpsForGoal prune may have repaired the stored entry
+      // since. Re-reading the durable entry and adding only this batch's op
+      // ids keeps the repair intact instead of overwriting it with a stale
+      // snapshot (#375).
+      await _synchronizedGoalIndexWrite(() async {
+        final entriesToWrite = <String, Map<String, dynamic>>{};
+        for (final addedEntry in addedOpIds.entries) {
+          final goalId = addedEntry.key;
+          final durableEntry = await repo.loadGoalIndexEntry(goalId);
+          final durableOpIds =
+              (durableEntry?["opIds"] as List<dynamic>?)?.cast<String>() ?? [];
+          final mergedOpIds = [...durableOpIds];
+          for (final opId in addedEntry.value) {
+            if (!mergedOpIds.contains(opId)) {
+              mergedOpIds.add(opId);
+            }
+          }
+          final mergedEntry = {...?durableEntry, "opIds": mergedOpIds};
+          _goalOpsIndexCache[goalId] = mergedEntry;
+          if (mergedOpIds.length != durableOpIds.length) {
+            entriesToWrite[goalId] = mergedEntry;
+          }
+        }
+        if (entriesToWrite.isNotEmpty) {
+          await repo.storeGoalIndexEntries(entriesToWrite);
+        }
+      });
+    }
 
     // Only now that the ops are stored and indexed does the cursor cover
     // them; a stop before this point pulls them again on restart (#42).

@@ -182,6 +182,16 @@ export class CachingLocalStore implements LocalStore {
     string,
     Deferred<GoalIndexEntry | null>
   >();
+  private goalIndexWriteChain: Promise<void> = Promise.resolve();
+
+  private synchronizedGoalIndexWrite(action: () => Promise<void>): Promise<void> {
+    const run = this.goalIndexWriteChain.then(action, action);
+    this.goalIndexWriteChain = run.then(
+      () => {},
+      () => {},
+    );
+    return run;
+  }
 
   constructor(readonly repo: SyncRepository) {}
 
@@ -355,7 +365,7 @@ export class CachingLocalStore implements LocalStore {
     parentId: string,
     childId: string,
     afterHlc: string,
-    goalIndexEntriesToWrite: Map<string, GoalIndexEntry>,
+    addedOpIds: Map<string, Set<string>>,
   ): Promise<void> {
     const childOps = await this.loadOpsForGoal(childId);
     const laterSetParentOps = childOps.filter(
@@ -383,7 +393,12 @@ export class CachingLocalStore implements LocalStore {
       const newEntry = await this.computeNewGoalIndexEntry(parentId, opToIndex);
       if (newEntry) {
         this.goalOpsIndexCache.set(parentId, newEntry);
-        goalIndexEntriesToWrite.set(parentId, newEntry);
+        let ids = addedOpIds.get(parentId);
+        if (ids == null) {
+          ids = new Set();
+          addedOpIds.set(parentId, ids);
+        }
+        ids.add(opToIndex.id);
       }
     }
   }
@@ -415,28 +430,50 @@ export class CachingLocalStore implements LocalStore {
       indexedOpIds.map((opId) => this.getOp(opId)),
     );
     const result: AnyOp[] = [];
-    const validOpIds: string[] = [];
-    let hasMissing = false;
+    const missingOpIds: string[] = [];
     for (let i = 0; i < loadedOps.length; i++) {
       const op = loadedOps[i];
       if (op == null) {
-        hasMissing = true;
+        missingOpIds.push(indexedOpIds[i]!);
       } else {
         result.push(op);
-        validOpIds.push(indexedOpIds[i]!);
       }
     }
-    if (hasMissing) {
-      // Only a post-cursor / incomplete-batch op can be missing from
-      // syncedOps while still referenced in goalOpsIndex; prune the dangling
-      // reference so future loads don't repeatedly miss it.
-      const cleanedEntry = {
-        ...entry,
-        opIds: validOpIds,
-      };
+    if (missingOpIds.length === 0) {
+      return result;
+    }
+    await this.synchronizedGoalIndexWrite(async () => {
+      const stillMissing: string[] = [];
+      for (const opId of missingOpIds) {
+        let op = this.opCache.get(opId) ?? null;
+        if (op == null) {
+          op = (await this.repo.loadOps([opId]))[0] ?? null;
+        }
+        if (op == null) {
+          stillMissing.push(opId);
+        } else {
+          this.opCache.set(opId, op);
+          result.push(op);
+        }
+      }
+      if (stillMissing.length === 0) {
+        return;
+      }
+      const currentEntry =
+        this.goalOpsIndexCache.get(goalId) ??
+        (await this.repo.loadGoalIndexEntry(goalId));
+      if (currentEntry == null) {
+        return;
+      }
+      const missing = new Set(stillMissing);
+      const prunedOpIds = currentEntry.opIds.filter((id) => !missing.has(id));
+      if (prunedOpIds.length === currentEntry.opIds.length) {
+        return;
+      }
+      const cleanedEntry = { ...currentEntry, opIds: prunedOpIds };
       this.goalOpsIndexCache.set(goalId, cleanedEntry);
       await this.repo.storeGoalIndexEntry(goalId, cleanedEntry);
-    }
+    });
     return result;
   }
 
@@ -566,7 +603,7 @@ export class CachingLocalStore implements LocalStore {
   private async doOpStorage(ops: AnyOp[]): Promise<void> {
     const sortedOps = [...ops].sort(byHlc);
     const stringsToWrite = new Map<string, string>();
-    const goalIndexEntriesToWrite = new Map<string, GoalIndexEntry>();
+    const addedOpIds = new Map<string, Set<string>>();
     const opsToWrite: AnyOp[] = [];
     let maxHlc: string | null = null;
     for (const op of sortedOps) {
@@ -615,7 +652,12 @@ export class CachingLocalStore implements LocalStore {
           const newEntry = await this.computeNewGoalIndexEntry(goalId, op);
           if (newEntry) {
             this.goalOpsIndexCache.set(goalId, newEntry);
-            goalIndexEntriesToWrite.set(goalId, newEntry);
+            let ids = addedOpIds.get(goalId);
+            if (ids == null) {
+              ids = new Set();
+              addedOpIds.set(goalId, ids);
+            }
+            ids.add(op.id);
           }
         }
 
@@ -632,7 +674,7 @@ export class CachingLocalStore implements LocalStore {
             introducedParentId,
             op.delta.id,
             op.hlcTimestamp,
-            goalIndexEntriesToWrite,
+            addedOpIds,
           );
         }
       } else if (isEnableOp(op) || isDisableOp(op)) {
@@ -650,13 +692,43 @@ export class CachingLocalStore implements LocalStore {
           const newEntry = await this.computeNewGoalIndexEntry(goalId, op);
           if (newEntry) {
             this.goalOpsIndexCache.set(goalId, newEntry);
-            goalIndexEntriesToWrite.set(goalId, newEntry);
+            let ids = addedOpIds.get(goalId);
+            if (ids == null) {
+              ids = new Set();
+              addedOpIds.set(goalId, ids);
+            }
+            ids.add(op.id);
           }
         }
       }
     }
 
-    await this.repo.storeGoalIndexEntries(goalIndexEntriesToWrite);
+    if (addedOpIds.size > 0) {
+      await this.synchronizedGoalIndexWrite(async () => {
+        const entriesToWrite = new Map<string, GoalIndexEntry>();
+        for (const [goalId, ids] of addedOpIds) {
+          const durableEntry = await this.repo.loadGoalIndexEntry(goalId);
+          const durableOpIds = durableEntry?.opIds ?? [];
+          const mergedOpIds = [...durableOpIds];
+          for (const opId of ids) {
+            if (!mergedOpIds.includes(opId)) {
+              mergedOpIds.push(opId);
+            }
+          }
+          const mergedEntry: GoalIndexEntry = {
+            ...durableEntry,
+            opIds: mergedOpIds,
+          };
+          this.goalOpsIndexCache.set(goalId, mergedEntry);
+          if (mergedOpIds.length !== durableOpIds.length) {
+            entriesToWrite.set(goalId, mergedEntry);
+          }
+        }
+        if (entriesToWrite.size > 0) {
+          await this.repo.storeGoalIndexEntries(entriesToWrite);
+        }
+      });
+    }
 
     // Only now that the ops are stored and indexed does the cursor cover
     // them; a stop before this point pulls them again on restart (#42).
