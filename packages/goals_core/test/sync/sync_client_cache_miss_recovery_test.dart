@@ -238,20 +238,21 @@ void main() {
     });
 
     test(
-        'recovers from missing historical op in syncedOps, increments fullSyncCount, preserves unsyncedOps (offline save)',
+        'prunes dangling opId reference in goalOpsIndex without full resync, preserves unsyncedOps, and loads multi-batch ops',
         () async {
       final corpus = _buildIncidentCorpus();
       final repo = MemorySyncRepository()
         ..clientId = 'SVB5'
         ..cursor = _crashCursor;
-      // Store only op_import_root; drop op_cZo_old from syncedOps while
-      // goalOpsIndex['cZoLug5RNb1VQA'] still references it.
-      await repo.storeSyncedOps([corpus[0], corpus[2]]);
+      // Pre-cursor ops were stored in syncedOps, but a dangling post-cursor
+      // opId (op_dangling_post_cursor) was left in goalOpsIndex for
+      // _corruptedGoalId without its op in syncedOps.
+      await repo.storeSyncedOps(corpus.take(3));
       await repo.storeGoalIndexEntry(_parentImportId, {
         'opIds': ['op_import_root', 'op_cZo_parent'],
       });
       await repo.storeGoalIndexEntry(_corruptedGoalId, {
-        'opIds': ['op_cZo_old', 'op_cZo_parent'],
+        'opIds': ['op_cZo_old', 'op_cZo_parent', 'op_dangling_post_cursor'],
       });
       await repo.setIndexGoalIds('rootGoals', {_parentImportId});
 
@@ -278,7 +279,9 @@ void main() {
       await client.loadGoal(_mauetCh9Id);
       await client.loadGoal(_rootTestGoalId);
 
-      expect(client.fullSyncCount, 1);
+      // Must NOT wipe cache or issue a full rescan from cursor == null.
+      expect(client.fullSyncCount, 0);
+      expect(server.loadCursors, isNot(contains(null)));
       expect(localStore.clientId, 'SVB5');
       expect(localStore.getAckedOpIds(), contains('acked_unreceived_id'));
       expect(
@@ -286,7 +289,11 @@ void main() {
         equals(['op_local_pending']),
       );
       expect(await localStore.loadString('local-note-1'), 'Unsynced local note');
-      expect(server.loadCursors, contains(null));
+      final repairedIndex = await repo.loadGoalIndexEntry(_corruptedGoalId);
+      expect(
+        repairedIndex?['opIds'],
+        isNot(contains('op_dangling_post_cursor')),
+      );
       expect(client.stateSubject.value[_corruptedGoalId]?.text,
           'V - LICENSING FOR AI TRAINING');
       expect(client.stateSubject.value[_mauetCh9Id]?.text,
@@ -296,64 +303,19 @@ void main() {
     });
 
     test(
-        'recovers from missing historical op and still pushes preserved unsyncedOps when online',
-        () async {
-      final corpus = _buildIncidentCorpus();
-      final repo = MemorySyncRepository()
-        ..clientId = 'SVB5'
-        ..cursor = _crashCursor;
-      await repo.storeSyncedOps([corpus[0]]);
-      await repo.storeGoalIndexEntry(_corruptedGoalId, {
-        'opIds': ['op_cZo_old', 'op_cZo_parent'],
-      });
-      await repo.setIndexGoalIds('rootGoals', {_parentImportId});
-
-      final pendingEdit = _titleOp(
-        'op_local_pending',
-        '001794930990000:00001:SVB5',
-        'localPendingGoal',
-        'Local Pending Title',
-      );
-      final localStore = CachingLocalStore(repo: repo);
-      await localStore.setUnsyncedOps([pendingEdit]);
-
-      final server = _AppendServer(initialOps: corpus);
-      final client = SyncClient(
-        persistenceService: server,
-        localStore: localStore,
-      );
-
-      await client.init();
-      await client.loadGoal(_corruptedGoalId);
-      await client.loadGoal(_mauetCh9Id);
-      await client.loadGoal(_rootTestGoalId);
-
-      expect(client.fullSyncCount, 1);
-      expect(
-        server.committed.map((op) => op.id),
-        contains('op_local_pending'),
-      );
-      expect(client.stateSubject.value['localPendingGoal']?.text,
-          'Local Pending Title');
-      expect(client.stateSubject.value[_rootTestGoalId]?.text,
-          'Sync test — November 17, 17:19 UTC');
-    });
-
-    test(
-        'recovers when CacheMissException occurs on loadGoal after quiet pull and coalesces concurrent loads',
+        'prunes dangling opId references on concurrent loadGoal after quiet pull without full resync',
         () async {
       final corpus = _buildIncidentCorpus();
       final latestCursor = corpus.last.hlcTimestamp;
       final repo = MemorySyncRepository()
         ..clientId = 'SVB5'
         ..cursor = latestCursor;
-      // Corrupt both corruptedGoalId and mauetCh9Id while cursor is at tip so
-      // _pull() returns 0 ops during init().
+      await repo.storeSyncedOps([corpus[1], corpus[corpus.length - 2]]);
       await repo.storeGoalIndexEntry(_corruptedGoalId, {
-        'opIds': ['op_cZo_old'],
+        'opIds': ['op_cZo_old', 'op_dangling_missing'],
       });
       await repo.storeGoalIndexEntry(_mauetCh9Id, {
-        'opIds': ['op_mauet_ch9'],
+        'opIds': ['op_mauet_ch9', 'op_mauet_dangling'],
       });
       await repo.setIndexGoalIds('rootGoals', {_parentImportId});
 
@@ -366,8 +328,7 @@ void main() {
       final localStore = CachingLocalStore(repo: repo);
       await localStore.setUnsyncedOps([pendingEdit]);
 
-      final server = _AppendServer(initialOps: corpus)
-        ..failSave = true;
+      final server = _AppendServer(initialOps: corpus)..failSave = true;
       final client = SyncClient(
         persistenceService: server,
         localStore: localStore,
@@ -379,9 +340,18 @@ void main() {
         client.loadGoal(_mauetCh9Id),
       ]);
 
-      expect(client.fullSyncCount, 1);
+      expect(client.fullSyncCount, 0);
+      expect(server.loadCursors, isNot(contains(null)));
       expect(results[0]?.text, 'V - LICENSING FOR AI TRAINING');
       expect(results[1]?.text, 'Chapter 9 — Closing Arguments');
+      expect(
+        (await repo.loadGoalIndexEntry(_corruptedGoalId))?['opIds'],
+        equals(['op_cZo_old']),
+      );
+      expect(
+        (await repo.loadGoalIndexEntry(_mauetCh9Id))?['opIds'],
+        equals(['op_mauet_ch9']),
+      );
       expect(
         localStore.getUnsyncedOps().map((op) => op.id),
         equals(['op_local_pending']),

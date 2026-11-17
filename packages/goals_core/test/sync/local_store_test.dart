@@ -144,63 +144,60 @@ void main() {
     });
 
     test(
-        'resetSyncedCache clears synced cache and cursor while preserving unsyncedOps, ackedOpIds, clientId, fullSyncCount, and unsynced strings',
+        'loadOpsForGoal prunes dangling opId references from goalOpsIndex and returns remaining valid ops',
         () async {
-      final repo = MemorySyncRepository()
-        ..clientId = 'SVB5'
-        ..version = 2;
+      final repo = MemorySyncRepository()..clientId = 'SVB5';
       final store = CachingLocalStore(repo: repo);
-      final syncedOp = DeltaOp(
-        id: 'op_synced',
+      final op1 = DeltaOp(
+        id: 'op_1',
         hlcTimestamp: '001794930562329:00001:SVB5',
         delta: GoalDelta(
-          id: 'goal_synced',
-          text: 'Synced Goal',
-          logEntry: NoteLogEntry(
-            id: 'note_synced',
-            creationTime: DateTime.utc(2026, 11, 17),
-            text: 'Synced note',
-          ),
+          id: 'goal_1',
+          text: 'Goal One',
         ),
       );
-      await store.storeSyncedOps([syncedOp]);
-      await store.settled();
-      store.setIndexGoalIds('rootGoals', {'goal_synced'});
-      await store.setSearchIndex('goalNamesIndex', '{"synced goal":"goal_synced"}');
-      store.lastSyncTime = DateTime.utc(2026, 11, 17);
-      store.incrementFullSyncCount();
-
-      final unsyncedOp = DeltaOp(
-        id: 'op_unsynced',
-        hlcTimestamp: '001794930990000:00001:SVB5',
+      final op2 = DeltaOp(
+        id: 'op_2',
+        hlcTimestamp: '001794930562330:00001:SVB5',
         delta: GoalDelta(
-          id: 'goal_unsynced',
+          id: 'goal_1',
           logEntry: NoteLogEntry(
-            id: 'note_unsynced',
+            id: 'note_1',
             creationTime: DateTime.utc(2026, 11, 17),
-            text: 'Unsynced note',
+            text: 'Valid note',
           ),
         ),
       );
-      await store.setUnsyncedOps([unsyncedOp]);
-      await store.setAckedOpIds(['op_unsynced']);
+      await store.storeSyncedOps([op1, op2]);
+      await store.settled();
 
-      await store.resetSyncedCache();
+      // Simulate an incomplete-batch dangling opId left in goalOpsIndex.
+      await repo.storeGoalIndexEntry('goal_1', {
+        'opIds': ['op_1', 'op_missing_dangling', 'op_2'],
+      });
+      await repo.storeGoalIndexEntry('goal_only_missing', {
+        'opIds': ['op_never_written'],
+      });
+      store.clearCaches();
 
-      expect(store.cursor, isNull);
-      expect(store.lastSyncTime, isNull);
-      expect(await store.loadOpsForGoal('goal_synced'), isEmpty);
-      expect(await repo.loadOps(['op_synced']), [isNull]);
-      expect(await store.loadString('note_synced'), isNull);
-      expect(store.getIndexGoalIds('rootGoals'), isEmpty);
-      expect(await store.loadSearchIndex('goalNamesIndex'), isNull);
+      final loaded = (await store.loadOpsForGoal('goal_1')).toList();
+      expect(loaded.map((op) => op.id), ['op_1', 'op_2']);
+      final cleanedEntry = await repo.loadGoalIndexEntry('goal_1');
+      expect(cleanedEntry?['opIds'], ['op_1', 'op_2']);
 
-      expect(store.clientId, 'SVB5');
-      expect(repo.version, 2);
-      expect(store.fullSyncCount, 1);
-      expect(store.getUnsyncedOps().map((op) => op.id), ['op_unsynced']);
-      expect(store.getAckedOpIds(), {'op_unsynced'});
-      expect(await store.loadString('note_unsynced'), 'Unsynced note');
+      // Second read hits the pruned index cleanly (even from a fresh store).
+      final reopened = CachingLocalStore(repo: repo);
+      expect(
+        (await reopened.loadOpsForGoal('goal_1')).map((op) => op.id),
+        ['op_1', 'op_2'],
+      );
+
+      // All-missing goal returns [] and prunes opIds to [].
+      expect(await reopened.loadOpsForGoal('goal_only_missing'), isEmpty);
+      expect(
+        (await repo.loadGoalIndexEntry('goal_only_missing'))?['opIds'],
+        isEmpty,
+      );
     });
   });
 }

@@ -261,17 +261,17 @@ describe("Issue #375 CacheMissException recovery", () => {
     );
   });
 
-  it("recovers from missing historical op in syncedOps, increments fullSyncCount, preserves unsyncedOps (offline save)", async () => {
+  it("prunes dangling opId reference in goalOpsIndex without full resync, preserves unsyncedOps, and loads multi-batch ops", async () => {
     const corpus = buildIncidentCorpus();
     const repo = new MemorySyncRepository();
     repo.clientId = "SVB5";
     repo.cursor = CRASH_CURSOR;
-    await repo.storeSyncedOps([corpus[0], corpus[2]]);
+    await repo.storeSyncedOps(corpus.slice(0, 3));
     await repo.storeGoalIndexEntry(PARENT_IMPORT_ID, {
       opIds: ["op_import_root", "op_cZo_parent"],
     });
     await repo.storeGoalIndexEntry(CORRUPTED_GOAL_ID, {
-      opIds: ["op_cZo_old", "op_cZo_parent"],
+      opIds: ["op_cZo_old", "op_cZo_parent", "op_dangling_post_cursor"],
     });
     await repo.setIndexGoalIds("rootGoals", new Set([PARENT_IMPORT_ID]));
 
@@ -296,7 +296,8 @@ describe("Issue #375 CacheMissException recovery", () => {
     await client.loadGoal(MAUET_CH9_ID);
     await client.loadGoal(ROOT_TEST_GOAL_ID);
 
-    expect(client.fullSyncCount).toBe(1);
+    expect(client.fullSyncCount).toBe(0);
+    expect(server.loadCursors).not.toContain(null);
     expect(localStore.clientId).toBe("SVB5");
     expect(localStore.getAckedOpIds().has("acked_unreceived_id")).toBe(true);
     expect(localStore.getUnsyncedOps().map((op) => op.id)).toEqual([
@@ -305,7 +306,8 @@ describe("Issue #375 CacheMissException recovery", () => {
     expect(await localStore.loadString("local-note-1")).toBe(
       "Unsynced local note",
     );
-    expect(server.loadCursors).toContain(null);
+    const repairedIndex = await repo.loadGoalIndexEntry(CORRUPTED_GOAL_ID);
+    expect(repairedIndex?.opIds).not.toContain("op_dangling_post_cursor");
     expect(client.stateSubject.value.get(CORRUPTED_GOAL_ID)?.text).toBe(
       "V - LICENSING FOR AI TRAINING",
     );
@@ -317,55 +319,18 @@ describe("Issue #375 CacheMissException recovery", () => {
     );
   });
 
-  it("recovers from missing historical op and pushes preserved unsyncedOps when online", async () => {
-    const corpus = buildIncidentCorpus();
-    const repo = new MemorySyncRepository();
-    repo.clientId = "SVB5";
-    repo.cursor = CRASH_CURSOR;
-    await repo.storeSyncedOps([corpus[0]]);
-    await repo.storeGoalIndexEntry(CORRUPTED_GOAL_ID, {
-      opIds: ["op_cZo_old", "op_cZo_parent"],
-    });
-    await repo.setIndexGoalIds("rootGoals", new Set([PARENT_IMPORT_ID]));
-
-    const pendingEdit = titleOp(
-      "op_local_pending",
-      "001794930990000:00001:SVB5",
-      "localPendingGoal",
-      "Local Pending Title",
-    );
-    const localStore = new CachingLocalStore(repo);
-    await localStore.setUnsyncedOps([pendingEdit]);
-
-    const server = new AppendServer(corpus);
-    const client = new SyncClient(server, localStore, { onError: () => {} });
-
-    await client.init();
-    await client.loadGoal(CORRUPTED_GOAL_ID);
-    await client.loadGoal(MAUET_CH9_ID);
-    await client.loadGoal(ROOT_TEST_GOAL_ID);
-
-    expect(client.fullSyncCount).toBe(1);
-    expect(server.committed.map((op) => op.id)).toContain("op_local_pending");
-    expect(client.stateSubject.value.get("localPendingGoal")?.text).toBe(
-      "Local Pending Title",
-    );
-    expect(client.stateSubject.value.get(ROOT_TEST_GOAL_ID)?.text).toBe(
-      "Sync test — November 17, 17:19 UTC",
-    );
-  });
-
-  it("recovers when CacheMissException occurs on loadGoal after quiet pull and coalesces concurrent loads", async () => {
+  it("prunes dangling opId references on concurrent loadGoal after quiet pull without full resync", async () => {
     const corpus = buildIncidentCorpus();
     const latestCursor = corpus[corpus.length - 1].hlcTimestamp;
     const repo = new MemorySyncRepository();
     repo.clientId = "SVB5";
     repo.cursor = latestCursor;
+    await repo.storeSyncedOps([corpus[1], corpus[corpus.length - 2]]);
     await repo.storeGoalIndexEntry(CORRUPTED_GOAL_ID, {
-      opIds: ["op_cZo_old"],
+      opIds: ["op_cZo_old", "op_dangling_missing"],
     });
     await repo.storeGoalIndexEntry(MAUET_CH9_ID, {
-      opIds: ["op_mauet_ch9"],
+      opIds: ["op_mauet_ch9", "op_mauet_dangling"],
     });
     await repo.setIndexGoalIds("rootGoals", new Set([PARENT_IMPORT_ID]));
 
@@ -388,9 +353,16 @@ describe("Issue #375 CacheMissException recovery", () => {
       client.loadGoal(MAUET_CH9_ID),
     ]);
 
-    expect(client.fullSyncCount).toBe(1);
+    expect(client.fullSyncCount).toBe(0);
+    expect(server.loadCursors).not.toContain(null);
     expect(results[0]?.text).toBe("V - LICENSING FOR AI TRAINING");
     expect(results[1]?.text).toBe("Chapter 9 — Closing Arguments");
+    expect((await repo.loadGoalIndexEntry(CORRUPTED_GOAL_ID))?.opIds).toEqual([
+      "op_cZo_old",
+    ]);
+    expect((await repo.loadGoalIndexEntry(MAUET_CH9_ID))?.opIds).toEqual([
+      "op_mauet_ch9",
+    ]);
     expect(localStore.getUnsyncedOps().map((op) => op.id)).toEqual([
       "op_local_pending",
     ]);

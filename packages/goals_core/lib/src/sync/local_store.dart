@@ -69,8 +69,6 @@ abstract class LocalStore {
   Future<String?> loadString(String key);
   Future<void> setString(String key, String value);
 
-  Future<void> resetSyncedCache();
-
   Future<void> clear();
 
   Future<Iterable<Op>> loadOpsForGoal(String goalId);
@@ -374,13 +372,29 @@ class CachingLocalStore implements LocalStore {
       ops.add(_getOp(opId));
     }
 
+    final loadedOps = await Future.wait(ops);
     final result = <Op>[];
-    for (final op in await Future.wait(ops)) {
+    final validOpIds = <String>[];
+    var hasMissing = false;
+    for (var i = 0; i < loadedOps.length; i++) {
+      final op = loadedOps[i];
       if (op == null) {
-        throw CacheMissException(
-            'Op not found in cache or repo for goal $goalId');
+        hasMissing = true;
+      } else {
+        result.add(op);
+        validOpIds.add(indexedOpIds[i]);
       }
-      result.add(op);
+    }
+    if (hasMissing) {
+      // Only a post-cursor / incomplete-batch op can be missing from
+      // syncedOps while still referenced in goalOpsIndex; prune the dangling
+      // reference so future loads don't repeatedly miss it.
+      final cleanedEntry = {
+        ...?cachedEntry,
+        "opIds": validOpIds,
+      };
+      _goalOpsIndexCache[goalId] = cleanedEntry;
+      await repo.storeGoalIndexEntry(goalId, cleanedEntry);
     }
     return result;
   }
@@ -656,32 +670,6 @@ class CachingLocalStore implements LocalStore {
     if (maxHlc != null &&
         (repo.cursor == null || maxHlc.comesAfter(repo.cursor!))) {
       repo.cursor = maxHlc;
-    }
-  }
-
-  @override
-  Future<void> resetSyncedCache() async {
-    if (_opStorageQueue.remainingItemCount > 0) {
-      try {
-        await _opStorageQueue.onComplete;
-      } catch (_) {}
-    }
-    final unsyncedOps = repo.getUnsyncedOps();
-    await repo.clearSyncedCache();
-    clearCaches();
-
-    final unsyncedStrings = <String, String>{};
-    for (final op in unsyncedOps) {
-      if (op is DeltaOp) {
-        final entry = op.delta.logEntry;
-        if (entry is TextGoalLogEntry && entry.text != null) {
-          _stringCache[entry.id] = entry.text!;
-          unsyncedStrings[entry.id] = entry.text!;
-        }
-      }
-    }
-    if (unsyncedStrings.isNotEmpty) {
-      await repo.storeStrings(unsyncedStrings);
     }
   }
 

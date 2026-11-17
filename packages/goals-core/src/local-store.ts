@@ -69,8 +69,6 @@ export interface LocalStore {
   loadString(key: string): Promise<string | null>;
   setString(key: string, value: string): Promise<void>;
 
-  resetSyncedCache(): Promise<void>;
-
   clear(): Promise<void>;
 
   loadOpsForGoal(goalId: string): Promise<AnyOp[]>;
@@ -413,15 +411,33 @@ export class CachingLocalStore implements LocalStore {
     if (indexedOpIds.length === 0) {
       return [];
     }
-    const ops = await Promise.all(indexedOpIds.map((opId) => this.getOp(opId)));
-    for (const op of ops) {
+    const loadedOps = await Promise.all(
+      indexedOpIds.map((opId) => this.getOp(opId)),
+    );
+    const result: AnyOp[] = [];
+    const validOpIds: string[] = [];
+    let hasMissing = false;
+    for (let i = 0; i < loadedOps.length; i++) {
+      const op = loadedOps[i];
       if (op == null) {
-        throw new CacheMissException(
-          `Op not found in cache or repo for goal ${goalId}`,
-        );
+        hasMissing = true;
+      } else {
+        result.push(op);
+        validOpIds.push(indexedOpIds[i]!);
       }
     }
-    return ops as AnyOp[];
+    if (hasMissing) {
+      // Only a post-cursor / incomplete-batch op can be missing from
+      // syncedOps while still referenced in goalOpsIndex; prune the dangling
+      // reference so future loads don't repeatedly miss it.
+      const cleanedEntry = {
+        ...entry,
+        opIds: validOpIds,
+      };
+      this.goalOpsIndexCache.set(goalId, cleanedEntry);
+      await this.repo.storeGoalIndexEntry(goalId, cleanedEntry);
+    }
+    return result;
   }
 
   private async getOpBatch(): Promise<void> {
@@ -650,27 +666,6 @@ export class CachingLocalStore implements LocalStore {
       (this.repo.cursor == null || compareHlc(maxHlc, this.repo.cursor) > 0)
     ) {
       this.repo.cursor = maxHlc;
-    }
-  }
-
-  async resetSyncedCache(): Promise<void> {
-    if (this.pendingStorage > 0) {
-      await this.opStorageQueue;
-    }
-    const unsyncedOps = this.repo.getUnsyncedOps();
-    await this.repo.clearSyncedCache();
-    this.clearCaches();
-
-    const unsyncedStrings = new Map<string, string>();
-    for (const op of unsyncedOps) {
-      const text = extractEntryTextField(op);
-      if (text) {
-        this.stringCache.put(text.entryId, text.text);
-        unsyncedStrings.set(text.entryId, text.text);
-      }
-    }
-    if (unsyncedStrings.size > 0) {
-      await this.repo.storeStrings(unsyncedStrings);
     }
   }
 

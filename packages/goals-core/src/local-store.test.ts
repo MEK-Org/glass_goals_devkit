@@ -192,71 +192,67 @@ describe("CachingLocalStore.settled", () => {
   });
 });
 
-describe("CachingLocalStore.resetSyncedCache", () => {
-  it("clears synced cache and cursor while preserving unsynced state", async () => {
+describe("CachingLocalStore.loadOpsForGoal pruning", () => {
+  it("prunes dangling opId references from goalOpsIndex and returns remaining valid ops", async () => {
     const repo = new RecordingRepository();
     repo.clientId = "SVB5";
-    repo.version = 2;
     const store = new CachingLocalStore(repo);
-    const syncedOp: DeltaOp = {
-      id: "op_synced",
+    const op1: DeltaOp = {
+      id: "op_1",
       hlcTimestamp: "001794930562329:00001:SVB5",
       version: 6,
       type: "delta",
       delta: {
-        id: "goal_synced",
-        text: "Synced Goal",
-        logEntry: {
-          type: "note",
-          id: "note_synced",
-          creationTime: 1794930562329,
-          text: "Synced note",
-        },
+        id: "goal_1",
+        text: "Goal One",
       },
     };
-    await store.storeSyncedOps([syncedOp]);
-    await store.settled();
-    store.setIndexGoalIds("rootGoals", new Set(["goal_synced"]));
-    await store.setSearchIndex(
-      "goalNamesIndex",
-      JSON.stringify({ "synced goal": "goal_synced" }),
-    );
-    store.lastSyncTime = new Date(1794930562329);
-    store.incrementFullSyncCount();
-
-    const unsyncedOp: DeltaOp = {
-      id: "op_unsynced",
-      hlcTimestamp: "001794930990000:00001:SVB5",
+    const op2: DeltaOp = {
+      id: "op_2",
+      hlcTimestamp: "001794930562330:00001:SVB5",
       version: 6,
       type: "delta",
       delta: {
-        id: "goal_unsynced",
+        id: "goal_1",
         logEntry: {
           type: "note",
-          id: "note_unsynced",
-          creationTime: 1794930990000,
-          text: "Unsynced note",
+          id: "note_1",
+          creationTime: 1794930562330,
+          text: "Valid note",
         },
       },
     };
-    await store.setUnsyncedOps([unsyncedOp]);
-    await store.setAckedOpIds(["op_unsynced"]);
+    await store.storeSyncedOps([op1, op2]);
+    await store.settled();
 
-    await store.resetSyncedCache();
+    await repo.storeGoalIndexEntry("goal_1", {
+      opIds: ["op_1", "op_missing_dangling", "op_2"],
+    });
+    await repo.storeGoalIndexEntry("goal_only_missing", {
+      opIds: ["op_never_written"],
+    });
+    store.clearCaches();
 
-    expect(store.cursor).toBeNull();
-    expect(store.lastSyncTime).toBeNull();
-    expect(await store.loadOpsForGoal("goal_synced")).toEqual([]);
-    expect(await repo.loadOps(["op_synced"])).toEqual([null]);
-    expect(await store.loadString("note_synced")).toBeNull();
-    expect([...store.getIndexGoalIds("rootGoals")]).toEqual([]);
-    expect(await store.loadSearchIndex("goalNamesIndex")).toBeNull();
+    const loaded = await store.loadOpsForGoal("goal_1");
+    expect(loaded.map((op) => op.id)).toEqual(["op_1", "op_2"]);
+    expect((await repo.loadGoalIndexEntry("goal_1"))?.opIds).toEqual([
+      "op_1",
+      "op_2",
+    ]);
 
-    expect(store.clientId).toBe("SVB5");
-    expect(repo.version).toBe(2);
-    expect(store.fullSyncCount).toBe(1);
-    expect(store.getUnsyncedOps().map((op) => op.id)).toEqual(["op_unsynced"]);
-    expect([...store.getAckedOpIds()]).toEqual(["op_unsynced"]);
-    expect(await store.loadString("note_unsynced")).toBe("Unsynced note");
+    const readsBeforeReopen = repo.opReads.length;
+    const reopened = new CachingLocalStore(repo);
+    expect((await reopened.loadOpsForGoal("goal_1")).map((op) => op.id)).toEqual([
+      "op_1",
+      "op_2",
+    ]);
+    expect(repo.opReads.slice(readsBeforeReopen).flat()).not.toContain(
+      "op_missing_dangling",
+    );
+
+    expect(await reopened.loadOpsForGoal("goal_only_missing")).toEqual([]);
+    expect(
+      (await repo.loadGoalIndexEntry("goal_only_missing"))?.opIds,
+    ).toEqual([]);
   });
 });

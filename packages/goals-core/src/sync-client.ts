@@ -13,7 +13,6 @@ import { Cupid } from "./cupid";
 import { GoalSubjectRegistry } from "./goal-subject-registry";
 import { HLC } from "./hlc";
 import {
-  CacheMissException,
   CachingLocalStore,
   LocalStore,
   MemoryLocalStore,
@@ -110,8 +109,6 @@ export class SyncClient {
   private goalNamesIndex = new Map<string, string>();
   private unsubscribePersistence: (() => void) | null = null;
   private readonly onError: (error: unknown) => void;
-  private recoveryEpoch = 0;
-  private recoveryPromise: Promise<void> | null = null;
 
   constructor(
     readonly persistenceService: PersistenceService | null = null,
@@ -159,15 +156,7 @@ export class SyncClient {
     for (const op of ops) {
       this.workingOps.set(op.id, op);
     }
-    try {
-      await this.persistOps(ops);
-    } catch (error) {
-      if (error instanceof CacheMissException) {
-        await this.recoverAndResync();
-        return;
-      }
-      throw error;
-    }
+    await this.persistOps(ops);
     const affectedIds = await this.computeAffectedGoalIds(ops);
     this.computeAndEmitUnsyncedState("remote ops received", affectedIds);
   }
@@ -905,7 +894,7 @@ export class SyncClient {
           continue;
         }
         this.goalLoadState.set(goalId, GoalLoadState.loading);
-        loads.push(this.loadGoalInternal(goalId, false));
+        loads.push(this.loadGoal(goalId));
       }
       const results = await Promise.allSettled(loads);
       for (const result of results) {
@@ -988,19 +977,10 @@ export class SyncClient {
    * already loaded. Returns the goal, or null if the store has no ops for it.
    */
   async loadGoal(goalId: string): Promise<Goal | null> {
-    return this.loadGoalInternal(goalId, true);
-  }
-
-  private async loadGoalInternal(
-    goalId: string,
-    recoverOnCacheMiss: boolean,
-  ): Promise<Goal | null> {
     if (this.goalLoadState.get(goalId) === GoalLoadState.fullyLoaded) {
       this.touch(goalId);
       return this.stateSubject.value.get(goalId) ?? null;
     }
-
-    const startEpoch = this.recoveryEpoch;
 
     // Another load's eviction must not drop this goal's base entry between
     // installing it and marking the goal fully loaded.
@@ -1017,23 +997,7 @@ export class SyncClient {
       }
     };
     try {
-      return await this.loadUnloadedGoal(goalId, unprotect, startEpoch);
-    } catch (error) {
-      unprotect();
-      if (
-        !(error instanceof CacheMissException) ||
-        !recoverOnCacheMiss ||
-        this.persistenceService == null
-      ) {
-        throw error;
-      }
-      const inFlightRecovery = this.recoveryPromise;
-      if (inFlightRecovery != null) {
-        await inFlightRecovery;
-      } else if (startEpoch === this.recoveryEpoch) {
-        await this.recoverAndResync();
-      }
-      return await this.loadGoalInternal(goalId, false);
+      return await this.loadUnloadedGoal(goalId, unprotect);
     } finally {
       unprotect();
     }
@@ -1042,14 +1006,9 @@ export class SyncClient {
   private async loadUnloadedGoal(
     goalId: string,
     unprotect: () => void,
-    startEpoch: number,
   ): Promise<Goal | null> {
     const baseStateCursor = this.baseStateCursor;
     const opsToApply = await this.localStore.loadOpsForGoal(goalId);
-    if (startEpoch !== this.recoveryEpoch) {
-      unprotect();
-      return await this.loadGoalInternal(goalId, false);
-    }
     if (opsToApply.length === 0) {
       this.goalLoadState.set(goalId, GoalLoadState.fullyLoaded);
       this.touch(goalId);
@@ -1148,94 +1107,33 @@ export class SyncClient {
     return [...opMap.values()];
   }
 
-  private async recoverSyncedCache(): Promise<void> {
-    this.recoveryEpoch++;
-    this.localStore.incrementFullSyncCount();
-    await this.localStore.resetSyncedCache();
-    this.baseState = new Map();
-    this.baseStateCursor = null;
-    this.workingOps.clear();
-    this.goalLoadState.clear();
-    this.loadedSinceEmit.clear();
-    this.emittedBaseStateOpIds.clear();
-    this.emittedWorkingStateOpIds.clear();
-    this.lastEmittedStateOpCount = null;
-    this.goalNamesIndex.clear();
-  }
-
-  private async recoverAndResync(): Promise<void> {
-    const inFlight = this.recoveryPromise;
-    if (inFlight != null) {
-      await inFlight;
-      return;
-    }
-    const promise = (async () => {
-      await this.recoverSyncedCache();
-      await this.sync();
-      this.baseStateCursor = this.localStore.cursor;
-      const goalsToReload = new Set([
-        ...this.getRootGoalIds(),
-        ...this.pinCount.keys(),
-      ]);
-      if (goalsToReload.size > 0) {
-        await Promise.all(
-          [...goalsToReload].map((id) => this.loadGoalInternal(id, false)),
-        );
-      }
-    })();
-    this.recoveryPromise = promise;
-    try {
-      await promise;
-    } finally {
-      if (this.recoveryPromise === promise) {
-        this.recoveryPromise = null;
-      }
-    }
-  }
-
   private async pull(): Promise<void> {
     if (this.persistenceService == null) {
       return;
     }
-    let retriedCacheMiss = false;
-    while (true) {
-      let result: LoadOpsResp;
-      let latestCursor = this.pullStartCursor();
-      const batchSize = 4000;
-      try {
-        do {
-          result = await this.persistenceService.load({
-            cursor: latestCursor,
-            limit: batchSize,
-          });
-          for (const op of result.ops) {
-            this.hlc = this.hlc.receive(HLC.unpack(op.hlcTimestamp));
-          }
-          await this.persistOps(result.ops, true, true);
-          if (result.ops.length >= batchSize) {
-            await this.localStore.settled();
-          }
-          if (
-            result.cursor != null &&
-            (latestCursor == null || compareHlc(result.cursor, latestCursor) > 0)
-          ) {
-            latestCursor = result.cursor;
-          }
-        } while (result.ops.length >= batchSize);
-        if (retriedCacheMiss) {
-          await this.localStore.settled();
-          this.baseStateCursor = this.localStore.cursor;
-        }
-        this.localStore.lastSyncTime = new Date();
-        return;
-      } catch (error) {
-        if (!(error instanceof CacheMissException) || retriedCacheMiss) {
-          throw error;
-        }
-        retriedCacheMiss = true;
-        await this.recoverSyncedCache();
+    let result: LoadOpsResp;
+    let latestCursor = this.pullStartCursor();
+    const batchSize = 4000;
+    do {
+      result = await this.persistenceService.load({
+        cursor: latestCursor,
+        limit: batchSize,
+      });
+      for (const op of result.ops) {
+        this.hlc = this.hlc.receive(HLC.unpack(op.hlcTimestamp));
       }
-    }
+      await this.persistOps(result.ops, true, true);
+      if (result.ops.length >= batchSize) {
+        await this.localStore.settled();
+      }
+      if (
+        result.cursor != null &&
+        (latestCursor == null || compareHlc(result.cursor, latestCursor) > 0)
+      ) {
+        latestCursor = result.cursor;
+      }
+    } while (result.ops.length >= batchSize);
+    this.localStore.lastSyncTime = new Date();
   }
 
   /**
