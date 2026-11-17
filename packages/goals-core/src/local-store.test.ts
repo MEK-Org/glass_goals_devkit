@@ -191,3 +191,72 @@ describe("CachingLocalStore.settled", () => {
     ]);
   });
 });
+
+describe("CachingLocalStore.resetSyncedCache", () => {
+  it("clears synced cache and cursor while preserving unsynced state", async () => {
+    const repo = new RecordingRepository();
+    repo.clientId = "SVB5";
+    repo.version = 2;
+    const store = new CachingLocalStore(repo);
+    const syncedOp: DeltaOp = {
+      id: "op_synced",
+      hlcTimestamp: "001794930562329:00001:SVB5",
+      version: 6,
+      type: "delta",
+      delta: {
+        id: "goal_synced",
+        text: "Synced Goal",
+        logEntry: {
+          type: "note",
+          id: "note_synced",
+          creationTime: 1794930562329,
+          text: "Synced note",
+        },
+      },
+    };
+    await store.storeSyncedOps([syncedOp]);
+    await store.settled();
+    store.setIndexGoalIds("rootGoals", new Set(["goal_synced"]));
+    await store.setSearchIndex(
+      "goalNamesIndex",
+      JSON.stringify({ "synced goal": "goal_synced" }),
+    );
+    store.lastSyncTime = new Date(1794930562329);
+    store.incrementFullSyncCount();
+
+    const unsyncedOp: DeltaOp = {
+      id: "op_unsynced",
+      hlcTimestamp: "001794930990000:00001:SVB5",
+      version: 6,
+      type: "delta",
+      delta: {
+        id: "goal_unsynced",
+        logEntry: {
+          type: "note",
+          id: "note_unsynced",
+          creationTime: 1794930990000,
+          text: "Unsynced note",
+        },
+      },
+    };
+    await store.setUnsyncedOps([unsyncedOp]);
+    await store.setAckedOpIds(["op_unsynced"]);
+
+    await store.resetSyncedCache();
+
+    expect(store.cursor).toBeNull();
+    expect(store.lastSyncTime).toBeNull();
+    expect(await store.loadOpsForGoal("goal_synced")).toEqual([]);
+    expect(await repo.loadOps(["op_synced"])).toEqual([null]);
+    expect(await store.loadString("note_synced")).toBeNull();
+    expect([...store.getIndexGoalIds("rootGoals")]).toEqual([]);
+    expect(await store.loadSearchIndex("goalNamesIndex")).toBeNull();
+
+    expect(store.clientId).toBe("SVB5");
+    expect(repo.version).toBe(2);
+    expect(store.fullSyncCount).toBe(1);
+    expect(store.getUnsyncedOps().map((op) => op.id)).toEqual(["op_unsynced"]);
+    expect([...store.getAckedOpIds()]).toEqual(["op_unsynced"]);
+    expect(await store.loadString("note_unsynced")).toBe("Unsynced note");
+  });
+});

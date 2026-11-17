@@ -4,7 +4,7 @@ import 'dart:convert' show jsonEncode, jsonDecode;
 import 'package:collection/collection.dart';
 import 'package:goals_core/model.dart' show Goal, GoalInstance;
 import 'package:goals_core/src/sync/local_store.dart'
-    show LocalStore, MemoryLocalStore, CachingLocalStore;
+    show CacheMissException, LocalStore, MemoryLocalStore, CachingLocalStore;
 import 'package:goals_core/src/sync/sync_logger.dart' show SyncEventLogger;
 import 'package:goals_core/src/util/iterable_utils.dart';
 import 'package:goals_core/src/util/string_utils.dart';
@@ -107,6 +107,8 @@ class SyncClient {
   final baseStateQueue = Queue();
 
   final SyncEventLogger? _logger;
+  int _recoveryEpoch = 0;
+  Future<void>? _recoveryFuture;
 
   /// Soft upper bound on the number of unpinned resident goals. When
   /// `_baseState.length` exceeds this after a mutation batch, the LRU-oldest
@@ -143,6 +145,9 @@ class SyncClient {
     print('[SYNC-DIAG] SyncClient.init: start');
     await localStore.init();
     hlc = HLC.now(localStore.clientId);
+    if (localStore.cursor != null) {
+      hlc = hlc.receive(HLC.unpack(localStore.cursor!));
+    }
 
     _indexers["rootGoals"] = _isRootGoal;
     _indexers["statusGoals"] = _isStatusGoal;
@@ -188,7 +193,12 @@ class SyncClient {
               opId: op.id);
           _workingOps[op.id] = op;
         }
-        await _persistOps(ops);
+        try {
+          await _persistOps(ops);
+        } on CacheMissException {
+          await _recoverAndResync();
+          return;
+        }
         final affectedIds = await _computeAffectedGoalIds(ops);
         _computeAndEmitUnsyncedState(
           "remote ops received",
@@ -1057,6 +1067,10 @@ class SyncClient {
       return;
     }
 
+    // Prime the in-memory op and string caches before loading affected goals so
+    // an incoming op already listed in goalOpsIndex resolves without a miss.
+    localStore.cacheOps(newSyncedOps);
+
     final affectedGoalIds = await _computeAffectedGoalIds(newSyncedOps);
 
     for (final goalId in affectedGoalIds) {
@@ -1073,7 +1087,7 @@ class SyncClient {
 
         _goalLoadState[goalId] = _GoalLoadState.loading;
         _logger?.log('Loading goal $goalId due to new synced ops');
-        futures.add(loadGoal(goalId));
+        futures.add(_loadGoalInternal(goalId, recoverOnCacheMiss: false));
       }
       await Future.wait(futures);
     } else {
@@ -1091,6 +1105,11 @@ class SyncClient {
     );
     if (asBase) {
       _baseState = state;
+      for (final op in newSyncedOps) {
+        if (!_emittedWorkingStateOpIds.contains(op.id)) {
+          _emittedBaseStateOpIds.add(op.id);
+        }
+      }
     }
 
     final newIndexValues = <String, Set<String>>{};
@@ -1154,7 +1173,13 @@ class SyncClient {
     _maybeEvict();
   }
 
-  Future<Goal?> loadGoal(String goalId) async {
+  Future<Goal?> loadGoal(String goalId) =>
+      _loadGoalInternal(goalId, recoverOnCacheMiss: true);
+
+  Future<Goal?> _loadGoalInternal(
+    String goalId, {
+    required bool recoverOnCacheMiss,
+  }) async {
     _logger?.log('loadGoal', goalId: goalId);
     final totalSw = Stopwatch()..start();
 
@@ -1163,6 +1188,8 @@ class SyncClient {
       _perfLog('loadGoal($goalId) TOTAL ${_ms(totalSw)} (cache hit)');
       return stateSubject.value[goalId];
     }
+
+    final startEpoch = _recoveryEpoch;
 
     // Another load's eviction must not drop this goal's base entry between
     // installing it and marking the goal fully loaded.
@@ -1180,18 +1207,34 @@ class SyncClient {
     }
 
     try {
-      return await _loadUnloadedGoal(goalId, totalSw, unprotect);
+      return await _loadUnloadedGoal(goalId, totalSw, unprotect, startEpoch);
+    } on CacheMissException {
+      unprotect();
+      if (!recoverOnCacheMiss || persistenceService == null) {
+        rethrow;
+      }
+      final inFlightRecovery = _recoveryFuture;
+      if (inFlightRecovery != null) {
+        await inFlightRecovery;
+      } else if (startEpoch == _recoveryEpoch) {
+        await _recoverAndResync();
+      }
+      return await _loadGoalInternal(goalId, recoverOnCacheMiss: false);
     } finally {
       unprotect();
     }
   }
 
-  Future<Goal?> _loadUnloadedGoal(
-      String goalId, Stopwatch totalSw, void Function() unprotect) async {
+  Future<Goal?> _loadUnloadedGoal(String goalId, Stopwatch totalSw,
+      void Function() unprotect, int startEpoch) async {
     final baseStateCursor = _baseStateCursor;
 
     final loadOpsSw = Stopwatch()..start();
     var opsToApply = await localStore.loadOpsForGoal(goalId);
+    if (startEpoch != _recoveryEpoch) {
+      unprotect();
+      return await _loadGoalInternal(goalId, recoverOnCacheMiss: false);
+    }
     _perfLog(
         'loadGoal.loadOpsForGoal($goalId) ${_ms(loadOpsSw)} (ops=${opsToApply.length})');
 
@@ -1329,44 +1372,111 @@ class SyncClient {
     return opMap.values;
   }
 
+  Future<void> _recoverSyncedCache() async {
+    _recoveryEpoch++;
+    localStore.incrementFullSyncCount();
+    await localStore.resetSyncedCache();
+    _baseState = {};
+    _baseStateCursor = null;
+    _workingOps.clear();
+    _goalLoadState.clear();
+    _loadedSinceEmit.clear();
+    _emittedBaseStateOpIds.clear();
+    _emittedWorkingStateOpIds.clear();
+    _lastEmittedStateOpCount = null;
+    _goalNamesIndex.clear();
+  }
+
+  Future<void> _recoverAndResync() async {
+    final inFlight = _recoveryFuture;
+    if (inFlight != null) {
+      await inFlight;
+      return;
+    }
+    final future = () async {
+      await _recoverSyncedCache();
+      await sync();
+      _baseStateCursor = localStore.cursor;
+      final goalsToReload = <String>{
+        ...getRootGoalIds(),
+        ..._pinCount.keys,
+      };
+      if (goalsToReload.isNotEmpty) {
+        await Future.wait(
+          goalsToReload.map(
+            (id) => _loadGoalInternal(id, recoverOnCacheMiss: false),
+          ),
+        );
+      }
+    }();
+    _recoveryFuture = future;
+    try {
+      await future;
+    } finally {
+      if (identical(_recoveryFuture, future)) {
+        _recoveryFuture = null;
+      }
+    }
+  }
+
   Future<void> _pull() async {
     if (persistenceService == null) {
       print('[SYNC-DIAG] _pull: skipped (no persistenceService)');
       return;
     }
 
-    LoadOpsResp result;
-    String? latestCursor = _pullStartCursor();
-    int batchSize = 4000;
-    print('[SYNC-DIAG] _pull: start cursor=$latestCursor');
+    var retriedCacheMiss = false;
+    while (true) {
+      LoadOpsResp result;
+      String? latestCursor = _pullStartCursor();
+      const int batchSize = 4000;
+      print('[SYNC-DIAG] _pull: start cursor=$latestCursor');
 
-    try {
-      do {
-        result = await persistenceService!
-            .load(cursor: latestCursor, limit: batchSize);
+      try {
+        do {
+          result = await persistenceService!
+              .load(cursor: latestCursor, limit: batchSize);
+          print(
+              '[SYNC-DIAG] _pull: loaded ${result.ops.length} ops, newCursor=${result.cursor}');
+
+          for (Op op in result.ops) {
+            HLC.unpack(op.hlcTimestamp);
+            hlc = hlc.receive(HLC.unpack(op.hlcTimestamp));
+          }
+
+          await _persistOps(result.ops, asBase: true);
+          if (result.ops.length >= batchSize) {
+            await localStore.settled();
+          }
+
+          if (result.cursor != null &&
+              (latestCursor == null ||
+                  result.cursor!.compareTo(latestCursor) > 0)) {
+            latestCursor = result.cursor;
+          }
+        } while (result.ops.length >= batchSize);
+
+        if (retriedCacheMiss) {
+          await localStore.settled();
+          _baseStateCursor = localStore.cursor;
+        }
+        localStore.lastSyncTime = DateTime.now();
+        print('[SYNC-DIAG] _pull: end cursor=${localStore.cursor}');
+        return;
+      } on CacheMissException catch (e) {
+        if (retriedCacheMiss) {
+          print('[SYNC-DIAG] _pull: FAILED after recovery error=$e');
+          rethrow;
+        }
+        retriedCacheMiss = true;
         print(
-            '[SYNC-DIAG] _pull: loaded ${result.ops.length} ops, newCursor=${result.cursor}');
-
-        for (Op op in result.ops) {
-          HLC.unpack(op.hlcTimestamp);
-          hlc = hlc.receive(HLC.unpack(op.hlcTimestamp));
-        }
-
-        await _persistOps(result.ops, asBase: true);
-
-        if (result.cursor != null &&
-            (latestCursor == null ||
-                result.cursor!.compareTo(latestCursor) > 0)) {
-          latestCursor = result.cursor;
-        }
-      } while (result.ops.length >= batchSize);
-
-      localStore.lastSyncTime = DateTime.now();
-      print('[SYNC-DIAG] _pull: end cursor=${localStore.cursor}');
-    } catch (e, stackTrace) {
-      print('[SYNC-DIAG] _pull: FAILED error=$e');
-      print('[SYNC-DIAG] _pull: stack=$stackTrace');
-      rethrow;
+            '[SYNC-DIAG] _pull: CacheMissException during pull, resetting synced cache and resyncing from null: $e');
+        await _recoverSyncedCache();
+      } catch (e, stackTrace) {
+        print('[SYNC-DIAG] _pull: FAILED error=$e');
+        print('[SYNC-DIAG] _pull: stack=$stackTrace');
+        rethrow;
+      }
     }
   }
 
@@ -1492,21 +1602,24 @@ class SyncClient {
     final currentSyncFuture = syncFuture;
     final syncCompleter = Completer<void>();
     syncFuture = syncCompleter.future;
-    await currentSyncFuture;
+    try {
+      await currentSyncFuture;
 
-    if (persistenceService != null) {
-      await _pull();
+      if (persistenceService != null) {
+        await _pull();
 
-      await _push();
+        await _push();
 
-      // sync() is the durability barrier: a restart on this store must start
-      // from fully stored local state, so the store cursor may only cover
-      // the ops above once they are actually stored and indexed (#42).
-      await localStore.settled();
+        // sync() is the durability barrier: a restart on this store must start
+        // from fully stored local state, so the store cursor may only cover
+        // the ops above once they are actually stored and indexed (#42).
+        await localStore.settled();
+      }
+
+      _computeAndEmitUnsyncedState("sync");
+    } finally {
+      syncCompleter.complete();
     }
-
-    _computeAndEmitUnsyncedState("sync");
-    syncCompleter.complete();
   }
 
   Future<void> logOut() async {

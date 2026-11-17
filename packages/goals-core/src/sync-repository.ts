@@ -45,6 +45,8 @@ export interface SyncRepository {
   loadSearchIndex(indexKey: string): string | null;
   setSearchIndex(indexKey: string, indexData: string): Promise<void>;
 
+  clearSyncedCache(): Promise<void>;
+
   clear(): Promise<void>;
 }
 
@@ -143,6 +145,16 @@ export class MemorySyncRepository implements SyncRepository {
 
   async setSearchIndex(indexKey: string, indexData: string): Promise<void> {
     this.searchIndices.set(indexKey, indexData);
+  }
+
+  async clearSyncedCache(): Promise<void> {
+    this.cursor = null;
+    this.lastSyncTime = null;
+    this.strings.clear();
+    this.goalIndex.clear();
+    this.syncedOps.clear();
+    this.indexGoalIds.clear();
+    this.searchIndices.clear();
   }
 
   async clear(): Promise<void> {

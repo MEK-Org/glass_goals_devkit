@@ -45,6 +45,8 @@ abstract class SyncRepository {
   int get version;
   set version(int value);
 
+  Future<void> clearSyncedCache();
+
   Future<void> clear();
 }
 
@@ -184,6 +186,17 @@ class MemorySyncRepository implements SyncRepository {
   int get version => _version;
   @override
   set version(int value) => _version = value;
+
+  @override
+  Future<void> clearSyncedCache() async {
+    _cursor = null;
+    _lastSyncTime = null;
+    _strings.clear();
+    _goalIndex.clear();
+    _syncedOps.clear();
+    _indexGoalIds.clear();
+    _searchIndices.clear();
+  }
 
   @override
   Future<void> clear() async {

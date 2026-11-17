@@ -142,5 +142,65 @@ void main() {
       expect(store.opCache.containsKey('op2'), isTrue);
       expect(store.opCache.containsKey('op3'), isTrue);
     });
+
+    test(
+        'resetSyncedCache clears synced cache and cursor while preserving unsyncedOps, ackedOpIds, clientId, fullSyncCount, and unsynced strings',
+        () async {
+      final repo = MemorySyncRepository()
+        ..clientId = 'SVB5'
+        ..version = 2;
+      final store = CachingLocalStore(repo: repo);
+      final syncedOp = DeltaOp(
+        id: 'op_synced',
+        hlcTimestamp: '001794930562329:00001:SVB5',
+        delta: GoalDelta(
+          id: 'goal_synced',
+          text: 'Synced Goal',
+          logEntry: NoteLogEntry(
+            id: 'note_synced',
+            creationTime: DateTime.utc(2026, 11, 17),
+            text: 'Synced note',
+          ),
+        ),
+      );
+      await store.storeSyncedOps([syncedOp]);
+      await store.settled();
+      store.setIndexGoalIds('rootGoals', {'goal_synced'});
+      await store.setSearchIndex('goalNamesIndex', '{"synced goal":"goal_synced"}');
+      store.lastSyncTime = DateTime.utc(2026, 11, 17);
+      store.incrementFullSyncCount();
+
+      final unsyncedOp = DeltaOp(
+        id: 'op_unsynced',
+        hlcTimestamp: '001794930990000:00001:SVB5',
+        delta: GoalDelta(
+          id: 'goal_unsynced',
+          logEntry: NoteLogEntry(
+            id: 'note_unsynced',
+            creationTime: DateTime.utc(2026, 11, 17),
+            text: 'Unsynced note',
+          ),
+        ),
+      );
+      await store.setUnsyncedOps([unsyncedOp]);
+      await store.setAckedOpIds(['op_unsynced']);
+
+      await store.resetSyncedCache();
+
+      expect(store.cursor, isNull);
+      expect(store.lastSyncTime, isNull);
+      expect(await store.loadOpsForGoal('goal_synced'), isEmpty);
+      expect(await repo.loadOps(['op_synced']), [isNull]);
+      expect(await store.loadString('note_synced'), isNull);
+      expect(store.getIndexGoalIds('rootGoals'), isEmpty);
+      expect(await store.loadSearchIndex('goalNamesIndex'), isNull);
+
+      expect(store.clientId, 'SVB5');
+      expect(repo.version, 2);
+      expect(store.fullSyncCount, 1);
+      expect(store.getUnsyncedOps().map((op) => op.id), ['op_unsynced']);
+      expect(store.getAckedOpIds(), {'op_unsynced'});
+      expect(await store.loadString('note_unsynced'), 'Unsynced note');
+    });
   });
 }

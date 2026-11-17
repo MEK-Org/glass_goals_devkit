@@ -47,6 +47,9 @@ abstract class LocalStore {
 
   Future<void> storeSyncedOps(Iterable<Op> ops);
 
+  /// Populates in-memory op and string caches without writing to the repository.
+  void cacheOps(Iterable<Op> ops);
+
   /// Resolves once every op batch queued by [storeSyncedOps] so far has been
   /// written to the repository, including batches queued while waiting. The
   /// store cursor covers those ops from then on.
@@ -65,6 +68,8 @@ abstract class LocalStore {
 
   Future<String?> loadString(String key);
   Future<void> setString(String key, String value);
+
+  Future<void> resetSyncedCache();
 
   Future<void> clear();
 
@@ -461,8 +466,7 @@ class CachingLocalStore implements LocalStore {
   }
 
   @override
-  Future<void> storeSyncedOps(Iterable<Op> ops) async {
-    // Synchronously update the caches.
+  void cacheOps(Iterable<Op> ops) {
     for (final op in ops) {
       final opLogger = Logger(op.id);
       opLogger.fine("Putting Op Into Cache");
@@ -476,6 +480,12 @@ class CachingLocalStore implements LocalStore {
         }
       }
     }
+  }
+
+  @override
+  Future<void> storeSyncedOps(Iterable<Op> ops) async {
+    // Synchronously update the caches.
+    cacheOps(ops);
 
     // queue storage of the ops without waiting
     await _opStorageQueue.add(() => _doOpStorage(ops));
@@ -642,8 +652,36 @@ class CachingLocalStore implements LocalStore {
 
     // Only now that the ops are stored and indexed does the cursor cover
     // them; a stop before this point pulls them again on restart (#42).
-    if (maxHlc != null) {
+    // Keep the cursor monotonic so a late older-HLC batch never rewinds it.
+    if (maxHlc != null &&
+        (repo.cursor == null || maxHlc.comesAfter(repo.cursor!))) {
       repo.cursor = maxHlc;
+    }
+  }
+
+  @override
+  Future<void> resetSyncedCache() async {
+    if (_opStorageQueue.remainingItemCount > 0) {
+      try {
+        await _opStorageQueue.onComplete;
+      } catch (_) {}
+    }
+    final unsyncedOps = repo.getUnsyncedOps();
+    await repo.clearSyncedCache();
+    clearCaches();
+
+    final unsyncedStrings = <String, String>{};
+    for (final op in unsyncedOps) {
+      if (op is DeltaOp) {
+        final entry = op.delta.logEntry;
+        if (entry is TextGoalLogEntry && entry.text != null) {
+          _stringCache[entry.id] = entry.text!;
+          unsyncedStrings[entry.id] = entry.text!;
+        }
+      }
+    }
+    if (unsyncedStrings.isNotEmpty) {
+      await repo.storeStrings(unsyncedStrings);
     }
   }
 
@@ -653,8 +691,7 @@ class CachingLocalStore implements LocalStore {
       await _opStorageQueue.onComplete;
     }
     await repo.clear();
-    _stringCache.clear();
-    _opCache.clear();
+    clearCaches();
   }
 
   @override

@@ -46,10 +46,12 @@ export interface LocalStore {
 
   storeSyncedOps(ops: Iterable<AnyOp>): Promise<void>;
 
+  /** Populates in-memory op and string caches without writing to the repository. */
+  cacheOps(ops: Iterable<AnyOp>): void;
+
   /**
    * Resolves once every op batch queued by `storeSyncedOps` so far has been
-   * written to the repository, including batches queued while waiting. The
-   * store cursor covers those ops from then on.
+   * written to the repository, including batches queued while waiting.
    */
   settled(): Promise<void>;
 
@@ -66,6 +68,8 @@ export interface LocalStore {
 
   loadString(key: string): Promise<string | null>;
   setString(key: string, value: string): Promise<void>;
+
+  resetSyncedCache(): Promise<void>;
 
   clear(): Promise<void>;
 
@@ -486,14 +490,18 @@ export class CachingLocalStore implements LocalStore {
     return op;
   }
 
-  async storeSyncedOps(ops: Iterable<AnyOp>): Promise<void> {
-    const batch = [...ops];
-    // Synchronously update the caches.
-    for (const op of batch) {
+  cacheOps(ops: Iterable<AnyOp>): void {
+    for (const op of ops) {
       this.opCache.set(op.id, op);
       const text = extractEntryTextField(op);
       if (text) this.stringCache.put(text.entryId, text.text);
     }
+  }
+
+  async storeSyncedOps(ops: Iterable<AnyOp>): Promise<void> {
+    const batch = [...ops];
+    // Synchronously update the caches.
+    this.cacheOps(batch);
 
     // Queue storage behind any earlier batch.
     this.pendingStorage++;
@@ -636,8 +644,33 @@ export class CachingLocalStore implements LocalStore {
 
     // Only now that the ops are stored and indexed does the cursor cover
     // them; a stop before this point pulls them again on restart (#42).
-    if (maxHlc != null) {
+    // Keep the cursor monotonic so a late older-HLC batch never rewinds it.
+    if (
+      maxHlc != null &&
+      (this.repo.cursor == null || compareHlc(maxHlc, this.repo.cursor) > 0)
+    ) {
       this.repo.cursor = maxHlc;
+    }
+  }
+
+  async resetSyncedCache(): Promise<void> {
+    if (this.pendingStorage > 0) {
+      await this.opStorageQueue;
+    }
+    const unsyncedOps = this.repo.getUnsyncedOps();
+    await this.repo.clearSyncedCache();
+    this.clearCaches();
+
+    const unsyncedStrings = new Map<string, string>();
+    for (const op of unsyncedOps) {
+      const text = extractEntryTextField(op);
+      if (text) {
+        this.stringCache.put(text.entryId, text.text);
+        unsyncedStrings.set(text.entryId, text.text);
+      }
+    }
+    if (unsyncedStrings.size > 0) {
+      await this.repo.storeStrings(unsyncedStrings);
     }
   }
 
@@ -646,8 +679,7 @@ export class CachingLocalStore implements LocalStore {
       await this.opStorageQueue;
     }
     await this.repo.clear();
-    this.stringCache.clear();
-    this.opCache.clear();
+    this.clearCaches();
   }
 
   async loadOpsById(opIds: Iterable<string>): Promise<Array<AnyOp | null>> {
