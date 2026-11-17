@@ -12,3 +12,4 @@ export * from "./book-metadata";
 export * from "./case-metadata";
 export * from "./doc-note-metadata";
 export * from "./log-entry-modules";
+export * from "./goal-merge";
