@@ -201,14 +201,29 @@ describe("Enable/Disable of working ops keeps HLC order and identity (#38)", () 
 });
 
 describe("undo/redo replays the same after a restart (#38)", () => {
+  /**
+   * Lets the echo of every pushed op reach the local store before a restart,
+   * like the Dart twin's settle pump (sync_client_undo_redo_test.dart): the
+   * client sets the store cursor before it persists an echo, and the caching
+   * store batches on a 10 ms timer, so a single settled() can stop a client
+   * mid-echo.
+   */
+  async function settle(persistence: MemoryPersistenceService): Promise<void> {
+    for (let i = 0; i < 4; i++) {
+      await persistence.settled();
+      await new Promise((resolve) => setTimeout(resolve, 40));
+    }
+  }
+
   async function restarted(
     persistence: MemoryPersistenceService,
     store: MemoryLocalStore,
   ): Promise<SyncClient> {
-    await persistence.settled();
+    await settle(persistence);
     const client = new SyncClient(persistence, store);
     await client.init();
     await client.loadGoal("g");
+    await settle(persistence);
     return client;
   }
 
@@ -238,7 +253,7 @@ describe("undo/redo replays the same after a restart (#38)", () => {
     await client.redo();
     await client.undo();
     expect(textOf(client, "g")).toBe("Original");
-    await persistence.settled();
+    await settle(persistence);
     await client.dispose();
 
     const reopened = await restarted(persistence, store);
@@ -263,7 +278,7 @@ describe("undo/redo replays the same after a restart (#38)", () => {
       await client.redo();
     }
     expect(textOf(client, "g")).toBe("Changed");
-    await persistence.settled();
+    await settle(persistence);
     await client.dispose();
 
     const reopened = await restarted(persistence, store);
