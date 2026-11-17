@@ -191,3 +191,68 @@ describe("CachingLocalStore.settled", () => {
     ]);
   });
 });
+
+describe("CachingLocalStore.loadOpsForGoal pruning", () => {
+  it("prunes dangling opId references from goalOpsIndex and returns remaining valid ops", async () => {
+    const repo = new RecordingRepository();
+    repo.clientId = "SVB5";
+    const store = new CachingLocalStore(repo);
+    const op1: DeltaOp = {
+      id: "op_1",
+      hlcTimestamp: "001794930562329:00001:SVB5",
+      version: 6,
+      type: "delta",
+      delta: {
+        id: "goal_1",
+        text: "Goal One",
+      },
+    };
+    const op2: DeltaOp = {
+      id: "op_2",
+      hlcTimestamp: "001794930562330:00001:SVB5",
+      version: 6,
+      type: "delta",
+      delta: {
+        id: "goal_1",
+        logEntry: {
+          type: "note",
+          id: "note_1",
+          creationTime: 1794930562330,
+          text: "Valid note",
+        },
+      },
+    };
+    await store.storeSyncedOps([op1, op2]);
+    await store.settled();
+
+    await repo.storeGoalIndexEntry("goal_1", {
+      opIds: ["op_1", "op_missing_dangling", "op_2"],
+    });
+    await repo.storeGoalIndexEntry("goal_only_missing", {
+      opIds: ["op_never_written"],
+    });
+    store.clearCaches();
+
+    const loaded = await store.loadOpsForGoal("goal_1");
+    expect(loaded.map((op) => op.id)).toEqual(["op_1", "op_2"]);
+    expect((await repo.loadGoalIndexEntry("goal_1"))?.opIds).toEqual([
+      "op_1",
+      "op_2",
+    ]);
+
+    const readsBeforeReopen = repo.opReads.length;
+    const reopened = new CachingLocalStore(repo);
+    expect((await reopened.loadOpsForGoal("goal_1")).map((op) => op.id)).toEqual([
+      "op_1",
+      "op_2",
+    ]);
+    expect(repo.opReads.slice(readsBeforeReopen).flat()).not.toContain(
+      "op_missing_dangling",
+    );
+
+    expect(await reopened.loadOpsForGoal("goal_only_missing")).toEqual([]);
+    expect(
+      (await repo.loadGoalIndexEntry("goal_only_missing"))?.opIds,
+    ).toEqual([]);
+  });
+});

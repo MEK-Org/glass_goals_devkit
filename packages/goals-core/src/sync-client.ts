@@ -12,7 +12,11 @@ import {
 import { Cupid } from "./cupid";
 import { GoalSubjectRegistry } from "./goal-subject-registry";
 import { HLC } from "./hlc";
-import { CachingLocalStore, LocalStore, MemoryLocalStore } from "./local-store";
+import {
+  CachingLocalStore,
+  LocalStore,
+  MemoryLocalStore,
+} from "./local-store";
 import { Goal, GoalInstance, GoalStatus } from "./model";
 import {
   byHlc,
@@ -119,6 +123,9 @@ export class SyncClient {
   async init(): Promise<void> {
     await this.localStore.init();
     this.hlc = HLC.now(this.localStore.clientId);
+    if (this.localStore.cursor != null) {
+      this.hlc = this.hlc.receive(HLC.unpack(this.localStore.cursor));
+    }
 
     this.indexers.set("rootGoals", (goal) => this.isRootGoal(goal));
     this.indexers.set("statusGoals", (goal) => this.isStatusGoal(goal));
@@ -871,6 +878,10 @@ export class SyncClient {
       return;
     }
 
+    // Prime the in-memory op and string caches before loading affected goals so
+    // an incoming op already listed in goalOpsIndex resolves without a miss.
+    this.localStore.cacheOps(newSyncedOps);
+
     const affectedGoalIds = await this.computeAffectedGoalIds(newSyncedOps);
     for (const goalId of affectedGoalIds) {
       this.touch(goalId);
@@ -885,7 +896,12 @@ export class SyncClient {
         this.goalLoadState.set(goalId, GoalLoadState.loading);
         loads.push(this.loadGoal(goalId));
       }
-      await Promise.all(loads);
+      const results = await Promise.allSettled(loads);
+      for (const result of results) {
+        if (result.status === "rejected") {
+          throw result.reason;
+        }
+      }
     } else {
       for (const goalId of affectedGoalIds) {
         this.goalLoadState.set(goalId, GoalLoadState.fullyLoaded);
@@ -897,7 +913,14 @@ export class SyncClient {
         ? newSyncedOps
         : [...this.workingOps.values(), ...newSyncedOps],
     );
-    if (asBase) this.baseState = state;
+    if (asBase) {
+      this.baseState = state;
+      for (const op of newSyncedOps) {
+        if (!this.emittedWorkingStateOpIds.has(op.id)) {
+          this.emittedBaseStateOpIds.add(op.id);
+        }
+      }
+    }
 
     const newIndexValues = new Map<string, Set<string>>();
     for (const indexKey of this.indexers.keys()) {
@@ -1100,6 +1123,9 @@ export class SyncClient {
         this.hlc = this.hlc.receive(HLC.unpack(op.hlcTimestamp));
       }
       await this.persistOps(result.ops, true, true);
+      if (result.ops.length >= batchSize) {
+        await this.localStore.settled();
+      }
       if (
         result.cursor != null &&
         (latestCursor == null || compareHlc(result.cursor, latestCursor) > 0)

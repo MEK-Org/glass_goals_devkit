@@ -47,6 +47,9 @@ abstract class LocalStore {
 
   Future<void> storeSyncedOps(Iterable<Op> ops);
 
+  /// Populates in-memory op and string caches without writing to the repository.
+  void cacheOps(Iterable<Op> ops);
+
   /// Resolves once every op batch queued by [storeSyncedOps] so far has been
   /// written to the repository, including batches queued while waiting. The
   /// store cursor covers those ops from then on.
@@ -369,13 +372,29 @@ class CachingLocalStore implements LocalStore {
       ops.add(_getOp(opId));
     }
 
+    final loadedOps = await Future.wait(ops);
     final result = <Op>[];
-    for (final op in await Future.wait(ops)) {
+    final validOpIds = <String>[];
+    var hasMissing = false;
+    for (var i = 0; i < loadedOps.length; i++) {
+      final op = loadedOps[i];
       if (op == null) {
-        throw CacheMissException(
-            'Op not found in cache or repo for goal $goalId');
+        hasMissing = true;
+      } else {
+        result.add(op);
+        validOpIds.add(indexedOpIds[i]);
       }
-      result.add(op);
+    }
+    if (hasMissing) {
+      // Only a post-cursor / incomplete-batch op can be missing from
+      // syncedOps while still referenced in goalOpsIndex; prune the dangling
+      // reference so future loads don't repeatedly miss it.
+      final cleanedEntry = {
+        ...?cachedEntry,
+        "opIds": validOpIds,
+      };
+      _goalOpsIndexCache[goalId] = cleanedEntry;
+      await repo.storeGoalIndexEntry(goalId, cleanedEntry);
     }
     return result;
   }
@@ -461,8 +480,7 @@ class CachingLocalStore implements LocalStore {
   }
 
   @override
-  Future<void> storeSyncedOps(Iterable<Op> ops) async {
-    // Synchronously update the caches.
+  void cacheOps(Iterable<Op> ops) {
     for (final op in ops) {
       final opLogger = Logger(op.id);
       opLogger.fine("Putting Op Into Cache");
@@ -476,6 +494,12 @@ class CachingLocalStore implements LocalStore {
         }
       }
     }
+  }
+
+  @override
+  Future<void> storeSyncedOps(Iterable<Op> ops) async {
+    // Synchronously update the caches.
+    cacheOps(ops);
 
     // queue storage of the ops without waiting
     await _opStorageQueue.add(() => _doOpStorage(ops));
@@ -642,7 +666,9 @@ class CachingLocalStore implements LocalStore {
 
     // Only now that the ops are stored and indexed does the cursor cover
     // them; a stop before this point pulls them again on restart (#42).
-    if (maxHlc != null) {
+    // Keep the cursor monotonic so a late older-HLC batch never rewinds it.
+    if (maxHlc != null &&
+        (repo.cursor == null || maxHlc.comesAfter(repo.cursor!))) {
       repo.cursor = maxHlc;
     }
   }
@@ -653,8 +679,7 @@ class CachingLocalStore implements LocalStore {
       await _opStorageQueue.onComplete;
     }
     await repo.clear();
-    _stringCache.clear();
-    _opCache.clear();
+    clearCaches();
   }
 
   @override

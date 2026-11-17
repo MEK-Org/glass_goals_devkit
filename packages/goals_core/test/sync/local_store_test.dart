@@ -142,5 +142,62 @@ void main() {
       expect(store.opCache.containsKey('op2'), isTrue);
       expect(store.opCache.containsKey('op3'), isTrue);
     });
+
+    test(
+        'loadOpsForGoal prunes dangling opId references from goalOpsIndex and returns remaining valid ops',
+        () async {
+      final repo = MemorySyncRepository()..clientId = 'SVB5';
+      final store = CachingLocalStore(repo: repo);
+      final op1 = DeltaOp(
+        id: 'op_1',
+        hlcTimestamp: '001794930562329:00001:SVB5',
+        delta: GoalDelta(
+          id: 'goal_1',
+          text: 'Goal One',
+        ),
+      );
+      final op2 = DeltaOp(
+        id: 'op_2',
+        hlcTimestamp: '001794930562330:00001:SVB5',
+        delta: GoalDelta(
+          id: 'goal_1',
+          logEntry: NoteLogEntry(
+            id: 'note_1',
+            creationTime: DateTime.utc(2026, 11, 17),
+            text: 'Valid note',
+          ),
+        ),
+      );
+      await store.storeSyncedOps([op1, op2]);
+      await store.settled();
+
+      // Simulate an incomplete-batch dangling opId left in goalOpsIndex.
+      await repo.storeGoalIndexEntry('goal_1', {
+        'opIds': ['op_1', 'op_missing_dangling', 'op_2'],
+      });
+      await repo.storeGoalIndexEntry('goal_only_missing', {
+        'opIds': ['op_never_written'],
+      });
+      store.clearCaches();
+
+      final loaded = (await store.loadOpsForGoal('goal_1')).toList();
+      expect(loaded.map((op) => op.id), ['op_1', 'op_2']);
+      final cleanedEntry = await repo.loadGoalIndexEntry('goal_1');
+      expect(cleanedEntry?['opIds'], ['op_1', 'op_2']);
+
+      // Second read hits the pruned index cleanly (even from a fresh store).
+      final reopened = CachingLocalStore(repo: repo);
+      expect(
+        (await reopened.loadOpsForGoal('goal_1')).map((op) => op.id),
+        ['op_1', 'op_2'],
+      );
+
+      // All-missing goal returns [] and prunes opIds to [].
+      expect(await reopened.loadOpsForGoal('goal_only_missing'), isEmpty);
+      expect(
+        (await repo.loadGoalIndexEntry('goal_only_missing'))?['opIds'],
+        isEmpty,
+      );
+    });
   });
 }

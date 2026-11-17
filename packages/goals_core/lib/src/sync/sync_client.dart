@@ -143,6 +143,9 @@ class SyncClient {
     print('[SYNC-DIAG] SyncClient.init: start');
     await localStore.init();
     hlc = HLC.now(localStore.clientId);
+    if (localStore.cursor != null) {
+      hlc = hlc.receive(HLC.unpack(localStore.cursor!));
+    }
 
     _indexers["rootGoals"] = _isRootGoal;
     _indexers["statusGoals"] = _isStatusGoal;
@@ -1057,6 +1060,10 @@ class SyncClient {
       return;
     }
 
+    // Prime the in-memory op and string caches before loading affected goals so
+    // an incoming op already listed in goalOpsIndex resolves without a miss.
+    localStore.cacheOps(newSyncedOps);
+
     final affectedGoalIds = await _computeAffectedGoalIds(newSyncedOps);
 
     for (final goalId in affectedGoalIds) {
@@ -1091,6 +1098,11 @@ class SyncClient {
     );
     if (asBase) {
       _baseState = state;
+      for (final op in newSyncedOps) {
+        if (!_emittedWorkingStateOpIds.contains(op.id)) {
+          _emittedBaseStateOpIds.add(op.id);
+        }
+      }
     }
 
     final newIndexValues = <String, Set<String>>{};
@@ -1337,7 +1349,7 @@ class SyncClient {
 
     LoadOpsResp result;
     String? latestCursor = _pullStartCursor();
-    int batchSize = 4000;
+    const int batchSize = 4000;
     print('[SYNC-DIAG] _pull: start cursor=$latestCursor');
 
     try {
@@ -1353,6 +1365,9 @@ class SyncClient {
         }
 
         await _persistOps(result.ops, asBase: true);
+        if (result.ops.length >= batchSize) {
+          await localStore.settled();
+        }
 
         if (result.cursor != null &&
             (latestCursor == null ||
@@ -1492,21 +1507,24 @@ class SyncClient {
     final currentSyncFuture = syncFuture;
     final syncCompleter = Completer<void>();
     syncFuture = syncCompleter.future;
-    await currentSyncFuture;
+    try {
+      await currentSyncFuture;
 
-    if (persistenceService != null) {
-      await _pull();
+      if (persistenceService != null) {
+        await _pull();
 
-      await _push();
+        await _push();
 
-      // sync() is the durability barrier: a restart on this store must start
-      // from fully stored local state, so the store cursor may only cover
-      // the ops above once they are actually stored and indexed (#42).
-      await localStore.settled();
+        // sync() is the durability barrier: a restart on this store must start
+        // from fully stored local state, so the store cursor may only cover
+        // the ops above once they are actually stored and indexed (#42).
+        await localStore.settled();
+      }
+
+      _computeAndEmitUnsyncedState("sync");
+    } finally {
+      syncCompleter.complete();
     }
-
-    _computeAndEmitUnsyncedState("sync");
-    syncCompleter.complete();
   }
 
   Future<void> logOut() async {
