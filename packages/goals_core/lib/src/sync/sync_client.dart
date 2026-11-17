@@ -1270,6 +1270,9 @@ class SyncClient {
   Iterable<Op> _reHlcOps(Iterable<Op> ops) {
     List<Op> result = [];
     for (Op op in ops) {
+      // Increment first: the current HLC already stamps the newest local op,
+      // and a pushed copy must not share an HLC with an op still unsynced.
+      hlc = hlc.increment();
       final newHlc = hlc.pack();
       result.add(switch (op) {
         DeltaOp() => DeltaOp(
@@ -1291,8 +1294,6 @@ class SyncClient {
         _ => throw Exception(
             'Unknown op type encountered in _reHlcOps: \${op.runtimeType}'),
       });
-
-      hlc = hlc.increment();
     }
 
     return result;

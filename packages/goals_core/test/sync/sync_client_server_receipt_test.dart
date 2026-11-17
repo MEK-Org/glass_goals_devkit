@@ -6,7 +6,15 @@ import 'package:goals_core/src/sync/persistence_service.dart'
 import 'package:goals_core/src/sync/sync_logger.dart' show SyncEventLogger;
 import 'package:goals_core/sync.dart' show SyncClient, MemoryLocalStore, Op;
 import 'package:goals_types/goals_types.dart'
-    show GoalDelta, GoalStatus, NoteLogEntry, StatusLogEntry;
+    show
+        DeltaOp,
+        DisableOp,
+        EnableOp,
+        GoalDelta,
+        GoalStatus,
+        NoteLogEntry,
+        StatusLogEntry;
+import 'package:hlc/hlc.dart';
 import 'package:test/test.dart';
 
 /// A server whose REST commits succeed immediately but whose listener echo
@@ -22,6 +30,10 @@ class DelayedEchoServer implements PersistenceService {
   bool readsLag = false;
   int failSaves = 0;
 
+  /// When true, the next successful save delivers the listener echo of its
+  /// batch's first op before the save returns, as a fast listener can.
+  bool echoFirstDuringNextSave = false;
+
   @override
   Future<void> save(Iterable<Op> ops) async {
     await Future<void>.delayed(Duration.zero);
@@ -36,6 +48,22 @@ class DelayedEchoServer implements PersistenceService {
       committed.add(op);
       _pendingEchoes.add(op);
     }
+    if (echoFirstDuringNextSave && ops.isNotEmpty) {
+      echoFirstDuringNextSave = false;
+      final first = ops.first;
+      _pendingEchoes.remove(first);
+      _controller.add(([first], first.hlcTimestamp));
+      await _drain();
+      await _drain();
+    }
+  }
+
+  /// Delivers [ops] committed by another client through the listener.
+  Future<void> deliver(List<Op> ops) async {
+    committed.addAll(ops);
+    _controller.add((ops, ops.last.hlcTimestamp));
+    await _drain();
+    await _drain();
   }
 
   /// Delivers held listener events. [reversed] delivers newest first,
@@ -362,6 +390,145 @@ void main() {
     expect(client.stateSubject.value['g']?.text, equals('two'));
     expect(server.saveCounts.values, everyElement(equals(1)));
     expect(server.saveCounts.length, equals(4));
+    client.dispose();
+  });
+
+  test(
+      'redo of a multi-op action keeps every re-enabled op when the first '
+      'echo arrives before the push returns', () async {
+    final server = DelayedEchoServer();
+    final client = SyncClient(
+        persistenceService: server, localStore: MemoryLocalStore());
+    await client.init();
+
+    await client.modifyGoals([
+      GoalDelta(id: 'a', text: 'First draft'),
+      GoalDelta(id: 'b', text: 'B one'),
+      GoalDelta(id: 'c', text: 'C one'),
+    ]);
+    await _drain();
+    await server.releaseEchoes();
+    await _drain();
+
+    // One action that changes several goals, like a merge.
+    await client.modifyGoals([
+      GoalDelta(id: 'a', text: 'Final draft'),
+      GoalDelta(id: 'b', text: 'B two'),
+      GoalDelta(id: 'c', text: 'C two'),
+    ]);
+    await _drain();
+    await server.releaseEchoes();
+    await _drain();
+
+    final watch = client.watchGoals(['a', 'b', 'c']);
+    await _drain();
+
+    await client.undo();
+    await _drain();
+    await server.releaseEchoes();
+    await _drain();
+    expect(client.stateSubject.value['a']?.text, equals('First draft'));
+    expect(client.stateSubject.value['b']?.text, equals('B one'));
+    expect(client.stateSubject.value['c']?.text, equals('C one'));
+
+    void expectRedone(String phase) {
+      final state = client.stateSubject.value;
+      expect(state['a']?.text, equals('Final draft'), reason: phase);
+      expect(state['b']?.text, equals('B two'), reason: phase);
+      expect(state['c']?.text, equals('C two'), reason: phase);
+      for (final id in ['a', 'b', 'c']) {
+        expect(state[id]?.text, equals(watch.currentValue[id]?.text),
+            reason: '$phase: stateSubject agrees with the per-goal watch '
+                'for $id');
+      }
+    }
+
+    // The first re-enable's echo lands before the push replaces the
+    // unsynced originals with their pushed copies.
+    server.echoFirstDuringNextSave = true;
+    await client.redo();
+    await _drain();
+    expectRedone('after redo, first echo received during push');
+
+    await server.releaseEchoes();
+    await _drain();
+    expect(client.numUnsyncedOps, equals(0));
+    expectRedone('after every echo');
+    watch.dispose();
+    client.dispose();
+  });
+
+  test('enable ops that share an HLC each re-enable their own target',
+      () async {
+    final server = DelayedEchoServer();
+    final client = SyncClient(
+        persistenceService: server, localStore: MemoryLocalStore());
+    await client.init();
+
+    var seq = 0;
+    String nextHlc() =>
+        HLC(timestamp: 1700000000000 + ++seq, count: 0, node: 'remote')
+            .pack();
+    DeltaOp text(String id, String goalId, String value) => DeltaOp(
+        id: id,
+        hlcTimestamp: nextHlc(),
+        delta: GoalDelta(id: goalId, text: value));
+
+    // Built in delivery order so each HLC is later than the one before:
+    // x2/y2 must be newer than x1/y1 to win once they are re-enabled.
+    final x1 = text('x1', 'x', 'x one');
+    final y1 = text('y1', 'y', 'y one');
+    final x2 = text('x2', 'x', 'x two');
+    final y2 = text('y2', 'y', 'y two');
+    await server.deliver([
+      x1,
+      y1,
+      x2,
+      y2,
+      DisableOp(id: 'dx', hlcTimestamp: nextHlc(), opId: x2.id),
+      DisableOp(id: 'dy', hlcTimestamp: nextHlc(), opId: y2.id),
+    ]);
+    expect(client.stateSubject.value['x']?.text, equals('x one'));
+    expect(client.stateSubject.value['y']?.text, equals('y one'));
+
+    final shared = nextHlc();
+    await server.deliver([
+      EnableOp(id: 'ex', hlcTimestamp: shared, opId: x2.id),
+      EnableOp(id: 'ey', hlcTimestamp: shared, opId: y2.id),
+    ]);
+    expect(client.stateSubject.value['x']?.text, equals('x two'));
+    expect(client.stateSubject.value['y']?.text, equals('y two'));
+    client.dispose();
+  });
+
+  test('undo after redo disables the re-enabled op again', () async {
+    final server = DelayedEchoServer();
+    final client = SyncClient(
+        persistenceService: server, localStore: MemoryLocalStore());
+    await client.init();
+
+    Future<void> settle() async {
+      await _drain();
+      await server.releaseEchoes();
+      await _drain();
+    }
+
+    await client.modifyGoal(GoalDelta(id: 'g', text: 'one'));
+    await client.modifyGoal(GoalDelta(id: 'g', text: 'two'));
+    await settle();
+
+    await client.undo();
+    await settle();
+    expect(client.stateSubject.value['g']?.text, equals('one'));
+
+    await client.redo();
+    await settle();
+    expect(client.stateSubject.value['g']?.text, equals('two'));
+
+    await client.undo();
+    await settle();
+    expect(client.stateSubject.value['g']?.text, equals('one'));
+    expect(client.numUnsyncedOps, equals(0));
     client.dispose();
   });
 }

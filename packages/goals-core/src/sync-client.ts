@@ -1050,8 +1050,10 @@ export class SyncClient {
       if (!isDeltaOp(op) && !isDisableOp(op) && !isEnableOp(op)) {
         throw new Error(`Unknown op type encountered in reHlcOps: ${op.type}`);
       }
-      result.push({ ...op, hlcTimestamp: this.hlc.pack() });
+      // Increment first, like the Dart: the current HLC already stamps the
+      // newest local op, which may still be unsynced.
       this.hlc = this.hlc.increment();
+      result.push({ ...op, hlcTimestamp: this.hlc.pack() });
     }
     return result;
   }
