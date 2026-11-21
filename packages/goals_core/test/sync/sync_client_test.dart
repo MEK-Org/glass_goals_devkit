@@ -15,9 +15,11 @@ import 'package:goals_core/sync.dart'
 import 'package:goals_types/goals_types.dart'
     show
         CreateInstanceLogEntry,
+        DeltaOp,
         GoalDelta,
         SetParentLogEntry,
         DocumentContentsEntry;
+import 'package:hlc/hlc.dart' show HLC;
 import 'package:test/test.dart'
     show
         contains,
@@ -697,6 +699,33 @@ void main() {
     final goal2 = await client2.loadGoal('2');
 
     expect(goal2?.text, equals('bar'));
+  });
+
+  test('invalidating a missing goal allows a second local read', () async {
+    final store = MemoryLocalStore();
+    final client = SyncClient(
+      localStore: store,
+      persistenceService: MemoryPersistenceService(),
+    );
+    await client.init();
+
+    expect(await client.loadGoal('later'), isNull,
+        reason: 'the first local read establishes the missing-target state');
+
+    final clock = HLC.now('reload-goal-test');
+    await store.storeSyncedOps([
+      DeltaOp(
+        id: 'later-arrived',
+        hlcTimestamp: clock.pack(),
+        delta: GoalDelta(id: 'later', text: 'Available after retry'),
+      ),
+    ]);
+
+    client.invalidateMissingGoal('later');
+    final reloaded = await client.loadGoal('later');
+
+    expect(reloaded?.text, equals('Available after retry'),
+        reason: 'a deliberate retry must reread only the local goal index');
   });
 
   test("simple reload test", () async {

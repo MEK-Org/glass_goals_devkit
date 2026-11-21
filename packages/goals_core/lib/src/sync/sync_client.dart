@@ -1198,6 +1198,21 @@ class SyncClient {
     }
   }
 
+  /// Lets a caller retry a goal that was previously absent from local storage.
+  ///
+  /// A completed empty local read is normally cached as fully loaded.  That is
+  /// correct for ordinary graph traversal, but a local persistence update can
+  /// make a destination available between an explicit "not found" result and
+  /// a user retry.  This invalidates only that cached absence; it neither
+  /// starts a read nor contacts persistence/remote sync.  Resident goals stay
+  /// unchanged, so callers cannot use it to rebuild an already loaded goal
+  /// over its current in-memory state.
+  void invalidateMissingGoal(String goalId) {
+    if (stateSubject.value.containsKey(goalId)) return;
+    _goalLoadState.remove(goalId);
+    _lastAccessed.remove(goalId);
+  }
+
   Future<Goal?> _loadUnloadedGoal(
       String goalId, Stopwatch totalSw, void Function() unprotect) async {
     final baseStateCursor = _baseStateCursor;
