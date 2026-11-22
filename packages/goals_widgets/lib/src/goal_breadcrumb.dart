@@ -11,6 +11,7 @@ import 'package:flutter/material.dart'
         Material,
         RoundedRectangleBorder,
         Theme;
+import 'package:flutter/foundation.dart' show ValueChanged;
 import 'package:flutter/painting.dart'
     show
         Alignment,
@@ -60,7 +61,11 @@ import 'package:flutter/widgets.dart'
 import 'package:goals_core/model.dart' show Goal, GoalPath, isAnchor;
 import 'package:goals_core/sync.dart' show SyncClient, WatchedGoalSet;
 import 'package:goals_ui_core/core.dart'
-    show GoalActionsContext, GoalWidgetsContext, GoalsTheme;
+    show
+        BreadcrumbHoverRequest,
+        GoalActionsContext,
+        GoalWidgetsContext,
+        GoalsTheme;
 import 'package:rxdart/rxdart.dart' show ThrottleExtensions;
 
 enum CrumbAbbreviationStrategy {
@@ -123,6 +128,10 @@ class Breadcrumb extends StatefulWidget {
   final bool abbreviateGoalName;
   final double? maxWidth;
   final VoidCallback? onTap;
+
+  /// Told whether the crumb's hover (#404) shows, by a popover that lists
+  /// the crumb and must stay open while it does.
+  final ValueChanged<bool>? onHoverShowingChanged;
   const Breadcrumb({
     super.key,
     this.style,
@@ -131,6 +140,7 @@ class Breadcrumb extends StatefulWidget {
     this.abbreviateGoalName = false,
     this.maxWidth,
     this.onTap,
+    this.onHoverShowingChanged,
   });
 
   @override
@@ -182,6 +192,12 @@ class _BreadcrumbState extends State<Breadcrumb> {
     super.dispose();
   }
 
+  /// Opens the crumb's goal, as tapping it does.
+  void _openGoal() {
+    GoalActionsContext.of(context).onFocused(widget.path);
+    widget.onTap?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -191,7 +207,7 @@ class _BreadcrumbState extends State<Breadcrumb> {
     var crumbText =
         widget.abbreviateGoalName ? _doAbbreviation(_goal?.text) : _goal?.text;
 
-    final Widget child;
+    Widget child;
     if (crumbText == null) {
       child = FadeShimmer(
         width: 50,
@@ -212,14 +228,24 @@ class _BreadcrumbState extends State<Breadcrumb> {
                 ? widget.style!.copyWith(decoration: TextDecoration.underline)
                 : TextStyle(decoration: TextDecoration.underline),
           ),
-          onTap: widget.allowTapping
-              ? () {
-                  GoalActionsContext.of(context).onFocused(widget.path);
-                  widget.onTap?.call();
-                }
-              : null,
+          onTap: widget.allowTapping ? _openGoal : null,
         ),
       );
+      // A crumb that can't be tapped labels something else (a search
+      // result), so it doesn't offer its goal's hover either.
+      final hoverBuilder =
+          GoalWidgetsContext.of(context).breadcrumbHoverBuilder;
+      if (hoverBuilder != null && widget.allowTapping) {
+        child = hoverBuilder(
+          context,
+          BreadcrumbHoverRequest(
+            path: widget.path,
+            child: child,
+            onOpenGoal: _openGoal,
+            onShowingChanged: widget.onHoverShowingChanged,
+          ),
+        );
+      }
     }
 
     if (widget.maxWidth == null) return child;
@@ -638,6 +664,11 @@ class _OmittedBreadcrumbsEllipsisState
   bool _targetHovered = false;
   bool _popoverHovered = false;
 
+  /// Listed crumbs whose hover (#404) shows. A hover draws outside this
+  /// popover, so the pointer resting in one has left the popover; it stays
+  /// open until every hover it opened has gone.
+  final _showingHovers = <int>{};
+
   @override
   void didUpdateWidget(_OmittedBreadcrumbsEllipsis oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -645,6 +676,7 @@ class _OmittedBreadcrumbsEllipsisState
       _showTimer?.cancel();
       _hideTimer?.cancel();
       _popoverHovered = false;
+      _showingHovers.clear();
       if (_overlayController.isShowing) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted &&
@@ -692,11 +724,23 @@ class _OmittedBreadcrumbsEllipsisState
     _scheduleHide();
   }
 
+  void _onCrumbHoverShowingChanged(int index, bool showing) {
+    if (showing) {
+      _showingHovers.add(index);
+      _hideTimer?.cancel();
+    } else if (_showingHovers.remove(index)) {
+      _scheduleHide();
+    }
+  }
+
+  bool get _held =>
+      _targetHovered || _popoverHovered || _showingHovers.isNotEmpty;
+
   void _scheduleHide() {
-    if (_targetHovered || _popoverHovered) return;
+    if (_held) return;
     _hideTimer?.cancel();
     _hideTimer = Timer(_hoverDismissGrace, () {
-      if (!mounted || _targetHovered || _popoverHovered) return;
+      if (!mounted || _held) return;
       _dismissPopover();
     });
   }
@@ -705,6 +749,7 @@ class _OmittedBreadcrumbsEllipsisState
     _showTimer?.cancel();
     _hideTimer?.cancel();
     _popoverHovered = false;
+    _showingHovers.clear();
     if (mounted && _overlayController.isShowing) {
       _overlayController.hide();
     }
@@ -762,6 +807,9 @@ class _OmittedBreadcrumbsEllipsisState
                             abbreviateGoalName: false,
                             style: widget.style,
                             onTap: _dismissPopover,
+                            onHoverShowingChanged: (showing) =>
+                                _onCrumbHoverShowingChanged(
+                                    widget.omittedIndices[i], showing),
                           ),
                         ),
                     ],

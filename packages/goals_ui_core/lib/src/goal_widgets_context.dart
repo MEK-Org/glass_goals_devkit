@@ -1,6 +1,8 @@
 import 'package:flutter/scheduler.dart' show SchedulerPhase;
+import 'package:flutter/foundation.dart' show ValueChanged, VoidCallback;
 import 'package:flutter/widgets.dart'
     show BuildContext, InheritedWidget, Widget, WidgetsBinding;
+import 'package:goals_core/model.dart' show GoalPath;
 import 'package:goals_core/sync.dart' show SyncClient;
 
 import 'services/cloudstore_service.dart' show CloudstoreService;
@@ -128,6 +130,38 @@ class PendingGoalRegistry {
   }
 }
 
+/// What a goal breadcrumb hands a [BreadcrumbHoverBuilder] (#404).
+class BreadcrumbHoverRequest {
+  /// The crumb's goal path; its last goal is the crumb's goal.
+  final GoalPath path;
+
+  /// The crumb's label, already tappable. The builder returns it wrapped,
+  /// with the same size, so hovering a crumb never moves the path around it.
+  final Widget child;
+
+  /// Opens the crumb's goal as tapping the crumb does, closing any popover
+  /// the crumb is listed in.
+  final VoidCallback onOpenGoal;
+
+  /// Reports whether the hover shows, so a popover the crumb is listed in
+  /// (the `…` list) stays open while the pointer, focus or a menu is in the
+  /// crumb's hover, which draws outside that popover.
+  final ValueChanged<bool>? onShowingChanged;
+
+  const BreadcrumbHoverRequest({
+    required this.path,
+    required this.child,
+    required this.onOpenGoal,
+    this.onShowingChanged,
+  });
+}
+
+/// Wraps a goal breadcrumb so hovering it shows its goal (#404). The app
+/// supplies one through [GoalWidgetsContext.breadcrumbHoverBuilder]; without
+/// one a crumb is just its label.
+typedef BreadcrumbHoverBuilder = Widget Function(
+    BuildContext context, BreadcrumbHoverRequest request);
+
 /// App-wide dependency context for the goals widget package.
 ///
 /// Bundles the services that goal-rendering widgets (Breadcrumb, GoalItem,
@@ -142,6 +176,9 @@ class GoalWidgetsContext extends InheritedWidget {
   final PendingOperationService? pendingOperationService;
   final PendingGoalRegistry? pendingGoalRegistry;
 
+  /// Builds the hover every goal breadcrumb shows; null shows none.
+  final BreadcrumbHoverBuilder? breadcrumbHoverBuilder;
+
   const GoalWidgetsContext({
     super.key,
     required this.syncClient,
@@ -149,6 +186,7 @@ class GoalWidgetsContext extends InheritedWidget {
     this.documentService,
     this.pendingOperationService,
     this.pendingGoalRegistry,
+    this.breadcrumbHoverBuilder,
     required Widget child,
   }) : super(child: child);
 
@@ -170,6 +208,7 @@ class GoalWidgetsContext extends InheritedWidget {
         cloudstoreService != oldWidget.cloudstoreService ||
         documentService != oldWidget.documentService ||
         pendingOperationService != oldWidget.pendingOperationService ||
-        pendingGoalRegistry != oldWidget.pendingGoalRegistry;
+        pendingGoalRegistry != oldWidget.pendingGoalRegistry ||
+        breadcrumbHoverBuilder != oldWidget.breadcrumbHoverBuilder;
   }
 }
