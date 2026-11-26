@@ -395,6 +395,26 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
     });
   }
 
+  /// [name] wrapped in the app's goal-name hover, if it gives one
+  /// (glass_goals#410). Opening the goal from the hover does what tapping the
+  /// row does.
+  Widget _nameHover(BuildContext context, Widget name) {
+    final builder = GoalWidgetsContext.maybeOf(context)?.goalNameHoverBuilder;
+    if (builder == null) return name;
+    final actions = GoalActionsContext.of(context);
+    return builder(
+      context,
+      BreadcrumbHoverRequest(
+        path: widget.path,
+        child: name,
+        onOpenGoal: () {
+          actions.onSelected.call(widget.path);
+          actions.onFocused.call(widget.path);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -528,29 +548,32 @@ class _GoalItemWidgetState extends State<GoalItemWidget> {
                                     : Flexible(
                                         child: Focus(
                                           focusNode: _focusNode,
-                                          child: MouseRegion(
-                                            cursor: SystemMouseCursors.text,
-                                            child: GestureDetector(
-                                              onTap: hasMouse
-                                                  ? _startEditing
-                                                  : null,
-                                              onLongPress: !hasMouse
-                                                  ? _startEditing
-                                                  : null,
-                                              child: Text(
-                                                  goal?.text.length == 0
-                                                      ? " "
-                                                      : goal?.text ?? " ",
-                                                  style: (isSelected
-                                                          ? mainTextStyle.merge(
-                                                              focusedFontStyle)
-                                                          : mainTextStyle)
-                                                      .copyWith(
-                                                    decoration: TextDecoration
-                                                        .underline,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  )),
+                                          child: _nameHover(
+                                            context,
+                                            MouseRegion(
+                                              cursor: SystemMouseCursors.text,
+                                              child: GestureDetector(
+                                                onTap: hasMouse
+                                                    ? _startEditing
+                                                    : null,
+                                                onLongPress: !hasMouse
+                                                    ? _startEditing
+                                                    : null,
+                                                child: Text(
+                                                    goal?.text.length == 0
+                                                        ? " "
+                                                        : goal?.text ?? " ",
+                                                    style: (isSelected
+                                                            ? mainTextStyle.merge(
+                                                                focusedFontStyle)
+                                                            : mainTextStyle)
+                                                        .copyWith(
+                                                      decoration: TextDecoration
+                                                          .underline,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    )),
+                                              ),
                                             ),
                                           ),
                                         ),

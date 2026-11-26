@@ -179,6 +179,14 @@ class GoalWidgetsContext extends InheritedWidget {
   /// Builds the hover every goal breadcrumb shows; null shows none.
   final BreadcrumbHoverBuilder? breadcrumbHoverBuilder;
 
+  /// Builds the hover a goal row's name shows (glass_goals#410); null shows
+  /// none. It gets the request a breadcrumb gets: the row's path, the name
+  /// to wrap (still a click to edit the title), and an
+  /// [BreadcrumbHoverRequest.onOpenGoal] that selects and focuses the row's
+  /// goal as tapping the row does. A row drawn as a path of crumbs leaves
+  /// its names to [breadcrumbHoverBuilder].
+  final BreadcrumbHoverBuilder? goalNameHoverBuilder;
+
   const GoalWidgetsContext({
     super.key,
     required this.syncClient,
@@ -187,6 +195,7 @@ class GoalWidgetsContext extends InheritedWidget {
     this.pendingOperationService,
     this.pendingGoalRegistry,
     this.breadcrumbHoverBuilder,
+    this.goalNameHoverBuilder,
     required Widget child,
   }) : super(child: child);
 
@@ -209,6 +218,7 @@ class GoalWidgetsContext extends InheritedWidget {
         documentService != oldWidget.documentService ||
         pendingOperationService != oldWidget.pendingOperationService ||
         pendingGoalRegistry != oldWidget.pendingGoalRegistry ||
-        breadcrumbHoverBuilder != oldWidget.breadcrumbHoverBuilder;
+        breadcrumbHoverBuilder != oldWidget.breadcrumbHoverBuilder ||
+        goalNameHoverBuilder != oldWidget.goalNameHoverBuilder;
   }
 }
